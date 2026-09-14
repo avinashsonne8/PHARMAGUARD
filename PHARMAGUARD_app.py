@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import joblib
 import re
+from datetime import datetime
 
 MODEL_PATH = "PHARMAGUARD_RandomForest_Model.joblib"
 
@@ -48,6 +49,10 @@ def load_model():
 
 
 model = load_model()
+
+# Session-only ADR history. It resets when the app session is restarted.
+if "adr_history" not in st.session_state:
+    st.session_state.adr_history = []
 
 st.title("🛡️ PHARMAGUARD")
 st.subheader("AI-Assisted ADR Risk Prioritization System")
@@ -122,6 +127,19 @@ if st.button("🔍 ANALYZE ADR", use_container_width=True):
 
         st.caption(f"Reason: {result_reason}")
 
+        # Save the analyzed case to the current app session history.
+        st.session_state.adr_history.append({
+            "Date_Time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "Patient_ID": patient_id_clean,
+            "Age": int(age),
+            "Sex": sex,
+            "Drug": drug_clean,
+            "ADR": adr_clean,
+            "Priority": priority,
+            "Seriousness_Flag": "YES" if serious_flag else "NO",
+            "Reason": result_reason,
+        })
+
         st.info(
             "This output is AI-assisted prioritization only. "
             "It is not a diagnosis, treatment recommendation, causality assessment, "
@@ -130,7 +148,31 @@ if st.button("🔍 ANALYZE ADR", use_container_width=True):
         )
 
 st.divider()
+
+# Step 47: ADR Report History
+st.subheader("📋 ADR Report History")
+
+if st.session_state.adr_history:
+    history_df = pd.DataFrame(st.session_state.adr_history)
+    st.dataframe(history_df, use_container_width=True, hide_index=True)
+
+    csv_data = history_df.to_csv(index=False).encode("utf-8")
+    st.download_button(
+        "⬇️ Download ADR History (CSV)",
+        data=csv_data,
+        file_name="PHARMAGUARD_ADR_History.csv",
+        mime="text/csv",
+        use_container_width=True,
+    )
+
+    if st.button("🗑️ Clear Current Session History", use_container_width=True):
+        st.session_state.adr_history = []
+        st.rerun()
+else:
+    st.caption("No ADR cases analyzed yet in this session.")
+
 st.caption(
     "PHARMAGUARD • College project prototype • "
-    "Model trained on a 200-case feasibility dataset with provisional labels."
-    )
+    "Model trained on a 200-case feasibility dataset with provisional labels. "
+    "History is session-only in this version."
+)
