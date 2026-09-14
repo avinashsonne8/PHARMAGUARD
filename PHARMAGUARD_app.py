@@ -7,7 +7,7 @@ MODEL_PATH = "PHARMAGUARD_RandomForest_Model.joblib"
 
 st.set_page_config(
     page_title="PHARMAGUARD",
-    page_icon="ðŸ›¡ï¸",
+    page_icon="🛡️",
     layout="centered"
 )
 
@@ -49,9 +49,9 @@ def load_model():
 
 model = load_model()
 
-st.title("ðŸ›¡ï¸ PHARMAGUARD")
+st.title("🛡️ PHARMAGUARD")
 st.subheader("AI-Assisted ADR Risk Prioritization System")
-st.caption("Pharmacovigilance review support â€¢ Proof-of-concept")
+st.caption("Pharmacovigilance review support • Proof-of-concept")
 
 st.divider()
 
@@ -70,7 +70,7 @@ adr = st.text_area(
     placeholder="e.g., Headache"
 )
 
-if st.button("ðŸ” ANALYZE ADR", use_container_width=True):
+if st.button("🔍 ANALYZE ADR", use_container_width=True):
     if not patient_id.strip():
         st.warning("Please enter a Patient ID.")
     elif not drug.strip() or not adr.strip():
@@ -106,17 +106,17 @@ if st.button("ðŸ” ANALYZE ADR", use_container_width=True):
         st.write(f"**Patient ID:** {patient_id_clean}")
 
         if priority == "HIGH":
-            st.error("ðŸ”´ HIGH PRIORITY")
+            st.error("🔴 HIGH PRIORITY")
             st.write("Prompt pharmacovigilance review is recommended.")
         elif priority == "MODERATE":
-            st.warning("ðŸŸ¡ MODERATE PRIORITY")
+            st.warning("🟡 MODERATE PRIORITY")
             st.write("Pharmacovigilance review is recommended.")
         else:
-            st.success("ðŸŸ¢ LOW PRIORITY")
+            st.success("🟢 LOW PRIORITY")
             st.write("Routine review may be considered.")
 
         if serious_flag:
-            st.warning("âš ï¸ Seriousness Safety Flag: Potentially serious medical event")
+            st.warning("⚠️ Seriousness Safety Flag: Potentially serious medical event")
         else:
             st.info("Seriousness Safety Flag: No strong serious signal detected by the project safety gate.")
 
@@ -131,6 +131,6 @@ if st.button("ðŸ” ANALYZE ADR", use_container_width=True):
 
 st.divider()
 st.caption(
-    "PHARMAGUARD â€¢ College project prototype â€¢ "
+    "PHARMAGUARD • College project prototype • "
     "Model trained on a 200-case feasibility dataset with provisional labels."
-)
+    )
