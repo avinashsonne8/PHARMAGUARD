@@ -120,6 +120,40 @@ if st.button("🔍 ANALYZE ADR", use_container_width=True):
 
 if st.session_state.adr_history:
     st.divider()
+
+# =========================
+# STEP 50 — ADR DASHBOARD
+# =========================
+if st.session_state.get("adr_history"):
+    st.markdown("---")
+    st.subheader("📊 PHARMAGUARD Dashboard")
+    st.caption("Dashboard shows only ADR cases analyzed in the current app session.")
+
+    dashboard_df = pd.DataFrame(st.session_state.adr_history)
+    priority_counts = (
+        dashboard_df["Priority"]
+        .astype(str)
+        .str.upper()
+        .value_counts()
+        .reindex(["HIGH", "MODERATE", "LOW"], fill_value=0)
+    )
+
+    total_cases = len(dashboard_df)
+    high_cases = int(priority_counts["HIGH"])
+    moderate_cases = int(priority_counts["MODERATE"])
+    low_cases = int(priority_counts["LOW"])
+
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Total ADR Cases", total_cases)
+    m2.metric("🔴 High", high_cases)
+    m3.metric("🟡 Moderate", moderate_cases)
+    m4.metric("🟢 Low", low_cases)
+
+    st.markdown("#### Priority Distribution")
+    chart_df = priority_counts.rename("Cases").reset_index()
+    chart_df.columns = ["Priority", "Cases"]
+    st.bar_chart(chart_df.set_index("Priority"))
+
     st.subheader("📚 ADR Report History")
     df = pd.DataFrame(st.session_state.adr_history)
     st.dataframe(df, use_container_width=True, hide_index=True)
