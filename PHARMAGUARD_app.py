@@ -127,7 +127,7 @@ if st.button("🔍 ANALYZE ADR", use_container_width=True):
     st.write(f"**Reason:** {reason}")
     st.write(f"**Recommendation:** {recommendation}")
 
-        database_record = {
+    database_record = {
         "Date_Time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "Patient_ID": patient_id,
         "Age": age,
