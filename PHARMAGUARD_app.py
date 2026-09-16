@@ -1,6 +1,8 @@
 import streamlit as st
-import joblib
 import pandas as pd
+import joblib
+import requests
+
 from datetime import datetime
 
 st.set_page_config(page_title="PHARMAGUARD", page_icon="💊", layout="centered")
@@ -12,6 +14,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 MODEL_FILE = "PHARMAGUARD_RandomForest_Model.joblib"
+GOOGLE_SHEET_URL = st.secrets["GOOGLE_SHEET_URL"]
 try:
     model = joblib.load(MODEL_FILE)
 except Exception as e:
@@ -38,7 +41,16 @@ MODERATE_PATTERNS = [
     "significant dizziness","marked dizziness","muscle pain and weakness",
     "muscle pain with weakness","dehydration"
 ]
-
+def save_to_google_sheet(data):
+    try:
+        response = requests.post(
+            GOOGLE_SHEET_URL,
+            json=data,
+            timeout=15
+        )
+        return response.status_code == 200
+    except Exception:
+        return False
 def matches(text, patterns):
     text = " ".join(str(text).lower().strip().split())
     return [x for x in patterns if x in text]
@@ -115,11 +127,35 @@ if st.button("🔍 ANALYZE ADR", use_container_width=True):
     st.write(f"**Reason:** {reason}")
     st.write(f"**Recommendation:** {recommendation}")
 
-    st.session_state.adr_history.append({
+        database_record = {
         "Date_Time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "Patient_ID": patient_id, "Age": age, "Sex": sex,
-        "Drug": drug, "ADR": adr, "Priority": priority,
-        "Seriousness_Flag": flag, "Reason": reason
+        "Patient_ID": patient_id,
+        "Age": age,
+        "Sex": sex,
+        "Drug": drug,
+        "ADR": adr,
+        "Seriousness": "Yes" if serious_hits else "Uncertain",
+        "Priority": priority,
+        "Reason": reason
+    }
+
+    saved = save_to_google_sheet(database_record)
+
+    if saved:
+        st.success("✅ ADR saved to PHARMAGUARD Database")
+    else:
+        st.warning("⚠️ Analysis completed, but ADR could not be saved to database.")
+
+    st.session_state.adr_history.append({
+        "Date_Time": database_record["Date_Time"],
+        "Patient_ID": patient_id,
+        "Age": age,
+        "Sex": sex,
+        "Drug": drug,
+        "ADR": adr,
+        "Priority": priority,
+        "Seriousness_Flag": flag,
+        "Reason": reason
     })
 
 if st.session_state.adr_history:
