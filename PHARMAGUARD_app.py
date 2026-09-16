@@ -3,7 +3,28 @@ import joblib
 import pandas as pd
 from datetime import datetime
 
-st.set_page_config(page_title="PHARMAGUARD", page_icon="💊", layout="centered")
+# =========================
+# STEP 51 — PROFESSIONAL BRANDING
+# =========================
+st.set_page_config(page_title="PHARMAGUARD | ADR Prioritization", page_icon="🛡️", layout="centered")
+
+st.markdown("""
+<style>
+.pg-header{text-align:center;padding:.25rem 0 .7rem}
+.pg-logo{font-size:2.2rem;font-weight:800;letter-spacing:.4px}
+.pg-subtitle{font-size:.95rem;margin-top:-.15rem}
+.pg-badge{display:inline-block;padding:.22rem .65rem;border-radius:999px;font-size:.76rem;font-weight:600;margin-top:.4rem}
+.pg-flow{text-align:center;font-size:.82rem;padding:.65rem .25rem;border-radius:.6rem;margin:.45rem 0 1rem}
+</style>
+<div class="pg-header">
+<div class="pg-logo">🛡️ PHARMAGUARD</div>
+<div class="pg-subtitle">AI-Assisted ADR Risk Prioritization System</div>
+<div class="pg-badge">Pharmacovigilance • Proof of Concept</div>
+</div>
+<div class="pg-flow"><b>ADR Input</b> → <b>Seriousness Safety Gate</b> → <b>Moderate Review Gate</b> → <b>AI Model</b> → <b>Priority</b></div>
+""")
+
+
 st.title("💊 PHARMAGUARD")
 st.caption("Pharmacovigilance review support • Proof-of-concept")
 
