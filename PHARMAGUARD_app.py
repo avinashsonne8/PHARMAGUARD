@@ -4,9 +4,13 @@ import pandas as pd
 from datetime import datetime
 
 st.set_page_config(page_title="PHARMAGUARD", page_icon="💊", layout="centered")
-st.title("💊 PHARMAGUARD")
-st.caption("Pharmacovigilance review support • Proof-of-concept")
-
+st.markdown("""
+<div style="text-align:center; padding:10px;">
+    <h1>🛡️ PHARMAGUARD</h1>
+    <p>AI-Assisted ADR Risk Prioritization System</p>
+    <p><b>Pharmacovigilance • Proof of Concept</b></p>
+</div>
+""", unsafe_allow_html=True)
 MODEL_FILE = "PHARMAGUARD_RandomForest_Model.joblib"
 try:
     model = joblib.load(MODEL_FILE)
