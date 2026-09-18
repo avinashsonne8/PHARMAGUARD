@@ -486,24 +486,6 @@ if st.button(
 )
 
 
-    else:
-
-        st.info(
-            "⚪ PRIORITY UNCERTAIN",
-            icon="❓"
-        )
-
-        st.markdown(
-            "**Additional information or professional review may be required.**"
-)
-
-
-    else:
-
-        st.info(
-            "⚪ PRIORITY UNCERTAIN"
-        )
-
 
     st.write(
         f"**Seriousness / Review Flag:** {flag}"
