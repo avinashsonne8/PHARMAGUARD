@@ -711,24 +711,30 @@ if st.session_state.get(
     )
         placeholder="Search Patient ID, Drug, or ADR"
     )
-
-    if search_text.strip():
-        search_mask = (
-            df.astype(str)
-            .apply(
-                lambda row: row.str.contains(
-                    search_text,
-                    case=False,
-                    na=False
-                ).any(),
-                axis=1
-            )
+if search_text.strip():
+    search_mask = (
+        df.astype(str)
+        .apply(
+            lambda row: row.str.contains(
+                search_text,
+                case=False,
+                na=False
+            ).any(),
+            axis=1
         )
+    )
+    filtered_df = df[search_mask]
+else:
+    filtered_df = df
 
-        filtered_df = df[search_mask]
-
-    else:
-        filtered_df = df
+if priority_filter != "ALL":
+    filtered_df = filtered_df[
+        filtered_df["Priority"]
+        .astype(str)
+        .str.upper()
+        == priority_filter
+    ]
+    
 
     st.dataframe(
         filtered_df,
