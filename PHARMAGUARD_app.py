@@ -695,87 +695,56 @@ if st.session_state.get(
     # ADR HISTORY
     # =====================================================
 
-    # =====================================================
-# ADR HISTORY
-# =====================================================
+    st.subheader(
+        "📚 ADR Report History"
+    )
 
-st.subheader(
-    "📚 ADR Report History"
-)
+    df = pd.DataFrame(
+        st.session_state.adr_history
+    )
 
-df = pd.DataFrame(
-    st.session_state.adr_history
-)
+    search_text = st.text_input(
+        "🔎 Search ADR History",
+        placeholder="Search Patient ID, Drug, or ADR"
+    )
 
-search_text = st.text_input(
-    "🔎 Search ADR History",
-    placeholder="Search Patient ID, Drug, or ADR"
-)
-
-if search_text.strip():
-    search_mask = (
-        df.astype(str)
-        .apply(
-            lambda row: row.str.contains(
-                search_text,
-                case=False,
-                na=False
-            ).any(),
-            axis=1
+    if search_text.strip():
+        search_mask = (
+            df.astype(str)
+            .apply(
+                lambda row: row.str.contains(
+                    search_text,
+                    case=False,
+                    na=False
+                ).any(),
+                axis=1
+            )
         )
+
+        filtered_df = df[search_mask]
+
+    else:
+        filtered_df = df
+
+    st.dataframe(
+        filtered_df,
+        use_container_width=True,
+        hide_index=True
     )
-
-    filtered_df = df[search_mask]
-
-else:
-    filtered_df = df
-
-st.dataframe(
-    filtered_df,
-    use_container_width=True,
-    hide_index=True
-    )
-
 
     st.download_button(
-
         "⬇️ Download ADR History (CSV)",
-
         data=df.to_csv(
             index=False
         ).encode("utf-8"),
-
-        file_name=
-            "PHARMAGUARD_ADR_History.csv",
-
+        file_name="PHARMAGUARD_ADR_History.csv",
         mime="text/csv",
-
         use_container_width=True
-
     )
-
 
     if st.button(
         "🗑️ Clear Current Session History",
         use_container_width=True
     ):
-
         st.session_state.adr_history = []
-
         st.rerun()
-
-
-# =========================================================
-# DISCLAIMER
-# =========================================================
-
-st.divider()
-
-st.caption(
-    "⚠️ AI-assisted prioritization only. "
-    "This prototype is not a diagnosis, treatment "
-    "recommendation, causality assessment, or "
-    "regulatory decision. A qualified "
-    "healthcare/pharmacovigilance professional "
-    "must review the case."
-)
