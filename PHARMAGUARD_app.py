@@ -744,6 +744,28 @@ if st.session_state.get(
         use_container_width=True,
         hide_index=True
     )
+        if not filtered_df.empty:
+        st.markdown("### 🔍 ADR Case Details")
+
+        selected_case = st.selectbox(
+            "Select a Case",
+            filtered_df["Patient_ID"].astype(str).tolist()
+        )
+
+        selected_row = filtered_df[
+            filtered_df["Patient_ID"].astype(str)
+            == selected_case
+        ].iloc[0]
+
+        st.write("**Patient ID:**", selected_row.get("Patient_ID", ""))
+        st.write("**Age:**", selected_row.get("Age", ""))
+        st.write("**Sex:**", selected_row.get("Sex", ""))
+        st.write("**Drug:**", selected_row.get("Drug", ""))
+        st.write("**ADR:**", selected_row.get("ADR", ""))
+        st.write("**Seriousness:**", selected_row.get("Seriousness", ""))
+        st.write("**Priority:**", selected_row.get("Priority", ""))
+        st.write("**Reason:**", selected_row.get("Reason", ""))
+        st.write("**Date & Time:**", selected_row.get("Date_Time", ""))
 
     st.download_button(
         "⬇️ Download ADR History (CSV)",
