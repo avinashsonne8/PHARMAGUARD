@@ -438,25 +438,52 @@ if st.button(
     )
 
 
-    if priority == "HIGH":
+     if priority == "HIGH":
 
         st.error(
-            "🔴 HIGH PRIORITY"
+            "🔴 HIGH PRIORITY",
+            icon="🚨"
+        )
+
+        st.markdown(
+            "**Immediate pharmacovigilance review recommended.**"
         )
 
 
     elif priority == "MODERATE":
 
         st.warning(
-            "🟡 MODERATE PRIORITY"
+            "🟡 MODERATE PRIORITY",
+            icon="⚠️"
+        )
+
+        st.markdown(
+            "**Clinical and pharmacovigilance review recommended.**"
         )
 
 
     elif priority == "LOW":
 
         st.success(
-            "🟢 LOW PRIORITY"
+            "🟢 LOW PRIORITY",
+            icon="✅"
         )
+
+        st.markdown(
+            "**Routine pharmacovigilance review.**"
+        )
+
+
+    else:
+
+        st.info(
+            "⚪ PRIORITY UNCERTAIN",
+            icon="❓"
+        )
+
+        st.markdown(
+            "**Additional information or professional review may be required.**"
+)
 
 
     else:
