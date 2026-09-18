@@ -723,6 +723,26 @@ else:
     df = pd.DataFrame(
         st.session_state.adr_history
     )
+    search_text = st.text_input(
+    "🔎 Search ADR History",
+    placeholder="Search Patient ID, Drug, or ADR"
+)
+
+if search_text.strip():
+    search_mask = (
+        df.astype(str)
+        .apply(
+            lambda row: row.str.contains(
+                search_text,
+                case=False,
+                na=False
+            ).any(),
+            axis=1
+        )
+    )
+    filtered_df = df[search_mask]
+else:
+    filtered_df = df
 
 
     st.dataframe(
