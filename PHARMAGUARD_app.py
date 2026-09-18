@@ -438,7 +438,7 @@ if st.button(
     )
 
 
-   if priority == "HIGH":
+    if priority == "HIGH":
 
         st.error(
             "🔴 HIGH PRIORITY",
