@@ -695,9 +695,18 @@ if st.session_state.get(
     # ADR HISTORY
     # =====================================================
 
-    st.subheader(
-        "📚 ADR Report History"
-    )
+    # =====================================================
+# ADR HISTORY
+# =====================================================
+
+st.subheader(
+    "📚 ADR Report History"
+)
+
+df = pd.DataFrame(
+    st.session_state.adr_history
+)
+
 search_text = st.text_input(
     "🔎 Search ADR History",
     placeholder="Search Patient ID, Drug, or ADR"
@@ -717,37 +726,14 @@ if search_text.strip():
     )
 
     filtered_df = df[search_mask]
+
 else:
     filtered_df = df
 
-    df = pd.DataFrame(st.session_state.adr_history)
-    
-    search_text = st.text_input(
-    "🔎 Search ADR History",
-    placeholder="Search Patient ID, Drug, or ADR"
-)
-df = pd.DataFrame(st.session_state.adr_history)
-if search_text.strip():
-    search_mask = (
-        df.astype(str)
-        .apply(
-            lambda row: row.str.contains(
-                search_text,
-                case=False,
-                na=False
-            ).any(),
-            axis=1
-        )
-    )
-    filtered_df = df[search_mask]
-else:
-    filtered_df = df
-
-
-    st.dataframe(
+st.dataframe(
     filtered_df,
-        use_container_width=True,
-        hide_index=True
+    use_container_width=True,
+    hide_index=True
     )
 
 
