@@ -438,7 +438,7 @@ if st.button(
     )
 
 
-    if priority == "HIGH":
+     if priority == "HIGH":
 
         st.error(
             "🔴 HIGH PRIORITY",
@@ -472,6 +472,18 @@ if st.button(
         st.markdown(
             "**Routine pharmacovigilance review.**"
         )
+
+
+    else:
+
+        st.info(
+            "⚪ PRIORITY UNCERTAIN",
+            icon="❓"
+        )
+
+        st.markdown(
+            "**Additional information or professional review may be required.**"
+)
 
 
     else:
