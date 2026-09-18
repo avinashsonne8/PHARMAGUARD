@@ -744,7 +744,7 @@ if st.session_state.get(
         use_container_width=True,
         hide_index=True
     )
-        if not filtered_df.empty:
+     if not filtered_df.empty:
         st.markdown("### 🔍 ADR Case Details")
 
         selected_case = st.selectbox(
