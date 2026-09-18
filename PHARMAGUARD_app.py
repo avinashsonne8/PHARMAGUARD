@@ -24,6 +24,14 @@ except Exception as e:
 
 if "adr_history" not in st.session_state:
     st.session_state.adr_history = []
+    # Load permanent ADR history from Google Sheet
+if "database_loaded" not in st.session_state:
+    database_df = load_from_google_sheet()
+
+    if not database_df.empty:
+        st.session_state.adr_history = database_df.to_dict("records")
+
+    st.session_state.database_loaded = True
 
 SERIOUS_PATTERNS = [
     "anaphylaxis","anaphylactic","difficulty breathing","breathing difficulty",
