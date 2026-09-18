@@ -720,9 +720,8 @@ if search_text.strip():
 else:
     filtered_df = df
 
-    df = pd.DataFrame(
-        st.session_state.adr_history
-    )
+    df = pd.DataFrame(st.session_state.adr_history)
+    
     search_text = st.text_input(
     "🔎 Search ADR History",
     placeholder="Search Patient ID, Drug, or ADR"
