@@ -705,12 +705,13 @@ if st.session_state.get(
 
     search_text = st.text_input(
         "🔎 Search ADR History",
-        priority_filter = st.selectbox(
-    "🎯 Filter by Priority",
-    ["ALL", "HIGH", "MODERATE", "LOW"]
-    )
+        
         placeholder="Search Patient ID, Drug, or ADR"
     )
+        priority_filter = st.selectbox(
+        "🎯 Filter by Priority",
+        ["ALL", "HIGH", "MODERATE", "LOW"]
+)
 if search_text.strip():
     search_mask = (
         df.astype(str)
