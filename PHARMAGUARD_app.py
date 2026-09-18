@@ -42,6 +42,20 @@ MODERATE_PATTERNS = [
     "muscle pain with weakness","dehydration"
 ]
 def save_to_google_sheet(data):
+    def load_from_google_sheet():
+    try:
+        response = requests.get(
+            GOOGLE_SHEET_URL,
+            timeout=15
+        )
+
+        if response.status_code == 200:
+            return pd.DataFrame(response.json())
+
+        return pd.DataFrame()
+
+    except Exception:
+        return pd.DataFrame()
     try:
         response = requests.post(
             GOOGLE_SHEET_URL,
