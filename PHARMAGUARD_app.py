@@ -727,7 +727,7 @@ else:
     "🔎 Search ADR History",
     placeholder="Search Patient ID, Drug, or ADR"
 )
-
+df = pd.DataFrame(st.session_state.adr_history)
 if search_text.strip():
     search_mask = (
         df.astype(str)
