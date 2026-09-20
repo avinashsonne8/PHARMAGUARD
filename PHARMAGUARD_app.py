@@ -820,6 +820,38 @@ if st.session_state.get(
         use_container_width=True,
         hide_index=True
         )
+        # =====================================================
+    # SEX DISTRIBUTION
+    # =====================================================
+
+    st.markdown(
+        "#### 👥 Sex Distribution"
+    )
+
+    sex_counts = (
+        dashboard_df["Sex"]
+        .astype(str)
+        .str.upper()
+        .replace("", "UNKNOWN")
+        .value_counts()
+    )
+
+    sex_chart_df = (
+        sex_counts
+        .rename("Cases")
+        .reset_index()
+    )
+
+    sex_chart_df.columns = [
+        "Sex",
+        "Cases"
+    ]
+
+    st.bar_chart(
+        sex_chart_df.set_index(
+            "Sex"
+        )
+        )
 
 
         # =====================================================
