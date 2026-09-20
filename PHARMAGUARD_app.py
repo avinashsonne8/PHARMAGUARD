@@ -778,6 +778,48 @@ if st.session_state.get(
         ),
         horizontal=True
     )
+        # =====================================================
+    # RECENT ADR REPORTS
+    # =====================================================
+
+    st.markdown(
+        "#### 🕐 Recent ADR Reports"
+    )
+
+    recent_df = dashboard_df.copy()
+
+    if "Date_Time" in recent_df.columns:
+
+        recent_df["Date_Time"] = pd.to_datetime(
+            recent_df["Date_Time"],
+            errors="coerce"
+        )
+
+        recent_df = (
+            recent_df
+            .sort_values(
+                "Date_Time",
+                ascending=False
+            )
+            .head(10)
+        )
+
+        recent_df["Date_Time"] = (
+            recent_df["Date_Time"]
+            .dt.strftime(
+                "%Y-%m-%d %H:%M"
+            )
+        )
+
+    else:
+
+        recent_df = recent_df.head(10)
+
+    st.dataframe(
+        recent_df,
+        use_container_width=True,
+        hide_index=True
+        )
 
 
         # =====================================================
