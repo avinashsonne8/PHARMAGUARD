@@ -1092,6 +1092,39 @@ if st.session_state.get(
     st.bar_chart(
         adr_priority_table
     )
+        # =====================================================
+    # SERIOUSNESS DISTRIBUTION
+    # =====================================================
+
+    st.markdown(
+        "#### 🚨 Seriousness Distribution"
+    )
+
+    seriousness_counts = (
+        dashboard_df["Seriousness"]
+        .astype(str)
+        .str.strip()
+        .str.upper()
+        .replace("", "UNKNOWN")
+        .value_counts()
+    )
+
+    seriousness_chart_df = (
+        seriousness_counts
+        .rename("Cases")
+        .reset_index()
+    )
+
+    seriousness_chart_df.columns = [
+        "Seriousness",
+        "Cases"
+    ]
+
+    st.bar_chart(
+        seriousness_chart_df.set_index(
+            "Seriousness"
+        )
+    )
 
 
         # =====================================================
