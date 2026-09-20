@@ -738,7 +738,7 @@ if st.session_state.get(
         "Cases"
     ]
 
-        st.bar_chart(
+    st.bar_chart(
         drug_chart_df.set_index(
             "Drug"
         ),
