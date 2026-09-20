@@ -990,6 +990,57 @@ if st.session_state.get(
     st.bar_chart(
         priority_sex_table
     )
+        # =====================================================
+    # DRUG-WISE PRIORITY DISTRIBUTION
+    # =====================================================
+
+    st.markdown(
+        "#### 💊 Drug-wise Priority Distribution"
+    )
+
+    drug_priority_df = dashboard_df.copy()
+
+    drug_priority_df["Drug"] = (
+        drug_priority_df["Drug"]
+        .astype(str)
+        .str.strip()
+        .replace("", "Unknown")
+    )
+
+    drug_priority_table = pd.crosstab(
+        drug_priority_df["Drug"],
+        drug_priority_df["Priority"]
+    )
+
+    drug_priority_table = drug_priority_table.reindex(
+        columns=[
+            "HIGH",
+            "MODERATE",
+            "LOW"
+        ],
+        fill_value=0
+    )
+
+    # Show top 10 drugs by total reports
+    drug_priority_table["TOTAL"] = (
+        drug_priority_table[
+            ["HIGH", "MODERATE", "LOW"]
+        ].sum(axis=1)
+    )
+
+    drug_priority_table = (
+        drug_priority_table
+        .sort_values(
+            "TOTAL",
+            ascending=False
+        )
+        .head(10)
+        .drop(columns="TOTAL")
+    )
+
+    st.bar_chart(
+        drug_priority_table
+    )
 
 
         # =====================================================
