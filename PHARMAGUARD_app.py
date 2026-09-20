@@ -1041,6 +1041,57 @@ if st.session_state.get(
     st.bar_chart(
         drug_priority_table
     )
+        # =====================================================
+    # ADR-WISE PRIORITY DISTRIBUTION
+    # =====================================================
+
+    st.markdown(
+        "#### ⚠️ ADR-wise Priority Distribution"
+    )
+
+    adr_priority_df = dashboard_df.copy()
+
+    adr_priority_df["ADR"] = (
+        adr_priority_df["ADR"]
+        .astype(str)
+        .str.strip()
+        .replace("", "Unknown")
+    )
+
+    adr_priority_table = pd.crosstab(
+        adr_priority_df["ADR"],
+        adr_priority_df["Priority"]
+    )
+
+    adr_priority_table = adr_priority_table.reindex(
+        columns=[
+            "HIGH",
+            "MODERATE",
+            "LOW"
+        ],
+        fill_value=0
+    )
+
+    # Show top 10 ADRs by total reports
+    adr_priority_table["TOTAL"] = (
+        adr_priority_table[
+            ["HIGH", "MODERATE", "LOW"]
+        ].sum(axis=1)
+    )
+
+    adr_priority_table = (
+        adr_priority_table
+        .sort_values(
+            "TOTAL",
+            ascending=False
+        )
+        .head(10)
+        .drop(columns="TOTAL")
+    )
+
+    st.bar_chart(
+        adr_priority_table
+    )
 
 
         # =====================================================
