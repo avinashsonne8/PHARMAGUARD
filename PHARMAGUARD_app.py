@@ -710,6 +710,39 @@ if st.session_state.get(
             "Priority"
         )
     )
+    # =====================================================
+    # MOST REPORTED DRUGS
+    # =====================================================
+
+    st.markdown(
+        "#### 💊 Most Reported Drugs"
+    )
+
+    drug_counts = (
+        dashboard_df["Drug"]
+        .astype(str)
+        .str.strip()
+        .replace("", "Unknown")
+        .value_counts()
+        .head(10)
+    )
+
+    drug_chart_df = (
+        drug_counts
+        .rename("Cases")
+        .reset_index()
+    )
+
+    drug_chart_df.columns = [
+        "Drug",
+        "Cases"
+    ]
+
+    st.bar_chart(
+        drug_chart_df.set_index(
+            "Drug"
+        )
+    )
 
 
         # =====================================================
