@@ -851,6 +851,60 @@ if st.session_state.get(
     sex_chart_df.set_index("Sex"),
     horizontal=True
     )
+        # =====================================================
+    # AGE GROUP DISTRIBUTION
+    # =====================================================
+
+    st.markdown(
+        "#### 📈 Age Group Distribution"
+    )
+
+    age_data = pd.to_numeric(
+        dashboard_df["Age"],
+        errors="coerce"
+    )
+
+    age_groups = pd.cut(
+        age_data,
+        bins=[
+            -1,
+            17,
+            30,
+            45,
+            60,
+            120
+        ],
+        labels=[
+            "0–17",
+            "18–30",
+            "31–45",
+            "46–60",
+            "61–120"
+        ]
+    )
+
+    age_counts = (
+        age_groups
+        .value_counts()
+        .sort_index()
+    )
+
+    age_chart_df = (
+        age_counts
+        .rename("Cases")
+        .reset_index()
+    )
+
+    age_chart_df.columns = [
+        "Age Group",
+        "Cases"
+    ]
+
+    st.bar_chart(
+        age_chart_df.set_index(
+            "Age Group"
+        )
+    )
 
 
         # =====================================================
