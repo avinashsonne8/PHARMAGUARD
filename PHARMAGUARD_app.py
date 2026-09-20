@@ -905,6 +905,57 @@ if st.session_state.get(
             "Age Group"
         )
     )
+        # =====================================================
+    # PRIORITY-WISE AGE DISTRIBUTION
+    # =====================================================
+
+    st.markdown(
+        "#### 🎯 Priority-wise Age Distribution"
+    )
+
+    priority_age_df = dashboard_df.copy()
+
+    priority_age_df["Age"] = pd.to_numeric(
+        priority_age_df["Age"],
+        errors="coerce"
+    )
+
+    priority_age_df["Age Group"] = pd.cut(
+        priority_age_df["Age"],
+        bins=[
+            -1,
+            17,
+            30,
+            45,
+            60,
+            120
+        ],
+        labels=[
+            "0–17",
+            "18–30",
+            "31–45",
+            "46–60",
+            "61–120"
+        ]
+    )
+
+    priority_age_table = pd.crosstab(
+        priority_age_df["Age Group"],
+        priority_age_df["Priority"]
+    )
+
+    priority_age_table = priority_age_table.reindex(
+        columns=[
+            "HIGH",
+            "MODERATE",
+            "LOW"
+        ],
+        fill_value=0
+    )
+
+    st.bar_chart(
+        priority_age_table
+    )
 
 
         # =====================================================
