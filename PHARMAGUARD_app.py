@@ -956,6 +956,40 @@ if st.session_state.get(
     st.bar_chart(
         priority_age_table
     )
+        # =====================================================
+    # PRIORITY-WISE SEX DISTRIBUTION
+    # =====================================================
+
+    st.markdown(
+        "#### 👥 Priority-wise Sex Distribution"
+    )
+
+    priority_sex_df = dashboard_df.copy()
+
+    priority_sex_df["Sex"] = (
+        priority_sex_df["Sex"]
+        .astype(str)
+        .str.upper()
+        .replace("", "UNKNOWN")
+    )
+
+    priority_sex_table = pd.crosstab(
+        priority_sex_df["Sex"],
+        priority_sex_df["Priority"]
+    )
+
+    priority_sex_table = priority_sex_table.reindex(
+        columns=[
+            "HIGH",
+            "MODERATE",
+            "LOW"
+        ],
+        fill_value=0
+    )
+
+    st.bar_chart(
+        priority_sex_table
+    )
 
 
         # =====================================================
