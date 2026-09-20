@@ -1212,6 +1212,64 @@ if st.session_state.get(
         mime="text/csv",
         use_container_width=True
     )
+        # =====================================================
+    # DASHBOARD SUMMARY REPORT
+    # =====================================================
+
+    st.markdown(
+        "#### 📄 Dashboard Summary Report"
+    )
+
+    summary_report = pd.DataFrame({
+        "Metric": [
+            "Total ADR Cases",
+            "High Priority Cases",
+            "Moderate Priority Cases",
+            "Low Priority Cases",
+            "Serious Cases",
+            "Uncertain Seriousness Cases"
+        ],
+        "Count": [
+            total_cases,
+            high_cases,
+            moderate_cases,
+            low_cases,
+            int(
+                (
+                    dashboard_df["Seriousness"]
+                    .astype(str)
+                    .str.upper()
+                    == "YES"
+                ).sum()
+            ),
+            int(
+                (
+                    dashboard_df["Seriousness"]
+                    .astype(str)
+                    .str.upper()
+                    == "UNCERTAIN"
+                ).sum()
+            )
+        ]
+    })
+
+    st.dataframe(
+        summary_report,
+        use_container_width=True,
+        hide_index=True
+    )
+
+    summary_csv = summary_report.to_csv(
+        index=False
+    )
+
+    st.download_button(
+        label="⬇️ Download Dashboard Summary",
+        data=summary_csv,
+        file_name="PHARMAGUARD_Dashboard_Summary.csv",
+        mime="text/csv",
+        use_container_width=True
+        )
 
     if st.button(
         "🗑️ Clear Current Session History",
