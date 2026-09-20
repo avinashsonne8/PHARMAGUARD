@@ -1455,6 +1455,284 @@ Pharmacovigilance Proof of Concept
         mime="text/plain",
         use_container_width=True
     )
+    # =====================================================
+# STEP 62.4 — PROFESSIONAL PDF ADR CASE REPORT
+# =====================================================
+
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib import colors
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.enums import TA_CENTER
+    from reportlab.platypus import (
+        SimpleDocTemplate,
+        Paragraph,
+        Spacer,
+        Table,
+        TableStyle
+    )
+    from io import BytesIO
+
+    pdf_buffer = BytesIO()
+
+    pdf_doc = SimpleDocTemplate(
+        pdf_buffer,
+        pagesize=A4,
+        rightMargin=40,
+        leftMargin=40,
+        topMargin=40,
+        bottomMargin=40
+    )
+
+    styles = getSampleStyleSheet()
+
+    title_style = ParagraphStyle(
+        "PHARMAGUARDTitle",
+        parent=styles["Title"],
+        alignment=TA_CENTER,
+        fontSize=20,
+        spaceAfter=8
+    )
+
+    subtitle_style = ParagraphStyle(
+        "PHARMAGUARDSubtitle",
+        parent=styles["Normal"],
+        alignment=TA_CENTER,
+        fontSize=10,
+        spaceAfter=15
+    )
+
+    heading_style = ParagraphStyle(
+        "SectionHeading",
+        parent=styles["Heading2"],
+        fontSize=13,
+        spaceBefore=10,
+        spaceAfter=6
+    )
+
+    normal_style = ParagraphStyle(
+        "NormalText",
+        parent=styles["Normal"],
+        fontSize=10,
+        leading=14
+    )
+
+    pdf_content = []
+
+    # Header
+    pdf_content.append(
+        Paragraph(
+            "🛡️ PHARMAGUARD",
+            title_style
+        )
+    )
+
+    pdf_content.append(
+        Paragraph(
+            "AI-Assisted ADR Risk Prioritization System",
+            subtitle_style
+        )
+    )
+
+    pdf_content.append(
+        Paragraph(
+            "Pharmacovigilance • Proof of Concept",
+            subtitle_style
+        )
+    )
+
+    # Case Information
+    pdf_content.append(
+        Paragraph(
+            "1. Case Information",
+            heading_style
+        )
+    )
+
+    case_data = [
+        ["Patient ID", str(
+            selected_row.get("Patient_ID", "")
+        )],
+        ["Age", str(
+            selected_row.get("Age", "")
+        )],
+        ["Sex", str(
+            selected_row.get("Sex", "")
+        )],
+        ["Date & Time", str(
+            selected_row.get("Date_Time", "")
+        )]
+    ]
+
+    case_table = Table(
+        case_data,
+        colWidths=[130, 350]
+    )
+
+    case_table.setStyle(
+        TableStyle([
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ("BACKGROUND", (0, 0), (0, -1), colors.lightgrey),
+            ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+            ("FONTNAME", (1, 0), (1, -1), "Helvetica"),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("PADDING", (0, 0), (-1, -1), 6)
+        ])
+    )
+
+    pdf_content.append(case_table)
+
+    # Drug Information
+    pdf_content.append(
+        Paragraph(
+            "2. Drug Information",
+            heading_style
+        )
+    )
+
+    drug_data = [
+        ["Drug Name", str(
+            selected_row.get("Drug", "")
+        )]
+    ]
+
+    drug_table = Table(
+        drug_data,
+        colWidths=[130, 350]
+    )
+
+    drug_table.setStyle(
+        TableStyle([
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ("BACKGROUND", (0, 0), (0, -1), colors.lightgrey),
+            ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+            ("PADDING", (0, 0), (-1, -1), 6)
+        ])
+    )
+
+    pdf_content.append(drug_table)
+
+    # ADR Information
+    pdf_content.append(
+        Paragraph(
+            "3. ADR Information",
+            heading_style
+        )
+    )
+
+    adr_data = [
+        ["Reported ADR", str(
+            selected_row.get("ADR", "")
+        )]
+    ]
+
+    adr_table = Table(
+        adr_data,
+        colWidths=[130, 350]
+    )
+
+    adr_table.setStyle(
+        TableStyle([
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ("BACKGROUND", (0, 0), (0, -1), colors.lightgrey),
+            ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("PADDING", (0, 0), (-1, -1), 6)
+        ])
+    )
+
+    pdf_content.append(adr_table)
+
+    # PHARMAGUARD Assessment
+    pdf_content.append(
+        Paragraph(
+            "4. PHARMAGUARD Assessment",
+            heading_style
+        )
+    )
+
+    assessment_data = [
+        ["Seriousness", str(case_seriousness)],
+        ["Risk Priority", str(case_priority)],
+        ["Reason", str(
+            selected_row.get("Reason", "")
+        )]
+    ]
+
+    assessment_table = Table(
+        assessment_data,
+        colWidths=[130, 350]
+    )
+
+    assessment_table.setStyle(
+        TableStyle([
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ("BACKGROUND", (0, 0), (0, -1), colors.lightgrey),
+            ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("PADDING", (0, 0), (-1, -1), 6)
+        ])
+    )
+
+    pdf_content.append(assessment_table)
+
+    # Recommended Action
+    pdf_content.append(
+        Paragraph(
+            "5. Recommended Action",
+            heading_style
+        )
+    )
+
+    pdf_content.append(
+        Paragraph(
+            recommendation,
+            normal_style
+        )
+    )
+
+    # Disclaimer
+    pdf_content.append(
+        Paragraph(
+            "6. Important Disclaimer",
+            heading_style
+        )
+    )
+
+    pdf_content.append(
+        Paragraph(
+            "PHARMAGUARD is an AI-assisted "
+            "pharmacovigilance prioritization prototype. "
+            "It does not establish causality, provide "
+            "diagnosis or treatment, or replace professional "
+            "clinical judgment.",
+            normal_style
+        )
+    )
+
+    pdf_content.append(Spacer(1, 20))
+
+    pdf_content.append(
+        Paragraph(
+            "Generated by PHARMAGUARD • "
+            "Pharmacovigilance Proof of Concept",
+            subtitle_style
+        )
+    )
+
+    pdf_doc.build(pdf_content)
+
+    pdf_buffer.seek(0)
+
+    st.download_button(
+        label="📥 Download Professional PDF Report",
+        data=pdf_buffer,
+        file_name=(
+            f"PHARMAGUARD_ADR_Report_"
+            f"{selected_row.get('Patient_ID', 'Case')}.pdf"
+        ),
+        mime="application/pdf",
+        use_container_width=True
+    )
 
     st.download_button(
         "⬇️ Download ADR History (CSV)",
