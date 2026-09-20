@@ -744,6 +744,40 @@ if st.session_state.get(
         ),
         horizontal=True
         )
+        # =====================================================
+    # MOST FREQUENT ADRs
+    # =====================================================
+
+    st.markdown(
+        "#### ⚠️ Most Frequent ADRs"
+    )
+
+    adr_counts = (
+        dashboard_df["ADR"]
+        .astype(str)
+        .str.strip()
+        .replace("", "Unknown")
+        .value_counts()
+        .head(10)
+    )
+
+    adr_chart_df = (
+        adr_counts
+        .rename("Cases")
+        .reset_index()
+    )
+
+    adr_chart_df.columns = [
+        "ADR",
+        "Cases"
+    ]
+
+    st.bar_chart(
+        adr_chart_df.set_index(
+            "ADR"
+        ),
+        horizontal=True
+    )
 
 
         # =====================================================
