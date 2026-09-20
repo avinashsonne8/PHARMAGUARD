@@ -848,10 +848,9 @@ if st.session_state.get(
     ]
 
     st.bar_chart(
-        sex_chart_df.set_index(
-            "Sex"
-        )
-        )
+    sex_chart_df.set_index("Sex"),
+    horizontal=True
+    )
 
 
         # =====================================================
