@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import joblib
 import requests
+import re
 
 from datetime import datetime
 
@@ -157,10 +158,19 @@ def matches(text, patterns):
         str(text).lower().strip().split()
     )
 
-    return [
-        x for x in patterns
-        if x in text
-    ]
+    matched_patterns = []
+
+    for pattern in patterns:
+
+        pattern = str(pattern).lower().strip()
+
+        if re.search(
+            rf"(?<!\w){re.escape(pattern)}(?!\w)",
+            text
+        ):
+            matched_patterns.append(pattern)
+
+    return matched_patterns
 
 
 # =========================================================
