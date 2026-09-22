@@ -456,9 +456,65 @@ if st.button(
 
 
     moderate_hits = matches(
-        adr,
-        MODERATE_PATTERNS
+    adr,
+    MODERATE_PATTERNS
+)
+
+# Additional context protection for moderate patterns
+adr_lower = " ".join(
+    str(adr).lower().strip().split()
+)
+
+historical_context = [
+    "history of",
+    "past history of",
+    "previous",
+    "prior",
+    "previous history of",
+    "resolved",
+    "currently resolved",
+    "no longer",
+    "has resolved",
+    "had resolved"
+]
+
+for pattern in moderate_hits.copy():
+
+    pattern_positions = list(
+        re.finditer(
+            rf"(?<!\w){re.escape(pattern)}(?!\w)",
+            adr_lower
+        )
     )
+
+    for match in pattern_positions:
+
+        context_before = adr_lower[
+            max(0, match.start() - 60):match.start()
+        ]
+
+        context_after = adr_lower[
+            match.end():match.end() + 60
+        ]
+
+        historical_before = any(
+            term in context_before
+            for term in historical_context
+        )
+
+        resolved_after = any(
+            term in context_after
+            for term in [
+                "resolved",
+                "no longer",
+                "has resolved",
+                "had resolved"
+            ]
+        )
+
+        if historical_before or resolved_after:
+            moderate_hits.remove(pattern)
+            break
 
 
     # -----------------------------------------------------
