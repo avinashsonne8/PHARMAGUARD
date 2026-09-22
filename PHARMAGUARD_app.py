@@ -240,14 +240,12 @@ def matches(text, patterns):
             text
         ):
 
-            start_position = match.start()
-
-            # Look at the words immediately before the matched phrase
-            context_before = text[
-                max(0, start_position - 60):start_position
-            ]
-
             is_negated = False
+
+            # Check context BEFORE the matched phrase
+            context_before = text[
+                max(0, match.start() - 60):match.start()
+            ]
 
             for negation in negation_terms:
 
@@ -257,21 +255,24 @@ def matches(text, patterns):
                 ):
                     is_negated = True
                     break
-                    # Check for negation/context AFTER the matched phrase
-context_after = text[
-    match.end():match.end() + 60
-]
 
-for negation in negation_terms:
+            # Check context AFTER the matched phrase
+            if not is_negated:
 
-    if re.search(
-        rf"^\W*(?:was\s+|were\s+|is\s+|are\s+|has\s+|have\s+)?{re.escape(negation)}\b",
-        context_after
-    ):
-        is_negated = True
-        break
+                context_after = text[
+                    match.end():match.end() + 60
+                ]
 
-if not is_negated:
+                for negation in negation_terms:
+
+                    if re.search(
+                        rf"^\W*(?:was\s+|were\s+|is\s+|are\s+|has\s+|have\s+)?{re.escape(negation)}\b",
+                        context_after
+                    ):
+                        is_negated = True
+                        break
+
+            if not is_negated:
                 matched_patterns.append(pattern)
                 break
 
