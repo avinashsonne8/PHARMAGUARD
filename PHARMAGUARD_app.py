@@ -478,7 +478,21 @@ historical_context = [
     "had resolved"
 ]
 
-for pattern in moderate_hits.copy():
+negation_context = [
+    "no",
+    "not",
+    "without",
+    "never",
+    "was not",
+    "were not",
+    "did not",
+    "does not",
+    "do not"
+]
+
+filtered_moderate_hits = []
+
+for pattern in moderate_hits:
 
     pattern_positions = list(
         re.finditer(
@@ -486,6 +500,8 @@ for pattern in moderate_hits.copy():
             adr_lower
         )
     )
+
+    ignore_pattern = False
 
     for match in pattern_positions:
 
@@ -501,50 +517,39 @@ for pattern in moderate_hits.copy():
             term in context_before
             for term in historical_context
         )
-        negation_context = [
-    "no",
-    "not",
-    "without",
-    "never",
-    "was not",
-    "were not",
-    "did not",
-    "does not",
-    "do not"
-]
 
-negated_before = any(
-    re.search(
-        rf"\b{re.escape(term)}\b",
-        context_before
-    )
-    for term in negation_context
-)
+        negated_before = any(
+            term in context_before
+            for term in negation_context
+        )
 
-negated_after = any(
-    re.search(
-        rf"\b{re.escape(term)}\b",
-        context_after
-    )
-    for term in negation_context
-)
+        negated_after = any(
+            term in context_after
+            for term in negation_context
+        )
 
-resolved_after = any(
-    re.search(
-        rf"\b{re.escape(term)}\b",
-        context_after
-    )
-    for term in [
-        "resolved",
-        "no longer",
-        "has resolved",
-        "had resolved"
-    ]
-)
+        resolved_after = any(
+            term in context_after
+            for term in [
+                "resolved",
+                "no longer",
+                "has resolved",
+                "had resolved"
+            ]
+        )
 
-if historical_before or resolved_after or negated_before or negated_after:
-    moderate_hits.remove(pattern)
-    break
+        if (
+            historical_before
+            or negated_before
+            or negated_after
+            or resolved_after
+        ):
+            ignore_pattern = True
+
+    if not ignore_pattern:
+        filtered_moderate_hits.append(pattern)
+
+moderate_hits = filtered_moderate_hits
 
 
     # -----------------------------------------------------
