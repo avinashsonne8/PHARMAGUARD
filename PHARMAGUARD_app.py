@@ -449,16 +449,15 @@ if st.button(
     # FIND SERIOUS + MODERATE SIGNALS
     # -----------------------------------------------------
 
-    serious_hits = matches(
-        adr,
-        SERIOUS_PATTERNS
-    )
+serious_hits = matches(
+    adr,
+    SERIOUS_PATTERNS
+)
 
-
-        moderate_hits = matches(
-        adr,
-        MODERATE_PATTERNS
-    )
+moderate_hits = matches(
+    adr,
+    MODERATE_PATTERNS
+)
 
 
     # -----------------------------------------------------
