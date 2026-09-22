@@ -489,6 +489,12 @@ negation_context = [
     "does not",
     "do not"
 ]
+moderate_hits = matches(
+    adr,
+    MODERATE_PATTERNS
+)
+
+filtered_moderate_hits = []
 
 filtered_moderate_hits = []
 
