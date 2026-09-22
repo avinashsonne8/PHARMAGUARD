@@ -514,23 +514,37 @@ for pattern in moderate_hits.copy():
 ]
 
 negated_before = any(
-    term in context_before
+    re.search(
+        rf"\b{re.escape(term)}\b",
+        context_before
+    )
     for term in negation_context
 )
 
-        resolved_after = any(
-            term in context_after
-            for term in [
-                "resolved",
-                "no longer",
-                "has resolved",
-                "had resolved"
-            ]
-        )
+negated_after = any(
+    re.search(
+        rf"\b{re.escape(term)}\b",
+        context_after
+    )
+    for term in negation_context
+)
 
-        if historical_before or resolved_after or negated_before:
-            moderate_hits.remove(pattern)
-            break
+resolved_after = any(
+    re.search(
+        rf"\b{re.escape(term)}\b",
+        context_after
+    )
+    for term in [
+        "resolved",
+        "no longer",
+        "has resolved",
+        "had resolved"
+    ]
+)
+
+if historical_before or resolved_after or negated_before or negated_after:
+    moderate_hits.remove(pattern)
+    break
 
 
     # -----------------------------------------------------
