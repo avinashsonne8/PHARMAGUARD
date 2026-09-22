@@ -501,6 +501,22 @@ for pattern in moderate_hits.copy():
             term in context_before
             for term in historical_context
         )
+        negation_context = [
+    "no",
+    "not",
+    "without",
+    "never",
+    "was not",
+    "were not",
+    "did not",
+    "does not",
+    "do not"
+]
+
+negated_before = any(
+    term in context_before
+    for term in negation_context
+)
 
         resolved_after = any(
             term in context_after
@@ -512,7 +528,7 @@ for pattern in moderate_hits.copy():
             ]
         )
 
-        if historical_before or resolved_after:
+        if historical_before or resolved_after or negated_before:
             moderate_hits.remove(pattern)
             break
 
