@@ -460,47 +460,59 @@ moderate_hits = matches(
 )
 
 
-    # -----------------------------------------------------
-    # PRIORITY LOGIC
-    # -----------------------------------------------------
+    # -----------------------------------------
+# PRIORITY LOGIC
+# -----------------------------------------
 
-    if serious_hits:
+if serious_hits:
+    priority = "HIGH"
 
-        priority = "HIGH"
+    flag = (
+        "Potentially serious medical event detected."
+    )
 
-        flag = (
-            "Potentially serious medical event signal"
-        )
+    reason = (
+        "Serious ADR indicator detected: "
+        + ", ".join(serious_hits)
+    )
 
-        reason = (
-            "Serious ADR indicator detected: "
-            + ", ".join(serious_hits)
-        )
+    recommendation = (
+        "Priority pharmacovigilance review recommended."
+    )
 
-        recommendation = (
-            "Priority pharmacovigilance review required."
-        )
+elif moderate_hits:
+    priority = "MODERATE"
 
+    flag = (
+        "Non-serious but clinically meaningful "
+        "review signal"
+    )
 
-    elif moderate_hits:
+    reason = (
+        "Project-defined moderate review "
+        "indicator detected: "
+        + ", ".join(moderate_hits)
+    )
 
-        priority = "MODERATE"
+    recommendation = (
+        "Clinical and pharmacovigilance review recommended."
+    )
 
-        flag = (
-            "Non-serious but clinically meaningful "
-            "review signal"
-        )
+else:
+    priority = "LOW"
 
-        reason = (
-            "Project-defined moderate review "
-            "indicator detected: "
-            + ", ".join(moderate_hits)
-        )
+    flag = (
+        "No predefined serious or moderate "
+        "review signal detected."
+    )
 
-        recommendation = (
-            "Clinical and pharmacovigilance review recommended."
-        )
-        
+    reason = (
+        "No serious or moderate pattern detected."
+    )
+
+    recommendation = (
+        "Routine pharmacovigilance review recommended."
+    )
 
 
 
