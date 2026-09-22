@@ -549,7 +549,7 @@ for pattern in moderate_hits:
     if not ignore_pattern:
         filtered_moderate_hits.append(pattern)
 
-moderate_hits = filtered_moderate_hits
+    moderate_hits = filtered_moderate_hits
 
 
     # -----------------------------------------------------
