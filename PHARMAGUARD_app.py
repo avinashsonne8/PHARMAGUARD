@@ -58,23 +58,79 @@ except Exception as e:
 # =========================================================
 
 SERIOUS_PATTERNS = [
+    # Anaphylaxis / severe allergic reaction
     "anaphylaxis",
     "anaphylactic",
+    "severe allergic reaction",
+    "anaphylactic shock",
+    "airway swelling",
+
+    # Severe breathing problems
     "difficulty breathing",
     "breathing difficulty",
+    "breathing trouble",
+    "trouble breathing",
+    "shortness of breath",
+    "short of breath",
+    "breathlessness",
+    "unable to breathe",
+    "cannot breathe",
+    "could not breathe",
     "respiratory distress",
     "respiratory failure",
+    "acute respiratory failure",
+    "respiratory insufficiency",
+
+    # Life-threatening events
     "life threatening",
     "life-threatening",
+    "life-threatening event",
+    "life-threatening reaction",
+    "life-threatening condition",
+    "life was at risk",
+
+    # Cardiac emergencies
     "cardiac arrest",
     "cardiorespiratory arrest",
-    "severe allergic reaction",
-    "airway obstruction",
+    "heart stopped",
+    "heart stopped beating",
+    "cardiac collapse",
+    "cardiovascular collapse",
+
+    # Neurological emergencies
     "loss of consciousness",
+    "lost consciousness",
+    "unconscious",
+    "became unconscious",
+    "unresponsive",
+    "became unresponsive",
     "coma",
-    "shock",
+    "comatose",
+    "seizure",
+    "seizures",
     "convulsion",
-    "seizure"
+    "convulsions",
+    "convulsive seizure",
+
+    # Shock
+    "shock",
+    "circulatory shock",
+    "cardiogenic shock",
+    "hypovolemic shock",
+    "septic shock",
+    "anaphylactic shock",
+
+    # Hospitalization
+    "hospitalization",
+    "hospitalized",
+    "hospital admission",
+    "admitted to hospital",
+    "inpatient admission",
+    "required hospitalization",
+    "required hospital admission",
+    "prolonged hospitalization",
+    "prolonged hospital stay",
+    "extended hospital stay"
 ]
 
 
