@@ -271,7 +271,7 @@ for negation in negation_terms:
         is_negated = True
         break
 
-            if not is_negated:
+if not is_negated:
                 matched_patterns.append(pattern)
                 break
 
