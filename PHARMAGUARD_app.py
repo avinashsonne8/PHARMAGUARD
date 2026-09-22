@@ -257,6 +257,19 @@ def matches(text, patterns):
                 ):
                     is_negated = True
                     break
+                    # Check for negation/context AFTER the matched phrase
+context_after = text[
+    match.end():match.end() + 60
+]
+
+for negation in negation_terms:
+
+    if re.search(
+        rf"^\W*(?:was\s+|were\s+|is\s+|are\s+|has\s+|have\s+)?{re.escape(negation)}\b",
+        context_after
+    ):
+        is_negated = True
+        break
 
             if not is_negated:
                 matched_patterns.append(pattern)
