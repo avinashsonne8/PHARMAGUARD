@@ -216,15 +216,51 @@ def matches(text, patterns):
 
     matched_patterns = []
 
+    negation_terms = [
+        "no",
+        "not",
+        "without",
+        "denies",
+        "denied",
+        "negative for",
+        "ruled out",
+        "rule out",
+        "history of",
+        "previous",
+        "prior",
+        "past history of"
+    ]
+
     for pattern in patterns:
 
         pattern = str(pattern).lower().strip()
 
-        if re.search(
+        for match in re.finditer(
             rf"(?<!\w){re.escape(pattern)}(?!\w)",
             text
         ):
-            matched_patterns.append(pattern)
+
+            start_position = match.start()
+
+            # Look at the words immediately before the matched phrase
+            context_before = text[
+                max(0, start_position - 60):start_position
+            ]
+
+            is_negated = False
+
+            for negation in negation_terms:
+
+                if re.search(
+                    rf"(?:^|\W){re.escape(negation)}\W+(?:\w+\W+){{0,5}}$",
+                    context_before
+                ):
+                    is_negated = True
+                    break
+
+            if not is_negated:
+                matched_patterns.append(pattern)
+                break
 
     return matched_patterns
 
