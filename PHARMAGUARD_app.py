@@ -455,107 +455,145 @@ if st.button(
     )
 
 
-    moderate_hits = matches(
-    adr,
-    MODERATE_PATTERNS
-)
-
-# Additional context protection for moderate patterns
-adr_lower = " ".join(
-    str(adr).lower().strip().split()
-)
-
-historical_context = [
-    "history of",
-    "past history of",
-    "previous",
-    "prior",
-    "previous history of",
-    "resolved",
-    "currently resolved",
-    "no longer",
-    "has resolved",
-    "had resolved"
-]
-
-negation_context = [
-    "no",
-    "not",
-    "without",
-    "never",
-    "was not",
-    "were not",
-    "did not",
-    "does not",
-    "do not"
-]
-moderate_hits = matches(
-    adr,
-    MODERATE_PATTERNS
-)
-
-filtered_moderate_hits = []
-
-filtered_moderate_hits = []
-
-for pattern in moderate_hits:
-
-    pattern_positions = list(
-        re.finditer(
-            rf"(?<!\w){re.escape(pattern)}(?!\w)",
-            adr_lower
-        )
+        moderate_hits = matches(
+        adr,
+        MODERATE_PATTERNS
     )
 
-    ignore_pattern = False
+    # Additional context protection for moderate patterns
+    adr_lower = " ".join(
+        str(adr).lower().strip().split()
+    )
 
-    for match in pattern_positions:
+    historical_context = [
+        "history of",
+        "past history of",
+        "previous",
+        "prior",
+        "previous history of",
+        "resolved",
+        "currently resolved",
+        "no longer",
+        "has resolved",
+        "had resolved"
+    ]
 
-        context_before = adr_lower[
-            max(0, match.start() - 60):match.start()
-        ]
+    negation_context = [
+        "no",
+        "not",
+        "without",
+        "never",
+        "was not",
+        "were not",
+        "did not",
+        "does not",
+        "do not"
+    ]
 
-        context_after = adr_lower[
-            match.end():match.end() + 60
-        ]
+    filtered_moderate_hits = []
 
-        historical_before = any(
-            term in context_before
-            for term in historical_context
+    for pattern in moderate_hits:
+
+        pattern_positions = list(
+            re.finditer(
+                rf"(?<!\w){re.escape(pattern)}(?!\w)",
+                adr_lower
+            )
         )
 
-        negated_before = any(
-            term in context_before
-            for term in negation_context
-        )
+        ignore_pattern = False
 
-        negated_after = any(
-            term in context_after
-            for term in negation_context
-        )
+        for match in pattern_positions:
 
-        resolved_after = any(
-            term in context_after
-            for term in [
-                "resolved",
-                "no longer",
-                "has resolved",
-                "had resolved"
+            context_before = adr_lower[
+                max(0, match.start() - 60):match.start()
             ]
-        )
 
-        if (
-            historical_before
-            or negated_before
-            or negated_after
-            or resolved_after
-        ):
-            ignore_pattern = True
+            context_after = adr_lower[
+                match.end():match.end() + 60
+            ]
 
-    if not ignore_pattern:
-        filtered_moderate_hits.append(pattern)
+            historical_before = any(
+                term in context_before
+                for term in historical_context
+            )
+
+            negated_before = any(
+                term in context_before
+                for term in negation_context
+            )
+
+            negated_after = any(
+                term in context_after
+                for term in negation_context
+            )
+
+            resolved_after = any(
+                term in context_after
+                for term in [
+                    "resolved",
+                    "no longer",
+                    "has resolved",
+                    "had resolved"
+                ]
+            )
+
+            if (
+                historical_before
+                or negated_before
+                or negated_after
+                or resolved_after
+            ):
+                ignore_pattern = True
+                break
+
+        if not ignore_pattern:
+            filtered_moderate_hits.append(pattern)
 
     moderate_hits = filtered_moderate_hits
+
+
+    # -----------------------------------------------------
+    # PRIORITY LOGIC
+    # -----------------------------------------------------
+
+    if serious_hits:
+
+        priority = "HIGH"
+
+        flag = (
+            "Potentially serious medical event signal"
+        )
+
+        reason = (
+            "Serious ADR indicator detected: "
+            + ", ".join(serious_hits)
+        )
+
+        recommendation = (
+            "Priority pharmacovigilance review required."
+        )
+
+
+    elif moderate_hits:
+
+        priority = "MODERATE"
+
+        flag = (
+            "Non-serious but clinically meaningful "
+            "review signal"
+        )
+
+        reason = (
+            "Project-defined moderate review "
+            "indicator detected: "
+            + ", ".join(moderate_hits)
+        )
+
+        recommendation = (
+            "Clinical and pharmacovigilance review recommended."
+        )
+        
 
 
     # -----------------------------------------------------
