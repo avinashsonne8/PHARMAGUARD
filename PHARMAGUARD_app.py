@@ -132,6 +132,32 @@ SERIOUS_PATTERNS = [
     "prolonged hospital stay",
     "extended hospital stay"
 ]
+# =========================================================
+# CONTEXT PROTECTION PATTERNS
+# =========================================================
+
+NEGATION_PATTERNS = [
+    "no",
+    "not",
+    "without",
+    "denies",
+    "denied",
+    "did not",
+    "does not",
+    "doesn't",
+    "didn't",
+    "ruled out",
+    "no evidence of"
+]
+
+HISTORY_PATTERNS = [
+    "history of",
+    "past history of",
+    "previous history of",
+    "previous",
+    "prior",
+    "history"
+]
 
 
 # =========================================================
