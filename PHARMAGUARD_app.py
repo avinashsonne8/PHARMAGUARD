@@ -263,7 +263,6 @@ def has_context_protection(text, serious_pattern):
 
     serious_pattern = str(serious_pattern).lower().strip()
 
-    # Find the serious pattern in the text
     match = re.search(
         rf"(?<!\w){re.escape(serious_pattern)}(?!\w)",
         text
@@ -272,12 +271,17 @@ def has_context_protection(text, serious_pattern):
     if not match:
         return False
 
-    # Check nearby context before the serious phrase
-    start_position = match.start()
+    # Context before the serious phrase
+    context_before = text[
+        max(0, match.start() - 60):match.start()
+    ]
 
-    context_before = text[max(0, start_position - 60):start_position]
+    # Context after the serious phrase
+    context_after = text[
+        match.end():match.end() + 60
+    ]
 
-    # Negation / ruled-out context
+    # Check negation / ruled-out context BEFORE the phrase
     for pattern in NEGATION_PATTERNS:
 
         if re.search(
@@ -286,7 +290,16 @@ def has_context_protection(text, serious_pattern):
         ):
             return True
 
-    # History / previous-event context
+    # Check negation / ruled-out context AFTER the phrase
+    for pattern in NEGATION_PATTERNS:
+
+        if re.search(
+            rf"(?<!\w){re.escape(pattern)}(?!\w)",
+            context_after
+        ):
+            return True
+
+    # Check history context BEFORE the phrase
     for pattern in HISTORY_PATTERNS:
 
         if re.search(
