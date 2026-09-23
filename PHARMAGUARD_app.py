@@ -464,25 +464,31 @@ if st.button(
         st.stop()
 
 
-    # -----------------------------------------------------
-    # FIND SERIOUS + MODERATE SIGNALS
-    # -----------------------------------------------------
+# -----------------------------------------------------
+# FIND SERIOUS + MODERATE SIGNALS
+# -----------------------------------------------------
 
-    serious_hits = matches(
-        adr,
-        SERIOUS_PATTERNS
-    )
+serious_matches = matches(
+    adr,
+    SERIOUS_PATTERNS
+)
+
+serious_hits = [
+    pattern
+    for pattern in serious_matches
+    if not has_context_protection(adr, pattern)
+]
 
 
-    moderate_hits = matches(
-        adr,
-        MODERATE_PATTERNS
-    )
+moderate_hits = matches(
+    adr,
+    MODERATE_PATTERNS
+)
 
-
-    # -----------------------------------------------------
-    # PRIORITY LOGIC
-    # -----------------------------------------------------
+  
+# -----------------------------------------------------
+# PRIORITY LOGIC
+# -----------------------------------------------------
 
     if serious_hits:
 
