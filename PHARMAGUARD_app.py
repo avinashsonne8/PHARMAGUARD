@@ -216,65 +216,15 @@ def matches(text, patterns):
 
     matched_patterns = []
 
-    negation_terms = [
-        "no",
-        "not",
-        "without",
-        "denies",
-        "denied",
-        "negative for",
-        "ruled out",
-        "rule out",
-        "history of",
-        "previous",
-        "prior",
-        "past history of"
-    ]
-
     for pattern in patterns:
 
         pattern = str(pattern).lower().strip()
 
-        for match in re.finditer(
+        if re.search(
             rf"(?<!\w){re.escape(pattern)}(?!\w)",
             text
         ):
-
-            is_negated = False
-
-            # Check context BEFORE the matched phrase
-            context_before = text[
-                max(0, match.start() - 60):match.start()
-            ]
-
-            for negation in negation_terms:
-
-                if re.search(
-                    rf"(?:^|\W){re.escape(negation)}\W+(?:\w+\W+){{0,5}}$",
-                    context_before
-                ):
-                    is_negated = True
-                    break
-
-            # Check context AFTER the matched phrase
-            if not is_negated:
-
-                context_after = text[
-                    match.end():match.end() + 60
-                ]
-
-                for negation in negation_terms:
-
-                    if re.search(
-                        rf"^\W*(?:was\s+|were\s+|is\s+|are\s+|has\s+|have\s+)?{re.escape(negation)}\b",
-                        context_after
-                    ):
-                        is_negated = True
-                        break
-
-            if not is_negated:
-                matched_patterns.append(pattern)
-                break
+            matched_patterns.append(pattern)
 
     return matched_patterns
 
@@ -456,106 +406,9 @@ if st.button(
 
 
     moderate_hits = matches(
-    adr,
-    MODERATE_PATTERNS
-)
-
-# Additional context protection for moderate patterns
-adr_lower = " ".join(
-    str(adr).lower().strip().split()
-)
-
-historical_context = [
-    "history of",
-    "past history of",
-    "previous",
-    "prior",
-    "previous history of",
-    "resolved",
-    "currently resolved",
-    "no longer",
-    "has resolved",
-    "had resolved"
-]
-
-negation_context = [
-    "no",
-    "not",
-    "without",
-    "never",
-    "was not",
-    "were not",
-    "did not",
-    "does not",
-    "do not"
-]
-moderate_hits = matches(
-    adr,
-    MODERATE_PATTERNS
-)
-
-filtered_moderate_hits = []
-
-filtered_moderate_hits = []
-
-for pattern in moderate_hits:
-
-    pattern_positions = list(
-        re.finditer(
-            rf"(?<!\w){re.escape(pattern)}(?!\w)",
-            adr_lower
-        )
+        adr,
+        MODERATE_PATTERNS
     )
-
-    ignore_pattern = False
-
-    for match in pattern_positions:
-
-        context_before = adr_lower[
-            max(0, match.start() - 60):match.start()
-        ]
-
-        context_after = adr_lower[
-            match.end():match.end() + 60
-        ]
-
-        historical_before = any(
-            term in context_before
-            for term in historical_context
-        )
-
-        negated_before = any(
-            term in context_before
-            for term in negation_context
-        )
-
-        negated_after = any(
-            term in context_after
-            for term in negation_context
-        )
-
-        resolved_after = any(
-            term in context_after
-            for term in [
-                "resolved",
-                "no longer",
-                "has resolved",
-                "had resolved"
-            ]
-        )
-
-        if (
-            historical_before
-            or negated_before
-            or negated_after
-            or resolved_after
-        ):
-            ignore_pattern = True
-
-    if not ignore_pattern:
-        filtered_moderate_hits.append(pattern)
-
-    moderate_hits = filtered_moderate_hits
 
 
     # -----------------------------------------------------
