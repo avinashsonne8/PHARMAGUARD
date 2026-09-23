@@ -497,6 +497,11 @@ if st.button(
     adr,
     MODERATE_PATTERNS
 )
+    moderate_hits = [
+    pattern
+    for pattern in moderate_hits
+    if not has_context_protection(adr, pattern)
+    ]
 
   
     # -----------------------------------------------------
