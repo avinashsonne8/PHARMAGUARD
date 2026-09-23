@@ -1,4 +1,4 @@
-import streamlit as st
+streamlit as st
 import pandas as pd
 import joblib
 import requests
@@ -449,71 +449,190 @@ if st.button(
     # FIND SERIOUS + MODERATE SIGNALS
     # -----------------------------------------------------
 
-serious_hits = matches(
+    serious_hits = matches(
+        adr,
+        SERIOUS_PATTERNS
+    )
+
+
+    moderate_hits = matches(
     adr,
-    SERIOUS_PATTERNS
+    MODERATE_PATTERNS
 )
 
+# Additional context protection for moderate patterns
+adr_lower = " ".join(
+    str(adr).lower().strip().split()
+)
+
+historical_context = [
+    "history of",
+    "past history of",
+    "previous",
+    "prior",
+    "previous history of",
+    "resolved",
+    "currently resolved",
+    "no longer",
+    "has resolved",
+    "had resolved"
+]
+
+negation_context = [
+    "no",
+    "not",
+    "without",
+    "never",
+    "was not",
+    "were not",
+    "did not",
+    "does not",
+    "do not"
+]
 moderate_hits = matches(
     adr,
     MODERATE_PATTERNS
 )
 
+filtered_moderate_hits = []
 
-    # -----------------------------------------
-# PRIORITY LOGIC
-# -----------------------------------------
+filtered_moderate_hits = []
 
-if serious_hits:
-    priority = "HIGH"
+for pattern in moderate_hits:
 
-    flag = (
-        "Potentially serious medical event detected."
+    pattern_positions = list(
+        re.finditer(
+            rf"(?<!\w){re.escape(pattern)}(?!\w)",
+            adr_lower
+        )
     )
 
-    reason = (
-        "Serious ADR indicator detected: "
-        + ", ".join(serious_hits)
-    )
+    ignore_pattern = False
 
-    recommendation = (
-        "Priority pharmacovigilance review recommended."
-    )
+    for match in pattern_positions:
 
-elif moderate_hits:
-    priority = "MODERATE"
+        context_before = adr_lower[
+            max(0, match.start() - 60):match.start()
+        ]
 
-    flag = (
-        "Non-serious but clinically meaningful "
-        "review signal"
-    )
+        context_after = adr_lower[
+            match.end():match.end() + 60
+        ]
 
-    reason = (
-        "Project-defined moderate review "
-        "indicator detected: "
-        + ", ".join(moderate_hits)
-    )
+        historical_before = any(
+            term in context_before
+            for term in historical_context
+        )
 
-    recommendation = (
-        "Clinical and pharmacovigilance review recommended."
-    )
+        negated_before = any(
+            term in context_before
+            for term in negation_context
+        )
 
-else:
-    priority = "LOW"
+        negated_after = any(
+            term in context_after
+            for term in negation_context
+        )
 
-    flag = (
-        "No predefined serious or moderate "
-        "review signal detected."
-    )
+        resolved_after = any(
+            term in context_after
+            for term in [
+                "resolved",
+                "no longer",
+                "has resolved",
+                "had resolved"
+            ]
+        )
 
-    reason = (
-        "No serious or moderate pattern detected."
-    )
+        if (
+            historical_before
+            or negated_before
+            or negated_after
+            or resolved_after
+        ):
+            ignore_pattern = True
 
-    recommendation = (
-        "Routine pharmacovigilance review recommended."
-    )
+    if not ignore_pattern:
+        filtered_moderate_hits.append(pattern)
 
+    moderate_hits = filtered_moderate_hits
+
+
+    # -----------------------------------------------------
+    # PRIORITY LOGIC
+    # -----------------------------------------------------
+
+    if serious_hits:
+
+        priority = "HIGH"
+
+        flag = (
+            "Potentially serious medical event signal"
+        )
+
+        reason = (
+            "Serious ADR indicator detected: "
+            + ", ".join(serious_hits)
+        )
+
+        recommendation = (
+            "Priority pharmacovigilance review required."
+        )
+
+
+    elif moderate_hits:
+
+        priority = "MODERATE"
+
+        flag = (
+            "Non-serious but clinically meaningful "
+            "review signal"
+        )
+
+        reason = (
+            "Project-defined moderate-review "
+            "indicator detected: "
+            + ", ".join(moderate_hits)
+        )
+
+        recommendation = (
+            "Pharmacovigilance review and clinical "
+            "assessment recommended."
+        )
+
+
+    else:
+
+        priority = model_predict(
+            age,
+            sex,
+            drug,
+            adr
+        )
+
+
+        if priority not in {
+            "LOW",
+            "MODERATE",
+            "HIGH"
+        }:
+
+            priority = "UNKNOWN"
+
+
+        flag = (
+            "No predefined serious signal detected"
+        )
+
+        reason = (
+            "Priority assigned by the "
+            "Random Forest prototype."
+        )
+
+        recommendation = (
+            "Routine pharmacovigilance review "
+            "according to the project workflow."
+        )
 
 
     # =====================================================
