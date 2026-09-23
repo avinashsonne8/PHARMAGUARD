@@ -255,6 +255,49 @@ def matches(text, patterns):
     return matched_patterns
 
 
+def has_context_protection(text, serious_pattern):
+
+    text = " ".join(
+        str(text).lower().strip().split()
+    )
+
+    serious_pattern = str(serious_pattern).lower().strip()
+
+    # Find the serious pattern in the text
+    match = re.search(
+        rf"(?<!\w){re.escape(serious_pattern)}(?!\w)",
+        text
+    )
+
+    if not match:
+        return False
+
+    # Check nearby context before the serious phrase
+    start_position = match.start()
+
+    context_before = text[max(0, start_position - 60):start_position]
+
+    # Negation / ruled-out context
+    for pattern in NEGATION_PATTERNS:
+
+        if re.search(
+            rf"(?<!\w){re.escape(pattern)}(?!\w)",
+            context_before
+        ):
+            return True
+
+    # History / previous-event context
+    for pattern in HISTORY_PATTERNS:
+
+        if re.search(
+            rf"(?<!\w){re.escape(pattern)}(?!\w)",
+            context_before
+        ):
+            return True
+
+    return False
+
+
 # =========================================================
 # MACHINE LEARNING PREDICTION
 # =========================================================
