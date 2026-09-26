@@ -1317,7 +1317,7 @@ if st.session_state.get(
     if not filtered_df.empty:
         st.markdown("### 🔍 ADR Case Details")
 
-        case_options = (
+case_options = (
     filtered_df["Patient_ID"].astype(str)
     + " | "
     + filtered_df["Drug"].astype(str)
