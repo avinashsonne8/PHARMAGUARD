@@ -664,7 +664,7 @@ if st.button(
     # =====================================================
     # CREATE DATABASE RECORD
     # =====================================================
-
+    case_reference = "PHG-CASE-" + str(len(st.session_state.adr_history) + 1).zfill(3)
     database_record = {
 
         "Date_Time":
