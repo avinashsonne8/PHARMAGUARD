@@ -696,7 +696,9 @@ if st.button(
             priority,
 
         "Reason":
-            reason
+            reason,
+        "Case_Reference":
+    case_reference
     }
 
 
