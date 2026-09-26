@@ -23,10 +23,20 @@ st.set_page_config(
 # =========================================================
 
 st.markdown("""
-<div style="text-align:center; padding:10px;">
-    <h1>🛡️ PHARMAGUARD</h1>
-    <p>AI-Assisted ADR Risk Prioritization System</p>
-    <p><b>Pharmacovigilance • Proof of Concept</b></p>
+<style>
+.pg-header { text-align:center; padding:18px 12px 16px 12px; border-radius:16px; background:linear-gradient(135deg,#eef7ff 0%,#f7fbff 100%); border:1px solid #d7e7f5; margin-bottom:18px; }
+.pg-shield { font-size:42px; line-height:1; margin-bottom:4px; }
+.pg-title { font-size:34px; font-weight:800; letter-spacing:1px; margin:0; }
+.pg-subtitle { font-size:16px; margin:5px 0 3px 0; }
+.pg-tag { display:inline-block; padding:5px 12px; border-radius:999px; font-size:12px; font-weight:700; background:#e8f1f8; }
+.pg-section { margin-top:14px; padding:10px 14px; border-left:5px solid #2b6f9f; background:#f7fafc; border-radius:8px; }
+.pg-note { font-size:13px; color:#5b6570; padding:7px 10px; background:#f7f7f7; border-radius:7px; }
+</style>
+<div class="pg-header">
+<div class="pg-shield">🛡️</div>
+<div class="pg-title">PHARMAGUARD</div>
+<div class="pg-subtitle">AI-Assisted ADR Risk Prioritization System</div>
+<div class="pg-tag">Pharmacovigilance • Proof of Concept</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -412,11 +422,13 @@ if "database_loaded" not in st.session_state:
 # PATIENT INPUT
 # =========================================================
 
+st.markdown('<div class="pg-section"><b>👤 Patient Information</b></div>', unsafe_allow_html=True)
+
 patient_id = st.text_input(
     "Patient ID",
-    placeholder="Example: PHG-0001"
+    placeholder="Example: PHG-0001",
+    help="Enter a project patient identifier. Do not enter unnecessary personally identifiable information."
 )
-
 
 age = st.number_input(
     "Patient Age",
@@ -426,32 +438,38 @@ age = st.number_input(
     step=1
 )
 
-
 sex = st.selectbox(
     "Sex",
     ["M", "F", "Unknown"]
 )
 
+st.markdown('<div class="pg-section"><b>💊 Drug Information</b></div>', unsafe_allow_html=True)
 
 drug = st.text_input(
     "Drug Name",
     placeholder="Example: Amoxicillin"
 )
 
+st.markdown('<div class="pg-section"><b>⚠️ ADR Report</b></div>', unsafe_allow_html=True)
 
 adr = st.text_area(
     "Adverse Drug Reaction (ADR)",
     placeholder="Example: Anaphylaxis with difficulty breathing",
-    height=120
+    height=140,
+    help="Describe the reported adverse event as clearly as possible."
 )
+
+st.markdown('<div class="pg-note">💡 <b>Tip:</b> Include clinically relevant details available in the report, such as the reported reaction, severity-related information, or relevant outcome information.</div>', unsafe_allow_html=True)
 
 
 # =========================================================
 # ANALYZE ADR
 # =========================================================
 
+st.caption("Safety Gate → ML Assistance → Priority + Reason → Database")
+
 if st.button(
-    "🔍 ANALYZE ADR",
+    "🔍 ANALYZE ADR REPORT",
     use_container_width=True
 ):
 
