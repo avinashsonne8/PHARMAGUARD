@@ -727,36 +727,10 @@ if st.button(
     # ADD TO CURRENT SESSION HISTORY
     # =====================================================
 
-    st.session_state.adr_history.append({
-
-        "Date_Time":
-            database_record["Date_Time"],
-
-        "Patient_ID":
-            database_record["Patient_ID"],
-
-        "Age":
-            age,
-
-        "Sex":
-            sex,
-
-        "Drug":
-            drug,
-
-        "ADR":
-            adr,
-
-        "Priority":
-            priority,
-
-        "Seriousness_Flag":
-            flag,
-
-        "Reason":
-            reason
-
-    })
+    # Keep the current-session record schema identical to the Google Sheet schema.
+    st.session_state.adr_history.append(
+        database_record.copy()
+    )
 
 
 # =========================================================
@@ -1315,7 +1289,8 @@ if st.session_state.get(
                 lambda row: row.str.contains(
                     search_text,
                     case=False,
-                    na=False
+                    na=False,
+                    regex=False
                 ).any(),
                 axis=1
             )
@@ -1365,12 +1340,17 @@ if st.session_state.get(
 # STEP 62.2 — ADR CASE REPORT
 # =====================================================
 
+# selected_row only exists when ADR history contains at least one case.
+# Disable report generation when no case is available.
+selected_row = locals().get("selected_row", None)
+
 st.markdown("---")
 st.markdown("### 📄 ADR Case Report")
 
 if st.button(
     "📄 Generate ADR Case Report",
-    use_container_width=True
+    use_container_width=True,
+    disabled=selected_row is None
 ):
 
     # Get seriousness safely
