@@ -1314,27 +1314,27 @@ if st.session_state.get(
         use_container_width=True,
         hide_index=True
     )
-    if not filtered_df.empty:
+        if not filtered_df.empty:
         st.markdown("### 🔍 ADR Case Details")
 
-case_options = (
-    filtered_df["Patient_ID"].astype(str)
-    + " | "
-    + filtered_df["Drug"].astype(str)
-    + " | "
-    + filtered_df["ADR"].astype(str)
-)
+        case_options = (
+            filtered_df["Patient_ID"].astype(str)
+            + " | "
+            + filtered_df["Drug"].astype(str)
+            + " | "
+            + filtered_df["ADR"].astype(str)
+        )
 
-selected_case = st.selectbox(
-    "Select a Case",
-    case_options.tolist()
-)
+        selected_case = st.selectbox(
+            "Select a Case",
+            case_options.tolist()
+        )
 
-selected_index = case_options[
-    case_options == selected_case
-].index[0]
+        selected_index = case_options[
+            case_options == selected_case
+        ].index[0]
 
-selected_row = filtered_df.loc[selected_index]
+        selected_row = filtered_df.loc[selected_index]
 
         st.write("**Patient ID:**", selected_row.get("Patient_ID", ""))
         st.write("**Age:**", selected_row.get("Age", ""))
