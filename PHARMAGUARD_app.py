@@ -31,6 +31,31 @@ st.markdown("""
 .pg-tag { display:inline-block; padding:5px 12px; border-radius:999px; font-size:12px; font-weight:700; background:#e8f1f8; }
 .pg-section { margin-top:14px; padding:10px 14px; border-left:5px solid #2b6f9f; background:#f7fafc; border-radius:8px; }
 .pg-note { font-size:13px; color:#5b6570; padding:7px 10px; background:#f7f7f7; border-radius:7px; }
+.pg-result-card { display:flex; align-items:center; gap:14px; padding:16px 18px; border-radius:14px; margin:8px 0 16px 0; border:1px solid #d9e2ea; }
+.pg-result-high { background:#fff1f1; border-left:7px solid #c62828; }
+.pg-result-moderate { background:#fff8e6; border-left:7px solid #d99000; }
+.pg-result-low { background:#eef9f1; border-left:7px solid #2e7d32; }
+.pg-result-unknown { background:#f4f5f6; border-left:7px solid #7b8794; }
+.pg-result-icon { font-size:30px; line-height:1; }
+.pg-result-label { font-size:22px; font-weight:800; letter-spacing:.4px; }
+.pg-result-message { font-size:14px; margin-top:3px; color:#4f5963; }
+.pg-result-detail { padding:14px 16px; border:1px solid #dfe6ec; border-radius:12px; background:#ffffff; margin:10px 0 12px 0; }
+.pg-detail-title { font-size:16px; font-weight:800; margin-bottom:9px; }
+.pg-detail-row { display:flex; gap:12px; padding:7px 0; border-top:1px solid #edf0f2; font-size:14px; }
+.pg-detail-row b { min-width:180px; }
+@media (max-width: 700px) { .pg-result-label { font-size:19px; } .pg-detail-row { display:block; } .pg-detail-row b { display:block; margin-bottom:3px; } }
+.pg-dashboard-header { display:flex; align-items:center; gap:12px; padding:14px 16px; margin:10px 0 12px 0; border-radius:14px; background:#f5f9fc; border:1px solid #dbe8f1; }
+.pg-dashboard-icon { font-size:30px; line-height:1; }
+.pg-dashboard-title { font-size:25px; font-weight:800; letter-spacing:.2px; }
+.pg-dashboard-subtitle { font-size:13px; color:#65717d; margin-top:2px; }
+.pg-kpi { padding:14px 12px; min-height:112px; border-radius:14px; background:#f7fafc; border:1px solid #dbe6ee; box-shadow:0 2px 8px rgba(40,70,90,.05); }
+.pg-kpi-high { border-left:5px solid #c94b4b; }
+.pg-kpi-moderate { border-left:5px solid #d69a22; }
+.pg-kpi-low { border-left:5px solid #4f9b67; }
+.pg-kpi-label { font-size:13px; font-weight:700; color:#56616c; }
+.pg-kpi-value { font-size:30px; font-weight:800; margin-top:7px; line-height:1.05; }
+.pg-kpi-foot { font-size:11px; color:#7a848d; margin-top:7px; }
+
 </style>
 <div class="pg-header">
 <div class="pg-shield">🛡️</div>
@@ -600,84 +625,74 @@ if st.button(
 
 
     # =====================================================
-    # DISPLAY RESULT
+    # DISPLAY RESULT — STEP 96 PART 2
     # =====================================================
 
     st.divider()
+    st.subheader("📋 ADR Analysis Result")
 
-    st.subheader(
-        "📋 ADR Analysis Result"
+    priority_meta = {
+        "HIGH": {
+            "icon": "🚨",
+            "label": "HIGH PRIORITY",
+            "class_name": "pg-result-high",
+            "message": "Immediate pharmacovigilance review recommended."
+        },
+        "MODERATE": {
+            "icon": "⚠️",
+            "label": "MODERATE PRIORITY",
+            "class_name": "pg-result-moderate",
+            "message": "Clinical and pharmacovigilance review recommended."
+        },
+        "LOW": {
+            "icon": "✅",
+            "label": "LOW PRIORITY",
+            "class_name": "pg-result-low",
+            "message": "Routine pharmacovigilance review."
+        },
+        "UNKNOWN": {
+            "icon": "❓",
+            "label": "PRIORITY UNCERTAIN",
+            "class_name": "pg-result-unknown",
+            "message": "Additional information or professional review may be required."
+        }
+    }
+
+    meta = priority_meta.get(priority, priority_meta["UNKNOWN"])
+
+    st.markdown(f"""
+    <div class="pg-result-card {meta['class_name']}">
+        <div class="pg-result-icon">{meta['icon']}</div>
+        <div>
+            <div class="pg-result-label">{meta['label']}</div>
+            <div class="pg-result-message">{meta['message']}</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    result_col1, result_col2, result_col3 = st.columns(3)
+    with result_col1:
+        st.metric("Patient ID", str(patient_id))
+    with result_col2:
+        st.metric("Age", str(age))
+    with result_col3:
+        st.metric("Sex", str(sex))
+
+    st.markdown(
+        f"""
+        <div class="pg-result-detail">
+            <div class="pg-detail-title">⚕️ Review Assessment</div>
+            <div class="pg-detail-row"><b>Seriousness / Review Flag</b><span>{flag}</span></div>
+            <div class="pg-detail-row"><b>Reason</b><span>{reason}</span></div>
+            <div class="pg-detail-row"><b>Recommendation</b><span>{recommendation}</span></div>
+        </div>
+        """,
+        unsafe_allow_html=True
     )
 
-
-    st.write(
-        f"**Patient ID:** {patient_id}"
+    st.caption(
+        "PHARMAGUARD provides AI-assisted priority support for pharmacovigilance review; it does not establish ADR causality or replace professional clinical/regulatory assessment."
     )
-
-
-    if priority == "HIGH":
-
-        st.error(
-            "🔴 HIGH PRIORITY",
-            icon="🚨"
-        )
-
-        st.markdown(
-            "**Immediate pharmacovigilance review recommended.**"
-        )
-
-
-    elif priority == "MODERATE":
-
-        st.warning(
-            "🟡 MODERATE PRIORITY",
-            icon="⚠️"
-        )
-
-        st.markdown(
-            "**Clinical and pharmacovigilance review recommended.**"
-        )
-
-
-    elif priority == "LOW":
-
-        st.success(
-            "🟢 LOW PRIORITY",
-            icon="✅"
-        )
-
-        st.markdown(
-            "**Routine pharmacovigilance review.**"
-        )
-
-
-    else:
-
-        st.info(
-            "⚪ PRIORITY UNCERTAIN",
-            icon="❓"
-        )
-
-        st.markdown(
-            "**Additional information or professional review may be required.**"
-)
-
-
-
-    st.write(
-        f"**Seriousness / Review Flag:** {flag}"
-    )
-
-
-    st.write(
-        f"**Reason:** {reason}"
-    )
-
-
-    st.write(
-        f"**Recommendation:** {recommendation}"
-    )
-
 
     # =====================================================
     # CREATE DATABASE RECORD
@@ -763,14 +778,16 @@ if st.session_state.get(
 
     st.markdown("---")
 
-    st.subheader(
-        "📊 PHARMAGUARD Dashboard"
-    )
-
-    st.caption(
-        "Dashboard shows ADR cases available "
-        "in the current app session."
-    )
+    st.markdown("""
+    <div class="pg-dashboard-header">
+        <div class="pg-dashboard-icon">📊</div>
+        <div>
+            <div class="pg-dashboard-title">PHARMAGUARD Dashboard</div>
+            <div class="pg-dashboard-subtitle">ADR monitoring • Priority overview • Pharmacovigilance review support</div>
+        </div>
+    </div>
+    <div class="pg-note">📌 Dashboard metrics are based on ADR cases currently available in the app session/database view.</div>
+    """, unsafe_allow_html=True)
 
 
     dashboard_df = pd.DataFrame(
@@ -815,29 +832,17 @@ if st.session_state.get(
 
     m1, m2, m3, m4 = st.columns(4)
 
+    with m1:
+        st.markdown(f"""<div class="pg-kpi"><div class="pg-kpi-label">Total ADR Cases</div><div class="pg-kpi-value">{total_cases}</div><div class="pg-kpi-foot">Reports available</div></div>""", unsafe_allow_html=True)
 
-    m1.metric(
-        "Total ADR Cases",
-        total_cases
-    )
+    with m2:
+        st.markdown(f"""<div class="pg-kpi pg-kpi-high"><div class="pg-kpi-label">🔴 High Priority</div><div class="pg-kpi-value">{high_cases}</div><div class="pg-kpi-foot">Needs review</div></div>""", unsafe_allow_html=True)
 
+    with m3:
+        st.markdown(f"""<div class="pg-kpi pg-kpi-moderate"><div class="pg-kpi-label">🟡 Moderate</div><div class="pg-kpi-value">{moderate_cases}</div><div class="pg-kpi-foot">Monitor / review</div></div>""", unsafe_allow_html=True)
 
-    m2.metric(
-        "🔴 High",
-        high_cases
-    )
-
-
-    m3.metric(
-        "🟡 Moderate",
-        moderate_cases
-    )
-
-
-    m4.metric(
-        "🟢 Low",
-        low_cases
-    )
+    with m4:
+        st.markdown(f"""<div class="pg-kpi pg-kpi-low"><div class="pg-kpi-label">🟢 Low</div><div class="pg-kpi-value">{low_cases}</div><div class="pg-kpi-foot">Lower priority</div></div>""", unsafe_allow_html=True)
 
 
     st.markdown(
