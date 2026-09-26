@@ -1421,6 +1421,11 @@ if st.button(
     # -------------------------------------------------
 
     st.markdown("### 1. Case Information")
+    
+    st.write(
+    "**Case Reference:**",
+    selected_row.get("Case_Reference", "")
+        )
 
     st.write(
         "**Patient ID:**",
