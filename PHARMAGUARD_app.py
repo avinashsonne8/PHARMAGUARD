@@ -1704,6 +1704,9 @@ Pharmacovigilance Proof of Concept
     )
 
     case_data = [
+        ["Case Reference", str(
+    selected_row.get("Case_Reference", "")
+)],
         ["Patient ID", str(
             selected_row.get("Patient_ID", "")
         )],
