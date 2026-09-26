@@ -1317,15 +1317,24 @@ if st.session_state.get(
     if not filtered_df.empty:
         st.markdown("### 🔍 ADR Case Details")
 
-        selected_case = st.selectbox(
-            "Select a Case",
-            filtered_df["Patient_ID"].astype(str).tolist()
-        )
+        case_options = (
+    filtered_df["Patient_ID"].astype(str)
+    + " | "
+    + filtered_df["Drug"].astype(str)
+    + " | "
+    + filtered_df["ADR"].astype(str)
+)
 
-        selected_row = filtered_df[
-            filtered_df["Patient_ID"].astype(str)
-            == selected_case
-        ].iloc[0]
+selected_case = st.selectbox(
+    "Select a Case",
+    case_options.tolist()
+)
+
+selected_index = case_options[
+    case_options == selected_case
+].index[0]
+
+selected_row = filtered_df.loc[selected_index]
 
         st.write("**Patient ID:**", selected_row.get("Patient_ID", ""))
         st.write("**Age:**", selected_row.get("Age", ""))
