@@ -225,6 +225,69 @@ MODERATE_PATTERNS = [
 
 
 # =========================================================
+# STEP 96B — ADR INPUT VALIDATION
+# =========================================================
+
+# Common ADR/medical terms used in this project.
+# These are used only to flag possible spelling/entry issues;
+# the system does not silently correct the user's ADR text.
+ADR_TERM_SUGGESTIONS = {
+    "hepatotoxicity": ["hepatotoxcity", "hepatotoxicty", "hepatotoxity"],
+    "neurotoxicity": ["neurotoxicty", "neurotoxcity", "neurotoxity"],
+    "nephrotoxicity": ["nephrotoxicty", "nephrotoxcity", "nephrotoxity"],
+    "cardiotoxicity": ["cardiotoxcity", "cardiotoxicty", "cardiotoxity"],
+    "anaphylaxis": ["anaphylaxisx", "anaphylaxsis", "anaphylaxix"],
+    "anaphylactic": ["anaphylactc", "anaphylacticc"],
+    "respiratory distress": ["respiratory distres", "respiratory distrss"],
+    "difficulty breathing": ["difficulty brething", "difficulty breathng"],
+}
+
+
+def validate_adr_input(adr_text):
+    """
+    Validate ADR text before safety screening and ML prediction.
+
+    Returns:
+        status: VALID, POSSIBLE_TYPO, or UNKNOWN
+        suggestion: suggested medical term when available
+        message: user-facing validation message
+
+    The function does not silently modify the original ADR text.
+    """
+    text = " ".join(str(adr_text).lower().strip().split())
+
+    if not text:
+        return (
+            "UNKNOWN",
+            "",
+            "ADR entry is empty. Please enter the reported adverse reaction."
+        )
+
+    # Exact recognized terms/patterns already used by PHARMAGUARD.
+    recognized_patterns = SERIOUS_PATTERNS + MODERATE_PATTERNS
+    for term in recognized_patterns:
+        if re.search(rf"(?<!\w){re.escape(term.lower())}(?!\w)", text):
+            return ("VALID", "", "ADR term recognized. Continue with analysis.")
+
+    # Known possible spelling mistakes.
+    for correct_term, typo_list in ADR_TERM_SUGGESTIONS.items():
+        for typo in typo_list:
+            if re.search(rf"(?<!\w){re.escape(typo)}(?!\w)", text):
+                return (
+                    "POSSIBLE_TYPO",
+                    correct_term,
+                    f"Possible spelling/medical-term error detected. Did you mean '{correct_term}'?"
+                )
+
+    # Do not guess an unknown medical term.
+    return (
+        "UNKNOWN",
+        "",
+        "ADR term could not be confidently recognized. Please verify the reported medical term before analysis."
+    )
+
+
+# =========================================================
 # SAVE DATA TO GOOGLE SHEET
 # =========================================================
 
