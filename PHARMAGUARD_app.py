@@ -108,6 +108,8 @@ SERIOUS_PATTERNS = [
 
     # Severe breathing problems
     "difficulty breathing",
+    "breathing problem",
+    "breathing problems",
     "difficulty in breathing",
     "difficulty with breathing",
     "difficulty to breathe",
