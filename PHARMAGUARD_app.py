@@ -585,7 +585,29 @@ if st.button(
         )
 
         st.stop()
+        
+    # -----------------------------------------------------
+    # STEP 96B: ADR MEDICAL-TERM VALIDATION
+    # -----------------------------------------------------
 
+    validation_result = validate_adr_input(adr)
+
+    if validation_result["status"] == "possible_error":
+
+        st.warning(
+            validation_result["message"]
+        )
+
+        st.stop()
+
+    if validation_result["status"] == "uncertain":
+
+        st.warning(
+            validation_result["message"]
+        )
+
+        st.stop()
+        
 
     # -----------------------------------------------------
     # FIND SERIOUS + MODERATE SIGNALS
