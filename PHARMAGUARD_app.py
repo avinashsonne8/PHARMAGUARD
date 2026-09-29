@@ -292,6 +292,7 @@ return (
     "ADR input accepted. Continue with analysis."
 )
 
+
 # =========================================================
 # SAVE DATA TO GOOGLE SHEET
 # =========================================================
