@@ -279,12 +279,18 @@ def validate_adr_input(adr_text):
                     f"Possible spelling/medical-term error detected. Did you mean '{correct_term}'?"
                 )
 
-    # Do not guess an unknown medical term.
-    return (
-        "UNKNOWN",
-        "",
-        "ADR term could not be confidently recognized. Please verify the reported medical term before analysis."
-    )
+# -----------------------------------------------------
+# NORMAL / UNKNOWN ADR
+# -----------------------------------------------------
+
+# Do not block a new or previously unseen ADR term.
+# The original ADR text is passed to the Safety Gate and ML model.
+
+return (
+    "VALID",
+    "",
+    "ADR input accepted. Continue with analysis."
+)
 
 
 # =========================================================
