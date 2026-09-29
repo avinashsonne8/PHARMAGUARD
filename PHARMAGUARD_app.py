@@ -318,13 +318,14 @@ def save_to_google_sheet(data):
 # LOAD DATA FROM GOOGLE SHEET
 # =========================================================
 
+@st.cache_data(ttl=60, show_spinner=False)
 def load_from_google_sheet():
 
     try:
 
         response = requests.get(
             GOOGLE_SHEET_URL,
-            timeout=15
+            timeout=5
         )
 
         if response.status_code == 200:
