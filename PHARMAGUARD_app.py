@@ -79,13 +79,19 @@ GOOGLE_SHEET_URL = st.secrets["GOOGLE_SHEET_URL"]
 # LOAD ML MODEL
 # =========================================================
 
-try:
-    model = joblib.load(MODEL_FILE)
+@st.cache_resource
+def load_ml_model():
 
-except Exception as e:
-    st.error("Model could not be loaded.")
-    st.code(str(e))
-    st.stop()
+    try:
+        return joblib.load(MODEL_FILE)
+
+    except Exception as e:
+        st.error("Model could not be loaded.")
+        st.code(str(e))
+        st.stop()
+
+
+model = load_ml_model()
 
 
 # =========================================================
