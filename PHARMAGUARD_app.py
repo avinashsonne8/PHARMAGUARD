@@ -502,24 +502,47 @@ def has_nonmedical_shock_context(text):
 
 def has_death_causality_protection(text, serious_pattern):
 
-    # Death/fatality terms can appear in background or unrelated
-    # context. Do not suppress a genuine risk signal such as
-    # "risk of death due to ADR".
+    # Death/fatality terms may describe an unrelated event, an
+    # underlying disease, an accident, or another non-drug cause.
+    # Protect these contexts while preserving genuine ADR risk signals.
     pattern = str(serious_pattern).lower().strip()
-    if pattern not in {"death", "died", "fatal", "fatal outcome", "fatal reaction"}:
+
+    death_patterns = {
+        "death",
+        "died",
+        "fatal",
+        "fatal outcome",
+        "fatal reaction",
+    }
+
+    if pattern not in death_patterns:
         return False
 
-    text = " ".join(str(text).lower().strip().split())
+    text = " ".join(
+        str(text).lower().strip().split()
+    )
 
     unrelated_patterns = [
-        r"death\s+(?:was\s+)?unrelated\s+to\s+(?:the\s+)?(?:drug|treatment|medication|therapy|adr)",
-        r"(?:cause|reason)\s+of\s+death\s+(?:was\s+)?unrelated\s+to\s+(?:the\s+)?(?:drug|treatment|medication|therapy|adr)",
-        r"death\s+due\s+to\s+(?:an\s+)?underlying\s+(?:disease|condition|illness)",
-        r"fatal(?:\s+outcome|\s+reaction)?\s+(?:was\s+)?unrelated\s+to\s+(?:the\s+)?(?:drug|treatment|medication|therapy|adr)",
-        r"(?:died|death)\s+(?:from|due\s+to)\s+(?:an\s+)?underlying\s+(?:disease|condition|illness)",
+        # Explicitly unrelated to the medicinal product.
+        r"\b(?:death|died|fatal(?:\s+outcome|\s+reaction)?)\b.{0,80}\b(?:unrelated|not\s+related|not\s+due)\b.{0,40}\b(?:drug|treatment|medication|therapy|adr)\b",
+        r"\b(?:unrelated|not\s+related|not\s+due)\b.{0,40}\b(?:drug|treatment|medication|therapy|adr)\b.{0,80}\b(?:death|died|fatal(?:\s+outcome|\s+reaction)?)\b",
+
+        # Death attributed to an underlying/non-drug cause.
+        r"\b(?:death|died)\b.{0,50}\b(?:from|due\s+to|caused\s+by)\b.{0,50}\b(?:underlying|pre[-\s]?existing)\s+(?:disease|condition|illness)\b",
+        r"\b(?:death|died)\b.{0,70}\b(?:from|due\s+to|caused\s+by)\b.{0,70}\b(?:myocardial\s+infarction|heart\s+attack|stroke|accident|trauma|injury|infection|sepsis)\b",
+        r"\b(?:cause|reason)\s+of\s+death\b.{0,80}\b(?:unrelated|not\s+related|not\s+due)\b.{0,40}\b(?:drug|treatment|medication|therapy|adr)\b",
+
+        # Fatal event explicitly unrelated to treatment.
+        r"\bfatal(?:\s+outcome|\s+reaction)?\b.{0,80}\b(?:unrelated|not\s+related|not\s+due)\b.{0,40}\b(?:drug|treatment|medication|therapy|adr)\b",
+
+        # Accident/trauma deaths unrelated to treatment.
+        r"\b(?:died|death)\b.{0,60}\b(?:traffic|road|motor\s+vehicle|vehicle)\s+accident\b.{0,60}\b(?:unrelated|not\s+related)\b",
     ]
 
-    return any(re.search(pattern, text) for pattern in unrelated_patterns)
+    return any(
+        re.search(pattern, text)
+        for pattern in unrelated_patterns
+    )
 
 
 def has_context_protection(text, serious_pattern):
@@ -530,108 +553,85 @@ def has_context_protection(text, serious_pattern):
 
     serious_pattern = str(serious_pattern).lower().strip()
 
-    match = re.search(
-        rf"(?<!\w){re.escape(serious_pattern)}(?!\w)",
+    # -----------------------------------------------------
+    # CONTEXT PROTECTION — MULTIPLE-OCCURRENCE SAFE VERSION
+    # -----------------------------------------------------
+    # Evaluate every occurrence of the serious phrase.
+    # This prevents a historical occurrence from suppressing
+    # a later current occurrence in the same ADR report.
+    # Example:
+    #   "History of seizure; patient developed seizure"
+    # The first seizure is historical, but the second is current.
+    # Therefore the overall signal must remain detectable.
+    # -----------------------------------------------------
+
+    clauses = re.split(
+        r"(?<=[.!?;,])\s+|\s+(?:but|however|although|though|yet|except)\s+",
         text
     )
 
-    if not match:
-        return False
-
-    # -----------------------------------------------------
-    # CONTEXT PROTECTION — PHRASE-AWARE VERSION
-    # -----------------------------------------------------
-    #
-    # The earlier version used a broad 60-character window.
-    # That could incorrectly suppress a serious event when an
-    # unrelated word such as "no" or "history" appeared nearby.
-    #
-    # Example that MUST remain HIGH:
-    # "No fever, but patient developed difficulty breathing."
-    #
-    # Example that should be protected:
-    # "No difficulty breathing."
-    #
-    # We therefore:
-    # 1. Look only within the same local clause.
-    # 2. Treat common contrast/conjunction boundaries as a break.
-    # 3. Require the context phrase to be close to the serious ADR.
-    # -----------------------------------------------------
-
-    local_text = text
-
-    # Split at sentence/clause boundaries and common contrast words.
-    # This prevents unrelated information such as
-    # "No fever, but ..." from suppressing the later serious signal.
-    clauses = re.split(
-        r"(?<=[.!?;,])\s+|\s+(?:but|however|although|though|yet|except)\s+",
-        local_text
-    )
-
-    target_clause = None
+    found_occurrence = False
+    protected_occurrence = False
 
     for clause in clauses:
 
         clause = clause.strip()
 
-        if re.search(
+        for match in re.finditer(
             rf"(?<!\w){re.escape(serious_pattern)}(?!\w)",
             clause
         ):
-            target_clause = clause
-            break
 
-    if target_clause is None:
-        target_clause = local_text
+            found_occurrence = True
 
-    match = re.search(
-        rf"(?<!\w){re.escape(serious_pattern)}(?!\w)",
-        target_clause
-    )
+            before = clause[:match.start()].strip()
+            after = clause[match.end():].strip()
 
-    if not match:
-        return False
+            before_tokens = before.split()
+            after_tokens = after.split()
 
-    before = target_clause[:match.start()].strip()
-    after = target_clause[match.end():].strip()
+            nearby_before = " ".join(before_tokens[-6:])
+            nearby_after = " ".join(after_tokens[:6])
 
-    # Only nearby context is considered relevant.
-    # Six tokens is enough for phrases such as:
-    # "no evidence of respiratory distress"
-    # "patient has a previous history of seizure"
-    before_tokens = before.split()
-    after_tokens = after.split()
+            is_protected = False
 
-    nearby_before = " ".join(before_tokens[-6:])
-    nearby_after = " ".join(after_tokens[:6])
+            # Negation / ruled-out context before the phrase.
+            for pattern in NEGATION_PATTERNS:
+                if re.search(
+                    rf"(?<!\w){re.escape(pattern)}(?!\w)",
+                    nearby_before
+                ):
+                    is_protected = True
+                    break
 
-    # Negation / ruled-out context BEFORE the serious phrase.
-    for pattern in NEGATION_PATTERNS:
+            # Negation / ruled-out context after the phrase.
+            if not is_protected:
+                for pattern in NEGATION_PATTERNS:
+                    if re.search(
+                        rf"(?<!\w){re.escape(pattern)}(?!\w)",
+                        nearby_after
+                    ):
+                        is_protected = True
+                        break
 
-        if re.search(
-            rf"(?<!\w){re.escape(pattern)}(?!\w)",
-            nearby_before
-        ):
-            return True
+            # Historical / previous-event context before the phrase.
+            if not is_protected:
+                for pattern in HISTORY_PATTERNS:
+                    if re.search(
+                        rf"(?<!\w){re.escape(pattern)}(?!\w)",
+                        nearby_before
+                    ):
+                        is_protected = True
+                        break
 
-    # Negation / ruled-out context AFTER the serious phrase.
-    # Example: "difficulty breathing was not observed"
-    for pattern in NEGATION_PATTERNS:
+            if is_protected:
+                protected_occurrence = True
+            else:
+                # At least one current/unprotected occurrence exists.
+                return False
 
-        if re.search(
-            rf"(?<!\w){re.escape(pattern)}(?!\w)",
-            nearby_after
-        ):
-            return True
-
-    # Historical / previous-event context BEFORE the serious phrase.
-    for pattern in HISTORY_PATTERNS:
-
-        if re.search(
-            rf"(?<!\w){re.escape(pattern)}(?!\w)",
-            nearby_before
-        ):
-            return True
+    if found_occurrence and protected_occurrence:
+        return True
 
     return False
 
