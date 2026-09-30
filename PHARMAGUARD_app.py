@@ -102,7 +102,7 @@ with st.sidebar:
             "☁️ Database",
             "ℹ️ About / Methodology"
         ],
-        index=1,
+        index=0,
         label_visibility="collapsed"
     )
     st.divider()
@@ -950,12 +950,81 @@ diagnosis, treatment, regulatory seriousness, or clinical
 decision-making.
 """
     st.download_button(
-        "⬇️ Download Case Report",
+        "⬇️ Download Case Report (TXT)",
         data=report,
         file_name=f"PHARMAGUARD_{row.get('Case_Reference', 'Case')}.txt",
         mime="text/plain",
         use_container_width=True
     )
+
+    # Generate a compact PDF directly from the selected case.
+    try:
+        from io import BytesIO
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.enums import TA_CENTER
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+        from reportlab.lib import colors
+
+        pdf_buffer = BytesIO()
+        pdf_doc = SimpleDocTemplate(
+            pdf_buffer, pagesize=A4,
+            rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36
+        )
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            "PGTitle", parent=styles["Title"], alignment=TA_CENTER, fontSize=18, spaceAfter=8
+        )
+        sub_style = ParagraphStyle(
+            "PGSub", parent=styles["Normal"], alignment=TA_CENTER, fontSize=9, textColor=colors.grey, spaceAfter=14
+        )
+        normal = styles["BodyText"]
+        normal.fontSize = 9
+        normal.leading = 12
+
+        story = [
+            Paragraph("PHARMAGUARD ADR CASE REPORT", title_style),
+            Paragraph("AI-Assisted ADR Risk Prioritization System • Pharmacovigilance Proof of Concept", sub_style)
+        ]
+        data = [
+            ["Case Reference", str(row.get("Case_Reference", ""))],
+            ["Patient / Project ID", str(row.get("Patient_ID", ""))],
+            ["Age", str(row.get("Age", ""))],
+            ["Sex", str(row.get("Sex", ""))],
+            ["Date & Time", str(row.get("Date_Time", ""))],
+            ["Drug", str(row.get("Drug", ""))],
+            ["ADR", str(row.get("ADR", ""))],
+            ["Priority", priority],
+            ["Seriousness", seriousness],
+            ["Decision Source", str(row.get("Decision_Source", ""))],
+            ["Reason", str(row.get("Reason", ""))],
+            ["Recommended Action", recommendation],
+        ]
+        table = Table(data, colWidths=[135, 365])
+        table.setStyle(TableStyle([
+            ("GRID", (0,0), (-1,-1), 0.4, colors.grey),
+            ("BACKGROUND", (0,0), (0,-1), colors.whitesmoke),
+            ("FONTNAME", (0,0), (0,-1), "Helvetica-Bold"),
+            ("VALIGN", (0,0), (-1,-1), "TOP"),
+            ("FONTSIZE", (0,0), (-1,-1), 8.5),
+            ("LEADING", (0,0), (-1,-1), 11),
+            ("PADDING", (0,0), (-1,-1), 6),
+        ]))
+        story += [table, Spacer(1, 14), Paragraph(
+            "Disclaimer: PHARMAGUARD is a proof-of-concept AI-assisted pharmacovigilance review-prioritization system. It does not establish causality, diagnosis, treatment, regulatory seriousness, or replace professional clinical judgment.",
+            normal
+        )]
+        pdf_doc.build(story)
+        pdf_buffer.seek(0)
+        st.download_button(
+            "📥 Download Case Report (PDF)",
+            data=pdf_buffer,
+            file_name=f"PHARMAGUARD_{row.get('Case_Reference', 'Case')}.pdf",
+            mime="application/pdf",
+            use_container_width=True
+        )
+    except Exception as e:
+        st.warning(f"PDF report generation is unavailable: {e}")
 
 
 def render_database_screen():
