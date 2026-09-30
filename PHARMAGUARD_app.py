@@ -388,40 +388,98 @@ def has_context_protection(text, serious_pattern):
     if not match:
         return False
 
-    # Context before the serious phrase
-    context_before = text[
-        max(0, match.start() - 60):match.start()
-    ]
+    # -----------------------------------------------------
+    # CONTEXT PROTECTION — PHRASE-AWARE VERSION
+    # -----------------------------------------------------
+    #
+    # The earlier version used a broad 60-character window.
+    # That could incorrectly suppress a serious event when an
+    # unrelated word such as "no" or "history" appeared nearby.
+    #
+    # Example that MUST remain HIGH:
+    # "No fever, but patient developed difficulty breathing."
+    #
+    # Example that should be protected:
+    # "No difficulty breathing."
+    #
+    # We therefore:
+    # 1. Look only within the same local clause.
+    # 2. Treat common contrast/conjunction boundaries as a break.
+    # 3. Require the context phrase to be close to the serious ADR.
+    # -----------------------------------------------------
 
-    # Context after the serious phrase
-    context_after = text[
-        match.end():match.end() + 60
-    ]
+    local_text = text
 
-    # Check negation / ruled-out context BEFORE the phrase
+    # Split at sentence/clause boundaries and common contrast words.
+    # This prevents unrelated information such as
+    # "No fever, but ..." from suppressing the later serious signal.
+    clauses = re.split(
+        r"(?<=[.!?;,])\s+|\s+(?:but|however|although|though|yet|except)\s+",
+        local_text
+    )
+
+    target_clause = None
+
+    for clause in clauses:
+
+        clause = clause.strip()
+
+        if re.search(
+            rf"(?<!\w){re.escape(serious_pattern)}(?!\w)",
+            clause
+        ):
+            target_clause = clause
+            break
+
+    if target_clause is None:
+        target_clause = local_text
+
+    match = re.search(
+        rf"(?<!\w){re.escape(serious_pattern)}(?!\w)",
+        target_clause
+    )
+
+    if not match:
+        return False
+
+    before = target_clause[:match.start()].strip()
+    after = target_clause[match.end():].strip()
+
+    # Only nearby context is considered relevant.
+    # Six tokens is enough for phrases such as:
+    # "no evidence of respiratory distress"
+    # "patient has a previous history of seizure"
+    before_tokens = before.split()
+    after_tokens = after.split()
+
+    nearby_before = " ".join(before_tokens[-6:])
+    nearby_after = " ".join(after_tokens[:6])
+
+    # Negation / ruled-out context BEFORE the serious phrase.
     for pattern in NEGATION_PATTERNS:
 
         if re.search(
             rf"(?<!\w){re.escape(pattern)}(?!\w)",
-            context_before
+            nearby_before
         ):
             return True
 
-    # Check negation / ruled-out context AFTER the phrase
+    # Negation / ruled-out context AFTER the serious phrase.
+    # Example: "difficulty breathing was not observed"
     for pattern in NEGATION_PATTERNS:
 
         if re.search(
             rf"(?<!\w){re.escape(pattern)}(?!\w)",
-            context_after
+            nearby_after
         ):
             return True
 
-    # Check history context BEFORE the phrase
+    # Historical / previous-event context BEFORE the serious phrase.
     for pattern in HISTORY_PATTERNS:
 
         if re.search(
             rf"(?<!\w){re.escape(pattern)}(?!\w)",
-            context_before
+            nearby_before
         ):
             return True
 
