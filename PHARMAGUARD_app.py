@@ -413,12 +413,12 @@ def remove_redundant_hits(hits):
         ):
             filtered.append(pattern)
 
-    # Restore original detection order.
-    return [
+    # Restore original detection order while removing exact duplicates.
+    return list(dict.fromkeys(
         pattern
         for pattern in hits
         if pattern in filtered
-    ]
+    ))
 
 
 def has_nonmedical_shock_context(text):
@@ -797,8 +797,8 @@ if st.button(
     if not has_context_protection(adr, pattern)
     ]
 
-    # Remove duplicate reason signals while preserving order.
-    moderate_hits = list(dict.fromkeys(moderate_hits))
+    # Keep the most specific moderate signal in the reason.
+    moderate_hits = remove_redundant_hits(moderate_hits)
 
   
     # -----------------------------------------------------
