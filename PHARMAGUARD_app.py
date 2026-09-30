@@ -387,6 +387,31 @@ def matches(text, patterns):
     return matched_patterns
 
 
+def prioritize_specific_moderate_hits(hits):
+
+    # Prefer contextual clinical phrases over generic review phrases.
+    # This changes only the explanation text, not the priority decision.
+    generic = {
+        "medical attention",
+        "requiring monitoring",
+        "required monitoring",
+        "under monitoring",
+        "requiring evaluation",
+        "required evaluation",
+        "needs evaluation",
+    }
+
+    hits = list(dict.fromkeys(hits))
+
+    specific = [
+        pattern
+        for pattern in hits
+        if pattern not in generic
+    ]
+
+    return specific if specific else hits
+
+
 def remove_redundant_hits(hits):
 
     # Keep the most specific matched phrase when one matched
@@ -799,6 +824,10 @@ if st.button(
 
     # Keep the most specific moderate signal in the reason.
     moderate_hits = remove_redundant_hits(moderate_hits)
+
+    # Prefer specific clinical/contextual signals over generic phrases
+    # when both are present. This changes explanation text only.
+    moderate_hits = prioritize_specific_moderate_hits(moderate_hits)
 
   
     # -----------------------------------------------------
