@@ -500,6 +500,28 @@ def has_nonmedical_shock_context(text):
     )
 
 
+def has_death_causality_protection(text, serious_pattern):
+
+    # Death/fatality terms can appear in background or unrelated
+    # context. Do not suppress a genuine risk signal such as
+    # "risk of death due to ADR".
+    pattern = str(serious_pattern).lower().strip()
+    if pattern not in {"death", "died", "fatal", "fatal outcome", "fatal reaction"}:
+        return False
+
+    text = " ".join(str(text).lower().strip().split())
+
+    unrelated_patterns = [
+        r"death\s+(?:was\s+)?unrelated\s+to\s+(?:the\s+)?(?:drug|treatment|medication|therapy|adr)",
+        r"(?:cause|reason)\s+of\s+death\s+(?:was\s+)?unrelated\s+to\s+(?:the\s+)?(?:drug|treatment|medication|therapy|adr)",
+        r"death\s+due\s+to\s+(?:an\s+)?underlying\s+(?:disease|condition|illness)",
+        r"fatal(?:\s+outcome|\s+reaction)?\s+(?:was\s+)?unrelated\s+to\s+(?:the\s+)?(?:drug|treatment|medication|therapy|adr)",
+        r"(?:died|death)\s+(?:from|due\s+to)\s+(?:an\s+)?underlying\s+(?:disease|condition|illness)",
+    ]
+
+    return any(re.search(pattern, text) for pattern in unrelated_patterns)
+
+
 def has_context_protection(text, serious_pattern):
 
     text = " ".join(
@@ -818,6 +840,7 @@ if st.button(
     pattern
     for pattern in serious_matches
     if not has_context_protection(adr, pattern)
+    and not has_death_causality_protection(adr, pattern)
     and not (
         pattern == "shock"
         and has_nonmedical_shock_context(adr)
