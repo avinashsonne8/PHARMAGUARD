@@ -4,6 +4,7 @@ import joblib
 import requests
 import re
 import uuid
+from pathlib import Path
 
 from datetime import datetime
 
@@ -116,9 +117,14 @@ with st.sidebar:
 # MODEL + GOOGLE SHEET
 # =========================================================
 
-MODEL_FILE = "PHARMAGUARD_RandomForest_Model.joblib"
+BASE_DIR = Path(__file__).resolve().parent
+MODEL_FILE = str(BASE_DIR / "PHARMAGUARD_RandomForest_Model.joblib")
 
-GOOGLE_SHEET_URL = st.secrets["GOOGLE_SHEET_URL"]
+try:
+    GOOGLE_SHEET_URL = st.secrets["GOOGLE_SHEET_URL"]
+except Exception:
+    GOOGLE_SHEET_URL = ""
+    st.error("GOOGLE_SHEET_URL is missing from Streamlit Secrets. Add it under Settings → Secrets before using database features.")
 
 
 # =========================================================
@@ -132,7 +138,8 @@ def load_ml_model():
         return joblib.load(MODEL_FILE)
 
     except Exception as e:
-        st.error("Model could not be loaded.")
+        st.error("Random Forest model could not be loaded.")
+        st.info("Make sure PHARMAGUARD_RandomForest_Model.joblib is uploaded in the same repository folder as this app file.")
         st.code(str(e))
         st.stop()
 
