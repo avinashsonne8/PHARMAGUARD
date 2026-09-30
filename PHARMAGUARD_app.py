@@ -167,6 +167,30 @@ SERIOUS_PATTERNS = [
     "septic shock",
     "anaphylactic shock",
 
+    # Death / fatal outcomes
+    "death",
+    "died",
+    "fatal",
+    "fatal outcome",
+    "fatal reaction",
+
+    # Disability / incapacity
+    "persistent disability",
+    "significant disability",
+    "permanent disability",
+    "incapacity",
+
+    # Congenital / birth outcomes
+    "congenital anomaly",
+    "birth defect",
+    "congenital malformation",
+
+    # Critical-care / important medical-event signals
+    "intensive care",
+    "icu admission",
+    "admitted to intensive care",
+    "emergency room treatment",
+
     # Hospitalization
     "hospitalization",
     "hospitalized",
