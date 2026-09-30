@@ -3,6 +3,7 @@ import pandas as pd
 import joblib
 import requests
 import re
+import uuid
 
 from datetime import datetime
 
@@ -898,6 +899,8 @@ if st.button(
             "Priority pharmacovigilance review required."
         )
 
+        decision_source = "Safety Gate — serious signal"
+
 
     elif moderate_hits:
 
@@ -918,6 +921,8 @@ if st.button(
             "Pharmacovigilance review and clinical "
             "assessment recommended."
         )
+
+        decision_source = "Safety Gate — moderate signal"
 
 
     else:
@@ -952,6 +957,8 @@ if st.button(
             "Routine pharmacovigilance review "
             "according to the project workflow."
         )
+
+        decision_source = "Random Forest prototype"
 
 
     # =====================================================
@@ -1015,6 +1022,7 @@ if st.button(
             <div class="pg-detail-row"><b>Seriousness / Review Flag</b><span>{flag}</span></div>
             <div class="pg-detail-row"><b>Reason</b><span>{reason}</span></div>
             <div class="pg-detail-row"><b>Recommendation</b><span>{recommendation}</span></div>
+            <div class="pg-detail-row"><b>Decision source</b><span>{decision_source}</span></div>
         </div>
         """,
         unsafe_allow_html=True
@@ -1027,7 +1035,13 @@ if st.button(
     # =====================================================
     # CREATE DATABASE RECORD
     # =====================================================
-    case_reference = "PHG-CASE-" + str(len(st.session_state.adr_history) + 1).zfill(3)
+    # Generate a collision-resistant Case Reference.
+    # A UUID suffix avoids duplicate references when multiple sessions/users
+    # save cases at nearly the same time.
+    case_reference = (
+        f"PHG-CASE-{datetime.now().strftime('%Y%m%d-%H%M%S')}-"
+        f"{uuid.uuid4().hex[:8].upper()}"
+    )
     database_record = {
 
         "Date_Time":
@@ -1052,8 +1066,13 @@ if st.button(
 
         "Seriousness":
             "Yes"
-            if serious_hits
+            if priority == "HIGH"
+            else "No"
+            if priority in {"MODERATE", "LOW"}
             else "Uncertain",
+
+        "Decision_Source":
+            decision_source,
 
         "Priority":
             priority,
@@ -1075,6 +1094,13 @@ if st.button(
 
 
     if saved:
+
+        # Invalidate cached Google Sheet data so the next database refresh
+        # can retrieve the newly saved row instead of stale data.
+        try:
+            st.cache_data.clear()
+        except Exception:
+            pass
 
         st.success(
             "✅ ADR saved to PHARMAGUARD Database"
@@ -1672,13 +1698,18 @@ if st.session_state.get(
     if not filtered_df.empty:
         st.markdown("### 🔍 ADR Case Details")
 
-        case_options = (
-            filtered_df["Patient_ID"].astype(str)
-            + " | "
-            + filtered_df["Drug"].astype(str)
-            + " | "
-            + filtered_df["ADR"].astype(str)
-        )
+        # Use the unique Case_Reference when available so duplicate
+        # Patient ID / Drug / ADR combinations cannot select the wrong row.
+        if "Case_Reference" in filtered_df.columns:
+            case_options = filtered_df["Case_Reference"].astype(str)
+        else:
+            case_options = (
+                filtered_df["Patient_ID"].astype(str)
+                + " | "
+                + filtered_df["Drug"].astype(str)
+                + " | "
+                + filtered_df["ADR"].astype(str)
+            )
 
         selected_case = st.selectbox(
             "Select a Case",
@@ -1698,7 +1729,9 @@ if st.session_state.get(
         st.write("**ADR:**", selected_row.get("ADR", ""))
         st.write("**Seriousness:**", selected_row.get("Seriousness", ""))
         st.write("**Priority:**", selected_row.get("Priority", ""))
+        st.write("**Decision Source:**", selected_row.get("Decision_Source", ""))
         st.write("**Reason:**", selected_row.get("Reason", ""))
+        st.write("**Case Reference:**", selected_row.get("Case_Reference", ""))
         st.write("**Date & Time:**", selected_row.get("Date_Time", ""))
         # =====================================================
 # STEP 62.2 — ADR CASE REPORT
