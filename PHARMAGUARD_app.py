@@ -221,14 +221,29 @@ MODERATE_PATTERNS = [
     "requiring evaluation",
     "required evaluation",
     "needs evaluation",
-    "persistent",
-    "prolonged",
-    "recurrent",
     "significant dizziness",
     "marked dizziness",
     "muscle pain and weakness",
     "muscle pain with weakness",
     "dehydration"
+]
+
+# Contextual moderate-review patterns.
+# The terms persistent/prolonged/recurrent alone are intentionally
+# not sufficient to assign MODERATE priority.
+MODERATE_CONTEXT_PATTERNS = [
+    "persistent stomach pain",
+    "persistent vomiting",
+    "persistent diarrhea",
+    "persistent abdominal pain",
+    "persistent muscle pain",
+    "prolonged nausea",
+    "prolonged dizziness",
+    "prolonged vomiting",
+    "recurrent dizziness",
+    "recurrent abdominal pain",
+    "recurrent vomiting",
+    "recurrent diarrhea",
 ]
 
 
@@ -693,15 +708,26 @@ if st.button(
 ]
 
 
-    moderate_hits = matches(
+    moderate_matches = matches(
     adr,
     MODERATE_PATTERNS
 )
+
+    moderate_context_matches = matches(
+    adr,
+    MODERATE_CONTEXT_PATTERNS
+)
+
     moderate_hits = [
     pattern
-    for pattern in moderate_hits
+    for pattern in (
+        moderate_matches + moderate_context_matches
+    )
     if not has_context_protection(adr, pattern)
     ]
+
+    # Remove duplicate reason signals while preserving order.
+    moderate_hits = list(dict.fromkeys(moderate_hits))
 
   
     # -----------------------------------------------------
