@@ -15,7 +15,7 @@ from datetime import datetime
 st.set_page_config(
     page_title="PHARMAGUARD",
     page_icon="💊",
-    layout="centered"
+    layout="wide"
 )
 
 
@@ -56,15 +56,60 @@ st.markdown("""
 .pg-kpi-label { font-size:13px; font-weight:700; color:#56616c; }
 .pg-kpi-value { font-size:30px; font-weight:800; margin-top:7px; line-height:1.05; }
 .pg-kpi-foot { font-size:11px; color:#7a848d; margin-top:7px; }
+.pg-appbar { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 14px; margin:0 0 14px 0; border:1px solid #dbe8f1; border-radius:12px; background:#ffffff; box-shadow:0 2px 10px rgba(30,60,90,.04); }
+.pg-brand-mini { font-weight:800; letter-spacing:.5px; font-size:16px; }
+.pg-status { display:inline-flex; align-items:center; gap:6px; padding:5px 10px; border-radius:999px; background:#eef8f1; color:#236b3a; font-size:12px; font-weight:700; }
+.pg-hero { padding:18px; border-radius:16px; background:linear-gradient(135deg,#f4faff 0%,#ffffff 70%); border:1px solid #d8e8f4; margin-bottom:16px; }
+.pg-hero-title { font-size:25px; font-weight:800; margin-bottom:5px; }
+.pg-hero-text { color:#5f6d78; font-size:14px; line-height:1.55; }
+.pg-disclaimer { margin-top:22px; padding:12px 14px; border-radius:10px; background:#f7f8fa; border:1px solid #e1e5e9; color:#66717b; font-size:12px; line-height:1.5; }
+div.stButton > button { border-radius:10px; font-weight:700; min-height:44px; }
+@media (max-width: 700px) { .pg-appbar { padding:9px 10px; } .pg-hero-title { font-size:21px; } .pg-title { font-size:29px; } .pg-subtitle { font-size:14px; } }
 
 </style>
+<div class="pg-appbar">
+<div class="pg-brand-mini">🛡️ PHARMAGUARD</div>
+<div class="pg-status">● Prototype Online</div>
+</div>
 <div class="pg-header">
 <div class="pg-shield">🛡️</div>
 <div class="pg-title">PHARMAGUARD</div>
 <div class="pg-subtitle">AI-Assisted ADR Risk Prioritization System</div>
 <div class="pg-tag">Pharmacovigilance • Proof of Concept</div>
 </div>
+<div class="pg-hero">
+<div class="pg-hero-title">ADR Review Support, in One Workflow</div>
+<div class="pg-hero-text">Enter the reported adverse drug reaction, review the predefined Safety Gate, and use the Random Forest prototype for additional priority assistance. Final priority is intended to support pharmacovigilance review.</div>
+</div>
 """, unsafe_allow_html=True)
+
+
+# =========================================================
+# APP NAVIGATION / PROJECT INFO
+# =========================================================
+
+with st.sidebar:
+    st.markdown("## 🛡️ PHARMAGUARD")
+    st.caption("AI-Assisted ADR Risk Prioritization")
+    st.markdown("### Navigation")
+    active_page = st.radio(
+        "Open screen",
+        [
+            "🏠 Dashboard",
+            "🔍 New ADR Analysis",
+            "📚 ADR History",
+            "📄 Case Reports",
+            "☁️ Database",
+            "ℹ️ About / Methodology"
+        ],
+        index=1,
+        label_visibility="collapsed"
+    )
+    st.divider()
+    st.info(
+        "Prototype: review-priority support only. "
+        "It does not replace clinical, causality, or regulatory assessment."
+    )
 
 
 # =========================================================
@@ -735,16 +780,307 @@ if "database_loaded" not in st.session_state:
 
 
 # =========================================================
+# V29 SCREEN RENDERERS
+# =========================================================
+
+def _priority_counts(df):
+    if df.empty or "Priority" not in df.columns:
+        return {"HIGH": 0, "MODERATE": 0, "LOW": 0}
+    s = df["Priority"].astype(str).str.upper()
+    return {
+        "HIGH": int((s == "HIGH").sum()),
+        "MODERATE": int((s == "MODERATE").sum()),
+        "LOW": int((s == "LOW").sum())
+    }
+
+
+def render_dashboard_screen():
+    st.markdown("## 🏠 PHARMAGUARD Dashboard")
+    st.caption("ADR monitoring • Priority overview • Pharmacovigilance review support")
+
+    df = pd.DataFrame(st.session_state.get("adr_history", []))
+    counts = _priority_counts(df)
+
+    m1, m2, m3, m4 = st.columns(4)
+    with m1:
+        st.metric("Total ADR Cases", len(df))
+    with m2:
+        st.metric("🔴 High", counts["HIGH"])
+    with m3:
+        st.metric("🟡 Moderate", counts["MODERATE"])
+    with m4:
+        st.metric("🟢 Low", counts["LOW"])
+
+    st.markdown("### Priority Distribution")
+    chart = pd.DataFrame({
+        "Priority": ["HIGH", "MODERATE", "LOW"],
+        "Cases": [counts["HIGH"], counts["MODERATE"], counts["LOW"]]
+    }).set_index("Priority")
+    st.bar_chart(chart)
+
+    if df.empty:
+        st.info("No ADR cases are currently available in the app database view.")
+        return
+
+    st.markdown("### 🕐 Recent ADR Reports")
+    cols = [c for c in [
+        "Case_Reference", "Drug", "ADR", "Priority",
+        "Decision_Source", "Date_Time"
+    ] if c in df.columns]
+    st.dataframe(df[cols].tail(10).iloc[::-1], use_container_width=True, hide_index=True)
+
+
+def render_history_screen():
+    st.markdown("## 📚 ADR History")
+    df = pd.DataFrame(st.session_state.get("adr_history", []))
+
+    if df.empty:
+        st.info("No ADR cases are currently available.")
+        return
+
+    q = st.text_input(
+        "Search",
+        placeholder="Search by case ID, drug, ADR or priority..."
+    ).strip().lower()
+
+    filtered = df.copy()
+    if q:
+        mask = pd.Series(False, index=filtered.index)
+        for col in ["Case_Reference", "Patient_ID", "Drug", "ADR", "Priority"]:
+            if col in filtered.columns:
+                mask = mask | filtered[col].astype(str).str.lower().str.contains(
+                    re.escape(q), na=False
+                )
+        filtered = filtered[mask]
+
+    priority_filter = st.selectbox(
+        "Priority",
+        ["All", "HIGH", "MODERATE", "LOW"]
+    )
+    if priority_filter != "All" and "Priority" in filtered.columns:
+        filtered = filtered[
+            filtered["Priority"].astype(str).str.upper() == priority_filter
+        ]
+
+    display_cols = [c for c in [
+        "Case_Reference", "Patient_ID", "Drug", "ADR",
+        "Priority", "Seriousness", "Decision_Source", "Date_Time"
+    ] if c in filtered.columns]
+
+    st.caption(f"Showing {len(filtered)} of {len(df)} cases")
+    st.dataframe(
+        filtered[display_cols].sort_index(ascending=False),
+        use_container_width=True,
+        hide_index=True
+    )
+
+    st.download_button(
+        "⬇️ Export Filtered CSV",
+        data=filtered.to_csv(index=False).encode("utf-8"),
+        file_name="PHARMAGUARD_Filtered_ADR_History.csv",
+        mime="text/csv",
+        use_container_width=True
+    )
+
+
+def render_case_reports_screen():
+    st.markdown("## 📄 Case Reports")
+    df = pd.DataFrame(st.session_state.get("adr_history", []))
+
+    if df.empty:
+        st.info("Analyze at least one ADR case to generate a case report.")
+        return
+
+    labels = []
+    for idx, row in df.iterrows():
+        ref = str(row.get("Case_Reference", f"Case {idx + 1}"))
+        drug_name = str(row.get("Drug", "Unknown"))
+        adr_text = str(row.get("ADR", ""))
+        labels.append((idx, f"{ref} | {drug_name} | {adr_text[:50]}"))
+
+    selected_label = st.selectbox(
+        "Select case",
+        [x[1] for x in labels]
+    )
+    selected_idx = next(i for i, label in labels if label == selected_label)
+    row = df.loc[selected_idx]
+
+    priority = str(row.get("Priority", "UNKNOWN")).upper()
+    seriousness = str(row.get("Seriousness", "Uncertain"))
+    recommendation = {
+        "HIGH": "Priority pharmacovigilance review required.",
+        "MODERATE": "Pharmacovigilance review and clinical assessment recommended.",
+        "LOW": "Routine pharmacovigilance review according to the project workflow."
+    }.get(priority, "Additional information or professional review may be required.")
+
+    st.markdown(f"### {priority} PRIORITY")
+    c1, c2 = st.columns(2)
+    with c1:
+        st.write("**Case Reference:**", row.get("Case_Reference", ""))
+        st.write("**Patient / Project ID:**", row.get("Patient_ID", ""))
+        st.write("**Age:**", row.get("Age", ""))
+        st.write("**Sex:**", row.get("Sex", ""))
+    with c2:
+        st.write("**Drug:**", row.get("Drug", ""))
+        st.write("**ADR:**", row.get("ADR", ""))
+        st.write("**Seriousness:**", seriousness)
+        st.write("**Decision Source:**", row.get("Decision_Source", ""))
+
+    st.info(f"**Reason:** {row.get('Reason', '')}")
+    st.write("**Recommended Action:**", recommendation)
+
+    report = f"""PHARMAGUARD ADR CASE REPORT
+
+Case Reference: {row.get("Case_Reference", "")}
+Patient / Project ID: {row.get("Patient_ID", "")}
+Age: {row.get("Age", "")}
+Sex: {row.get("Sex", "")}
+Drug: {row.get("Drug", "")}
+ADR: {row.get("ADR", "")}
+Priority: {priority}
+Seriousness: {seriousness}
+Decision Source: {row.get("Decision_Source", "")}
+Reason: {row.get("Reason", "")}
+Recommended Action: {recommendation}
+
+DISCLAIMER:
+PHARMAGUARD is a proof-of-concept AI-assisted pharmacovigilance
+review-prioritization system. It does not establish causality,
+diagnosis, treatment, regulatory seriousness, or clinical
+decision-making.
+"""
+    st.download_button(
+        "⬇️ Download Case Report",
+        data=report,
+        file_name=f"PHARMAGUARD_{row.get('Case_Reference', 'Case')}.txt",
+        mime="text/plain",
+        use_container_width=True
+    )
+
+
+def render_database_screen():
+    st.markdown("## ☁️ Database")
+    df = pd.DataFrame(st.session_state.get("adr_history", []))
+
+    c1, c2 = st.columns(2)
+    with c1:
+        st.metric("Records in current database view", len(df))
+    with c2:
+        st.metric("Database status", "Loaded" if st.session_state.get("database_loaded") else "Not loaded")
+
+    st.caption(
+        "The app uses the configured Google Sheets integration as its project database. "
+        "The count below reflects records currently loaded into the app."
+    )
+
+    if not df.empty:
+        st.dataframe(df.tail(20).iloc[::-1], use_container_width=True, hide_index=True)
+        st.download_button(
+            "⬇️ Download Database CSV",
+            data=df.to_csv(index=False).encode("utf-8"),
+            file_name="PHARMAGUARD_Database.csv",
+            mime="text/csv",
+            use_container_width=True
+        )
+    else:
+        st.info("No database records are currently loaded.")
+
+
+def render_about_screen():
+    st.markdown("## ℹ️ About PHARMAGUARD")
+    st.markdown("### 🛡️ AI-Assisted ADR Risk Prioritization System")
+    st.write(
+        "PHARMAGUARD is a pharmacovigilance proof-of-concept designed to "
+        "prioritize ADR reports for review."
+    )
+
+    with st.expander("What is an ADR?"):
+        st.write(
+            "An adverse drug reaction is a harmful or unintended response "
+            "associated with the use of a medicinal product."
+        )
+
+    with st.expander("How PHARMAGUARD works"):
+        st.write(
+            "ADR report → Input validation → Safety Gate → Random Forest "
+            "assistance when no predefined signal is detected → Final review priority → Database."
+        )
+
+    with st.expander("Safety Gate"):
+        st.write(
+            "The Safety Gate screens for project-defined serious and moderate-review "
+            "signals and protects selected serious signals from being downgraded by the ML model."
+        )
+
+    with st.expander("Random Forest"):
+        st.write(
+            "The embedded Random Forest model provides prototype ML assistance. "
+            "Its output is not a clinical probability or a validated regulatory classification."
+        )
+
+    with st.expander("Project limitations"):
+        st.write(
+            "The current prototype has not established clinical validity or real-world "
+            "regulatory performance. Independent evaluation with an appropriately labeled "
+            "dataset would be required for such claims."
+        )
+
+    st.warning(
+        "PHARMAGUARD supports pharmacovigilance review. It does not replace "
+        "professional clinical judgment, causality assessment, diagnosis, treatment, "
+        "or regulatory assessment."
+    )
+
+
+# =========================================================
+# SCREEN ROUTING
+# =========================================================
+
+if active_page == "🏠 Dashboard":
+    render_dashboard_screen()
+    st.stop()
+
+if active_page == "📚 ADR History":
+    render_history_screen()
+    st.stop()
+
+if active_page == "📄 Case Reports":
+    render_case_reports_screen()
+    st.stop()
+
+if active_page == "☁️ Database":
+    render_database_screen()
+    st.stop()
+
+if active_page == "ℹ️ About / Methodology":
+    render_about_screen()
+    st.stop()
+
+
+# =========================================================
+# NEW ADR ANALYSIS
+# =========================================================
+
+st.markdown("## 🔍 New ADR Analysis")
+st.caption("1. Enter report → 2. Safety Gate → 3. Random Forest assistance → 4. Final priority → 5. Database")
+
+
+# =========================================================
 # PATIENT INPUT
 # =========================================================
 
-st.markdown('<div class="pg-section"><b>👤 Patient Information</b></div>', unsafe_allow_html=True)
+st.markdown('<div class="pg-section"><b>👤 Patient / Case Information</b></div>', unsafe_allow_html=True)
+
+if "current_patient_id" not in st.session_state:
+    st.session_state.current_patient_id = f"PHG-{uuid.uuid4().hex[:8].upper()}"
 
 patient_id = st.text_input(
-    "Patient ID",
-    placeholder="Example: PHG-0001",
-    help="Enter a project patient identifier. Do not enter unnecessary personally identifiable information."
+    "Patient / Project ID",
+    value=st.session_state.current_patient_id,
+    key="patient_id_input",
+    help="A project identifier is generated automatically. Avoid unnecessary personally identifiable information."
 )
+st.session_state.current_patient_id = patient_id
 
 age = st.number_input(
     "Patient Age",
@@ -1128,7 +1464,7 @@ if st.button(
 # DASHBOARD
 # =========================================================
 
-if st.session_state.get(
+if active_page == "🔍 New ADR Analysis" and st.session_state.get(
     "adr_history"
 ):
 
@@ -2352,3 +2688,10 @@ Pharmacovigilance Proof of Concept
     ):
         st.session_state.adr_history = []
         st.rerun()
+
+
+st.markdown("""
+<div class="pg-disclaimer">
+<b>Scientific disclaimer:</b> PHARMAGUARD is a proof-of-concept AI-assisted pharmacovigilance review-prioritization system. Its HIGH/MODERATE/LOW outputs are project-defined review priorities and do not establish ADR causality, diagnosis, treatment, regulatory seriousness, or clinical decision-making.
+</div>
+""", unsafe_allow_html=True)
