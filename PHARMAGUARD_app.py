@@ -387,6 +387,70 @@ def matches(text, patterns):
     return matched_patterns
 
 
+def remove_redundant_hits(hits):
+
+    # Keep the most specific matched phrase when one matched
+    # phrase is fully contained inside a longer matched phrase.
+    # Example: "anaphylactic shock" + "shock" ->
+    # "anaphylactic shock" only.
+    ordered = sorted(
+        list(dict.fromkeys(hits)),
+        key=len,
+        reverse=True
+    )
+
+    filtered = []
+
+    for pattern in ordered:
+
+        if not any(
+            pattern != existing
+            and re.search(
+                rf"(?<!\w){re.escape(pattern)}(?!\w)",
+                existing
+            )
+            for existing in filtered
+        ):
+            filtered.append(pattern)
+
+    # Restore original detection order.
+    return [
+        pattern
+        for pattern in hits
+        if pattern in filtered
+    ]
+
+
+def has_nonmedical_shock_context(text):
+
+    text = " ".join(
+        str(text).lower().strip().split()
+    )
+
+    # The generic word "shock" can occur in non-medical contexts.
+    # These phrases should not create a pharmacovigilance HIGH signal.
+    nonmedical_patterns = [
+        "shell shock",
+        "shock-like",
+        "shock like",
+        "electric shock",
+        "electrical shock",
+        "emotional shock",
+        "psychological shock",
+        "shock absorber",
+        "shock wave",
+        "shockwave",
+    ]
+
+    return any(
+        re.search(
+            rf"(?<!\w){re.escape(pattern)}(?!\w)",
+            text
+        )
+        for pattern in nonmedical_patterns
+    )
+
+
 def has_context_protection(text, serious_pattern):
 
     text = " ".join(
@@ -705,18 +769,25 @@ if st.button(
     pattern
     for pattern in serious_matches
     if not has_context_protection(adr, pattern)
+    and not (
+        pattern == "shock"
+        and has_nonmedical_shock_context(adr)
+    )
 ]
+
+    # Keep only the most specific serious signal in the reason.
+    serious_hits = remove_redundant_hits(serious_hits)
 
 
     moderate_matches = matches(
-    adr,
-    MODERATE_PATTERNS
-)
+        adr,
+        MODERATE_PATTERNS
+    )
 
     moderate_context_matches = matches(
-    adr,
-    MODERATE_CONTEXT_PATTERNS
-)
+        adr,
+        MODERATE_CONTEXT_PATTERNS
+    )
 
     moderate_hits = [
     pattern
