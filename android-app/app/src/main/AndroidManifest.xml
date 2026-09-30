@@ -5,9 +5,13 @@
     <!-- Internet is required to connect to the PHARMAGUARD Streamlit app -->
     <uses-permission android:name="android.permission.INTERNET" />
 
-    <application
-        android:allowBackup="true"
-        android:label="PHARMAGUARD"
+ <application
+    android:allowBackup="true"
+    android:label="PHARMAGUARD"
+    android:icon="@mipmap/ic_launcher"
+    android:roundIcon="@mipmap/ic_launcher"
+    android:supportsRtl="true"
+    android:theme="@style/Theme.PHARMAGUARD">
         android:supportsRtl="true"
         android:theme="@style/Theme.PHARMAGUARD">
 
