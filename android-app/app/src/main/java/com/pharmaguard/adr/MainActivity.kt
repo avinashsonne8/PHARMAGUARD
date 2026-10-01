@@ -13,7 +13,6 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 
 class MainActivity : AppCompatActivity() {
 
@@ -24,10 +23,6 @@ class MainActivity : AppCompatActivity() {
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
-
-        // Start Android splash screen
-        installSplashScreen()
-
         super.onCreate(savedInstanceState)
 
         webView = WebView(this)
@@ -38,17 +33,32 @@ class MainActivity : AppCompatActivity() {
             javaScriptEnabled = true
             domStorageEnabled = true
             databaseEnabled = true
+
             builtInZoomControls = false
             displayZoomControls = false
+
             allowFileAccess = true
             allowContentAccess = true
+
+            // Better mobile WebView behavior
+            useWideViewPort = true
+            loadWithOverviewMode = true
+            setSupportZoom(false)
+
+            // Keep WebView optimized for normal mobile pages
+            mediaPlaybackRequiresUserGesture = true
         }
 
         webView.webViewClient = WebViewClient()
         webView.webChromeClient = WebChromeClient()
 
-        // Handle CSV / PDF / TXT downloads
-        webView.setDownloadListener { url, userAgent, contentDisposition, mimeType, _ ->
+        // CSV / PDF / TXT download handling
+        webView.setDownloadListener {
+                url,
+                userAgent,
+                contentDisposition,
+                mimeType,
+                _ ->
 
             val request = DownloadManager.Request(Uri.parse(url))
 
@@ -90,7 +100,7 @@ class MainActivity : AppCompatActivity() {
 
         webView.loadUrl(pharmaguardUrl)
 
-        // Back button behavior
+        // Android back-button behavior
         onBackPressedDispatcher.addCallback(
             this,
             object : OnBackPressedCallback(true) {
