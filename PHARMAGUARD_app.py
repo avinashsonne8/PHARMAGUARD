@@ -411,7 +411,7 @@ st.markdown("""
     .pg-assessment-grid { grid-template-columns: 1fr; }
 }
 
-.pg-disclaimer { margin-top:22px; padding:12px 14px; border-radius:10px; background:#f7f8fa; border:1px solid #e1e5e9; color:#66717b; font-size:12px; line-height:1.5; }
+\n.pg-db-status { display:flex; justify-content:space-between; gap:12px; padding:12px 14px; margin:10px 0 18px 0; border:1px solid #dbe8f1; border-radius:12px; background:#f7fbff; color:#536575; font-size:13px; }\n.pg-db-status span:first-child { font-weight:800; color:#236b3a; }\n@media (max-width: 700px) { .pg-db-status { display:block; } .pg-db-status span { display:block; margin:3px 0; } }\n.pg-disclaimer { margin-top:22px; padding:12px 14px; border-radius:10px; background:#f7f8fa; border:1px solid #e1e5e9; color:#66717b; font-size:12px; line-height:1.5; }
 div.stButton > button { border-radius:10px; font-weight:700; min-height:44px; }
 @media (max-width: 700px) { .pg-appbar { padding:9px 10px; } .pg-hero-title { font-size:21px; } .pg-title { font-size:29px; } .pg-subtitle { font-size:14px; } }
 
@@ -1482,16 +1482,48 @@ def render_dashboard_screen():
 
 def render_history_screen():
     st.markdown("## 📚 ADR History")
+    st.caption("Search, filter and review previously recorded ADR cases")
+
     df = pd.DataFrame(st.session_state.get("adr_history", []))
 
     if df.empty:
-        st.info("No ADR cases are currently available.")
+        st.markdown(
+            textwrap.dedent("""
+            <div class="pg-empty-state">
+                <div class="pg-empty-icon">📚</div>
+                <div class="pg-empty-title">No ADR cases available</div>
+                <div class="pg-empty-text">Completed ADR analyses will appear here.</div>
+            </div>
+            """).strip(),
+            unsafe_allow_html=True
+        )
         return
 
-    q = st.text_input(
-        "Search",
-        placeholder="Search by case ID, drug, ADR or priority..."
-    ).strip().lower()
+    counts = _priority_counts(df)
+    m1, m2, m3, m4 = st.columns(4)
+    with m1:
+        st.metric("Total Cases", len(df))
+    with m2:
+        st.metric("🔴 High", counts["HIGH"])
+    with m3:
+        st.metric("🟡 Moderate", counts["MODERATE"])
+    with m4:
+        st.metric("🟢 Low", counts["LOW"])
+
+    st.markdown("### 🔎 Find a Case")
+    c1, c2 = st.columns([2, 1])
+    with c1:
+        q = st.text_input(
+            "Search cases",
+            placeholder="Case ID, patient ID, drug, ADR or priority...",
+            label_visibility="collapsed"
+        ).strip().lower()
+    with c2:
+        priority_filter = st.selectbox(
+            "Priority filter",
+            ["All", "HIGH", "MODERATE", "LOW"],
+            label_visibility="collapsed"
+        )
 
     filtered = df.copy()
     if q:
@@ -1503,26 +1535,26 @@ def render_history_screen():
                 )
         filtered = filtered[mask]
 
-    priority_filter = st.selectbox(
-        "Priority",
-        ["All", "HIGH", "MODERATE", "LOW"]
-    )
     if priority_filter != "All" and "Priority" in filtered.columns:
         filtered = filtered[
             filtered["Priority"].astype(str).str.upper() == priority_filter
         ]
+
+    st.caption(f"Showing {len(filtered)} of {len(df)} cases")
 
     display_cols = [c for c in [
         "Case_Reference", "Patient_ID", "Drug", "ADR",
         "Priority", "Seriousness", "Decision_Source", "Date_Time"
     ] if c in filtered.columns]
 
-    st.caption(f"Showing {len(filtered)} of {len(df)} cases")
-    st.dataframe(
-        filtered[display_cols].sort_index(ascending=False),
-        use_container_width=True,
-        hide_index=True
-    )
+    if filtered.empty:
+        st.info("No cases match the current search/filter.")
+    else:
+        st.dataframe(
+            filtered[display_cols].sort_index(ascending=False),
+            use_container_width=True,
+            hide_index=True
+        )
 
     st.download_button(
         "⬇️ Export Filtered CSV",
@@ -1531,7 +1563,6 @@ def render_history_screen():
         mime="text/csv",
         use_container_width=True
     )
-
 
 def render_case_reports_screen():
     st.markdown("## 📄 Case Reports")
@@ -1678,32 +1709,98 @@ decision-making.
 
 
 def render_database_screen():
-    st.markdown("## ☁️ Database")
+    st.markdown("## ☁️ PHARMAGUARD Database")
+    st.caption("Project database • Google Sheets integration • Loaded records")
+
     df = pd.DataFrame(st.session_state.get("adr_history", []))
+    counts = _priority_counts(df)
+    loaded = bool(st.session_state.get("database_loaded"))
 
-    c1, c2 = st.columns(2)
-    with c1:
-        st.metric("Records in current database view", len(df))
-    with c2:
-        st.metric("Database status", "Loaded" if st.session_state.get("database_loaded") else "Not loaded")
+    m1, m2, m3, m4 = st.columns(4)
+    with m1:
+        st.metric("Total Records", len(df))
+    with m2:
+        st.metric("🔴 High", counts["HIGH"])
+    with m3:
+        st.metric("🟡 Moderate", counts["MODERATE"])
+    with m4:
+        st.metric("🟢 Low", counts["LOW"])
 
-    st.caption(
-        "The app uses the configured Google Sheets integration as its project database. "
-        "The count below reflects records currently loaded into the app."
+    status_text = "● DATABASE LOADED" if loaded else "○ DATABASE NOT LOADED"
+    st.markdown(
+        textwrap.dedent(f"""
+        <div class="pg-db-status">
+            <span>{html.escape(status_text)}</span>
+            <span>Records currently available in the app: <b>{len(df)}</b></span>
+        </div>
+        """).strip(),
+        unsafe_allow_html=True
     )
 
-    if not df.empty:
-        st.dataframe(df.tail(20).iloc[::-1], use_container_width=True, hide_index=True)
-        st.download_button(
-            "⬇️ Download Database CSV",
-            data=df.to_csv(index=False).encode("utf-8"),
-            file_name="PHARMAGUARD_Database.csv",
-            mime="text/csv",
-            use_container_width=True
+    if df.empty:
+        st.markdown(
+            textwrap.dedent("""
+            <div class="pg-empty-state">
+                <div class="pg-empty-icon">☁️</div>
+                <div class="pg-empty-title">Database is empty</div>
+                <div class="pg-empty-text">Saved ADR cases will appear here after they are loaded into the app.</div>
+            </div>
+            """).strip(),
+            unsafe_allow_html=True
         )
-    else:
-        st.info("No database records are currently loaded.")
+        return
 
+    st.markdown("### 🔎 Database Search & Filter")
+    c1, c2 = st.columns([2, 1])
+    with c1:
+        q = st.text_input(
+            "Database search",
+            placeholder="Search case ID, drug, ADR or patient ID...",
+            label_visibility="collapsed"
+        ).strip().lower()
+    with c2:
+        priority_filter = st.selectbox(
+            "Database priority",
+            ["All", "HIGH", "MODERATE", "LOW"],
+            label_visibility="collapsed"
+        )
+
+    filtered = df.copy()
+    if q:
+        mask = pd.Series(False, index=filtered.index)
+        for col in ["Case_Reference", "Patient_ID", "Drug", "ADR"]:
+            if col in filtered.columns:
+                mask = mask | filtered[col].astype(str).str.lower().str.contains(
+                    re.escape(q), na=False
+                )
+        filtered = filtered[mask]
+
+    if priority_filter != "All" and "Priority" in filtered.columns:
+        filtered = filtered[
+            filtered["Priority"].astype(str).str.upper() == priority_filter
+        ]
+
+    st.caption(f"Showing {len(filtered)} of {len(df)} database records")
+
+    display_cols = [c for c in [
+        "Case_Reference", "Patient_ID", "Age", "Sex", "Drug", "ADR",
+        "Priority", "Seriousness", "Decision_Source", "Date_Time"
+    ] if c in filtered.columns]
+
+    st.dataframe(
+        filtered[display_cols].sort_index(ascending=False),
+        use_container_width=True,
+        hide_index=True
+    )
+
+    st.markdown("### 📤 Export Database")
+    st.download_button(
+        "⬇️ Download Database CSV",
+        data=filtered.to_csv(index=False).encode("utf-8"),
+        file_name="PHARMAGUARD_Database.csv",
+        mime="text/csv",
+        use_container_width=True
+    )
 
 def render_about_screen():
     st.markdown("## ℹ️ About PHARMAGUARD")
