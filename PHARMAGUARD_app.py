@@ -727,7 +727,7 @@ with st.sidebar:
             "ℹ️ About / Methodology",
             "⚙️ Settings / Disclaimer"
         ],
-        index=0,
+        key="active_page",
         label_visibility="collapsed"
     )
     st.divider()
