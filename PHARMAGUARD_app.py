@@ -7,6 +7,7 @@ import requests
 import re
 import uuid
 import textwrap
+import html
 from pathlib import Path
 
 from datetime import datetime
@@ -231,6 +232,183 @@ st.markdown("""
         font-size: 25px;
     }
 
+}
+
+
+/* =========================================================
+   UI-3 — PROFESSIONAL ANALYSIS RESULT
+   ========================================================= */
+.pg-result-hero {
+    padding: 20px;
+    margin: 8px 0 16px 0;
+    border-radius: 18px;
+    border: 1px solid #dbe7ef;
+    background: linear-gradient(135deg,#f7fbff 0%,#ffffff 100%);
+    box-shadow: 0 4px 16px rgba(30,60,90,.05);
+}
+.pg-result-kicker {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: #64748b;
+    margin-bottom: 5px;
+}
+.pg-result-main {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+.pg-result-main-icon {
+    width: 58px;
+    height: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    font-size: 30px;
+    flex: 0 0 58px;
+}
+.pg-result-main-label {
+    font-size: 27px;
+    font-weight: 850;
+    line-height: 1.1;
+    color: #102a43;
+}
+.pg-result-main-message {
+    margin-top: 5px;
+    color: #52606d;
+    font-size: 13px;
+    line-height: 1.45;
+}
+.pg-result-high-main { background: #fff0f0; border: 1px solid #f2caca; }
+.pg-result-moderate-main { background: #fff8e8; border: 1px solid #f0ddb0; }
+.pg-result-low-main { background: #eef9f1; border: 1px solid #cce5d2; }
+.pg-result-unknown-main { background: #f4f6f8; border: 1px solid #dce2e7; }
+.pg-result-high-icon { background: #ffe0e0; }
+.pg-result-moderate-icon { background: #ffedbf; }
+.pg-result-low-icon { background: #dff2e3; }
+.pg-result-unknown-icon { background: #e7ebee; }
+
+.pg-case-strip {
+    display: grid;
+    grid-template-columns: 1.4fr 0.7fr 0.7fr;
+    gap: 10px;
+    margin: 0 0 16px 0;
+}
+.pg-case-item {
+    padding: 12px 14px;
+    border: 1px solid #dfe7ed;
+    border-radius: 12px;
+    background: #ffffff;
+}
+.pg-case-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .7px;
+    color: #7a8793;
+    font-weight: 800;
+}
+.pg-case-value {
+    margin-top: 4px;
+    font-size: 14px;
+    font-weight: 750;
+    color: #263746;
+    word-break: break-word;
+}
+
+.pg-assessment-card {
+    padding: 16px;
+    border: 1px solid #dfe7ed;
+    border-radius: 15px;
+    background: #ffffff;
+    margin: 0 0 14px 0;
+    box-shadow: 0 2px 10px rgba(30,60,90,.035);
+}
+.pg-assessment-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: #17324d;
+    margin-bottom: 11px;
+}
+.pg-assessment-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+.pg-assessment-item {
+    padding: 11px 12px;
+    border-radius: 10px;
+    background: #f7fafc;
+    border: 1px solid #e5edf2;
+}
+.pg-assessment-label {
+    font-size: 10px;
+    color: #7a8793;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+}
+.pg-assessment-value {
+    margin-top: 4px;
+    font-size: 13px;
+    color: #334e68;
+    line-height: 1.45;
+    word-break: break-word;
+}
+.pg-signal-card {
+    padding: 14px 15px;
+    border-radius: 13px;
+    background: #f7fafc;
+    border: 1px solid #dfe7ed;
+    margin: 0 0 14px 0;
+}
+.pg-signal-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #486581;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+}
+.pg-signal-text {
+    margin-top: 6px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #243b53;
+}
+.pg-action-card {
+    padding: 15px 16px;
+    border-radius: 14px;
+    background: #f4f9fd;
+    border: 1px solid #d6e6f1;
+    margin: 0 0 14px 0;
+}
+.pg-action-title {
+    font-size: 15px;
+    font-weight: 800;
+    color: #17324d;
+    margin-bottom: 5px;
+}
+.pg-action-text {
+    font-size: 13px;
+    line-height: 1.5;
+    color: #52606d;
+}
+.pg-result-disclaimer {
+    font-size: 11px;
+    line-height: 1.5;
+    color: #6b7785;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: #f8fafb;
+    border: 1px solid #e3e8ec;
+    margin-top: 12px;
+}
+@media (max-width: 700px) {
+    .pg-result-main-label { font-size: 23px; }
+    .pg-result-main-icon { width: 50px; height: 50px; flex-basis: 50px; font-size: 26px; }
+    .pg-case-strip { grid-template-columns: 1fr; }
+    .pg-assessment-grid { grid-template-columns: 1fr; }
 }
 
 .pg-disclaimer { margin-top:22px; padding:12px 14px; border-radius:10px; background:#f7f8fa; border:1px solid #e1e5e9; color:#66717b; font-size:12px; line-height:1.5; }
@@ -1916,74 +2094,129 @@ if st.button(
 
 
     # =====================================================
-    # DISPLAY RESULT — STEP 96 PART 2
+    # DISPLAY RESULT — UI-3 PROFESSIONAL RESULT
     # =====================================================
-
-    st.divider()
-    st.subheader("📋 ADR Analysis Result")
 
     priority_meta = {
         "HIGH": {
             "icon": "🚨",
             "label": "HIGH PRIORITY",
-            "class_name": "pg-result-high",
+            "main_class": "pg-result-high-main",
+            "icon_class": "pg-result-high-icon",
             "message": "Immediate pharmacovigilance review recommended."
         },
         "MODERATE": {
             "icon": "⚠️",
             "label": "MODERATE PRIORITY",
-            "class_name": "pg-result-moderate",
+            "main_class": "pg-result-moderate-main",
+            "icon_class": "pg-result-moderate-icon",
             "message": "Clinical and pharmacovigilance review recommended."
         },
         "LOW": {
             "icon": "✅",
             "label": "LOW PRIORITY",
-            "class_name": "pg-result-low",
+            "main_class": "pg-result-low-main",
+            "icon_class": "pg-result-low-icon",
             "message": "Routine pharmacovigilance review."
         },
         "UNKNOWN": {
             "icon": "❓",
             "label": "PRIORITY UNCERTAIN",
-            "class_name": "pg-result-unknown",
+            "main_class": "pg-result-unknown-main",
+            "icon_class": "pg-result-unknown-icon",
             "message": "Additional information or professional review may be required."
         }
     }
 
     meta = priority_meta.get(priority, priority_meta["UNKNOWN"])
 
-    st.markdown(f"""
-    <div class="pg-result-card {meta['class_name']}">
-        <div class="pg-result-icon">{meta['icon']}</div>
-        <div>
-            <div class="pg-result-label">{meta['label']}</div>
-            <div class="pg-result-message">{meta['message']}</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    result_col1, result_col2, result_col3 = st.columns(3)
-    with result_col1:
-        st.metric("Patient ID", str(patient_id))
-    with result_col2:
-        st.metric("Age", str(age))
-    with result_col3:
-        st.metric("Sex", str(sex))
+    safe_patient_id = html.escape(str(patient_id))
+    safe_age = html.escape(str(age))
+    safe_sex = html.escape(str(sex))
+    safe_drug = html.escape(str(drug))
+    safe_adr = html.escape(str(adr))
+    safe_flag = html.escape(str(flag))
+    safe_reason = html.escape(str(reason))
+    safe_source = html.escape(str(decision_source))
+    safe_recommendation = html.escape(str(recommendation))
 
     st.markdown(
-        f"""
-        <div class="pg-result-detail">
-            <div class="pg-detail-title">⚕️ Review Assessment</div>
-            <div class="pg-detail-row"><b>Seriousness / Review Flag</b><span>{flag}</span></div>
-            <div class="pg-detail-row"><b>Reason</b><span>{reason}</span></div>
-            <div class="pg-detail-row"><b>Recommendation</b><span>{recommendation}</span></div>
-            <div class="pg-detail-row"><b>Decision source</b><span>{decision_source}</span></div>
-        </div>
-        """,
+        textwrap.dedent(
+            f"""
+            <div class="pg-result-hero {meta['main_class']}">
+                <div class="pg-result-kicker">PHARMAGUARD • ANALYSIS COMPLETE</div>
+                <div class="pg-result-main">
+                    <div class="pg-result-main-icon {meta['icon_class']}">{meta['icon']}</div>
+                    <div>
+                        <div class="pg-result-main-label">{meta['label']}</div>
+                        <div class="pg-result-main-message">{meta['message']}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pg-case-strip">
+                <div class="pg-case-item">
+                    <div class="pg-case-label">Patient / Case ID</div>
+                    <div class="pg-case-value">{safe_patient_id}</div>
+                </div>
+                <div class="pg-case-item">
+                    <div class="pg-case-label">Age</div>
+                    <div class="pg-case-value">{safe_age}</div>
+                </div>
+                <div class="pg-case-item">
+                    <div class="pg-case-label">Sex</div>
+                    <div class="pg-case-value">{safe_sex}</div>
+                </div>
+            </div>
+
+            <div class="pg-assessment-card">
+                <div class="pg-assessment-title">⚕️ Review Assessment</div>
+                <div class="pg-assessment-grid">
+                    <div class="pg-assessment-item">
+                        <div class="pg-assessment-label">Drug</div>
+                        <div class="pg-assessment-value">{safe_drug}</div>
+                    </div>
+                    <div class="pg-assessment-item">
+                        <div class="pg-assessment-label">Reported ADR</div>
+                        <div class="pg-assessment-value">{safe_adr}</div>
+                    </div>
+                    <div class="pg-assessment-item">
+                        <div class="pg-assessment-label">Seriousness / Review Flag</div>
+                        <div class="pg-assessment-value">{safe_flag}</div>
+                    </div>
+                    <div class="pg-assessment-item">
+                        <div class="pg-assessment-label">Decision Source</div>
+                        <div class="pg-assessment-value">{safe_source}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pg-signal-card">
+                <div class="pg-signal-title">🔎 Why this priority was assigned</div>
+                <div class="pg-signal-text">{safe_reason}</div>
+            </div>
+
+            <div class="pg-action-card">
+                <div class="pg-action-title">📌 Recommended Action</div>
+                <div class="pg-action-text">{safe_recommendation}</div>
+            </div>
+            """
+        ),
         unsafe_allow_html=True
     )
 
-    st.caption(
-        "PHARMAGUARD provides AI-assisted priority support for pharmacovigilance review; it does not establish ADR causality or replace professional clinical/regulatory assessment."
+    st.markdown(
+        textwrap.dedent(
+            """
+            <div class="pg-result-disclaimer">
+                <b>Review-priority support only:</b> PHARMAGUARD is a proof-of-concept
+                AI-assisted pharmacovigilance system. The displayed priority does not
+                establish ADR causality, diagnosis, treatment, regulatory seriousness,
+                or clinical decision-making.
+            </div>
+            """
+        ),
+        unsafe_allow_html=True
     )
 
     # =====================================================
