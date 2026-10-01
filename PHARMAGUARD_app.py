@@ -63,6 +63,169 @@ st.markdown("""
 .pg-hero { padding:18px; border-radius:16px; background:linear-gradient(135deg,#f4faff 0%,#ffffff 70%); border:1px solid #d8e8f4; margin-bottom:16px; }
 .pg-hero-title { font-size:25px; font-weight:800; margin-bottom:5px; }
 .pg-hero-text { color:#5f6d78; font-size:14px; line-height:1.55; }
+/* =========================================================
+   PHARMAGUARD PROFESSIONAL DASHBOARD
+   ========================================================= */
+
+.pg-dashboard-hero {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 20px;
+    margin-bottom: 18px;
+    border-radius: 18px;
+    background: linear-gradient(
+        135deg,
+        #eef7ff 0%,
+        #ffffff 100%
+    );
+    border: 1px solid #d7e7f3;
+    box-shadow: 0 4px 18px rgba(30,60,90,.06);
+}
+
+.pg-dashboard-icon {
+    width: 52px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 15px;
+    background: #0b1f33;
+    font-size: 27px;
+}
+
+.pg-dashboard-title {
+    font-size: 24px;
+    font-weight: 800;
+    color: #102a43;
+}
+
+.pg-dashboard-subtitle {
+    margin-top: 3px;
+    font-size: 13px;
+    color: #657786;
+}
+
+.pg-stat-card {
+    min-height: 145px;
+    padding: 17px;
+    margin-bottom: 12px;
+    border-radius: 16px;
+    background: #ffffff;
+    border: 1px solid #dbe7ef;
+    box-shadow: 0 3px 14px rgba(30,60,90,.06);
+}
+
+.pg-stat-icon {
+    font-size: 22px;
+    margin-bottom: 8px;
+}
+
+.pg-stat-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #657786;
+}
+
+.pg-stat-value {
+    margin-top: 3px;
+    font-size: 28px;
+    font-weight: 800;
+    color: #102a43;
+}
+
+.pg-stat-note {
+    margin-top: 4px;
+    font-size: 11px;
+    color: #7b8794;
+}
+
+.pg-high-card {
+    border-top: 4px solid #d64545;
+}
+
+.pg-moderate-card {
+    border-top: 4px solid #d49b00;
+}
+
+.pg-low-card {
+    border-top: 4px solid #2f855a;
+}
+
+.pg-empty-state {
+    text-align: center;
+    padding: 35px 20px;
+    margin-top: 12px;
+    border-radius: 16px;
+    background: #f8fbfd;
+    border: 1px dashed #cbd9e3;
+}
+
+.pg-empty-icon {
+    font-size: 34px;
+}
+
+.pg-empty-title {
+    margin-top: 8px;
+    font-size: 18px;
+    font-weight: 800;
+    color: #243b53;
+}
+
+.pg-empty-text {
+    margin-top: 5px;
+    font-size: 13px;
+    color: #718096;
+}
+
+.pg-dashboard-info {
+    margin-top: 20px;
+    padding: 16px 18px;
+    border-radius: 15px;
+    background: #f4f9fc;
+    border: 1px solid #d9e8f1;
+}
+
+.pg-info-title {
+    font-size: 15px;
+    font-weight: 800;
+    color: #102a43;
+}
+
+.pg-info-text {
+    margin-top: 5px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #52606d;
+}
+
+.pg-info-note {
+    margin-top: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #6b7c8c;
+}
+
+@media (max-width: 700px) {
+
+    .pg-dashboard-title {
+        font-size: 20px;
+    }
+
+    .pg-dashboard-subtitle {
+        font-size: 12px;
+    }
+
+    .pg-stat-card {
+        min-height: 125px;
+    }
+
+    .pg-stat-value {
+        font-size: 25px;
+    }
+
+}
+
 .pg-disclaimer { margin-top:22px; padding:12px 14px; border-radius:10px; background:#f7f8fa; border:1px solid #e1e5e9; color:#66717b; font-size:12px; line-height:1.5; }
 div.stButton > button { border-radius:10px; font-weight:700; min-height:44px; }
 @media (max-width: 700px) { .pg-appbar { padding:9px 10px; } .pg-hero-title { font-size:21px; } .pg-title { font-size:29px; } .pg-subtitle { font-size:14px; } }
@@ -802,40 +965,218 @@ def _priority_counts(df):
 
 
 def render_dashboard_screen():
-    st.markdown("## 🏠 PHARMAGUARD Dashboard")
-    st.caption("ADR monitoring • Priority overview • Pharmacovigilance review support")
 
-    df = pd.DataFrame(st.session_state.get("adr_history", []))
+    df = pd.DataFrame(
+        st.session_state.get("adr_history", [])
+    )
+
     counts = _priority_counts(df)
 
-    m1, m2, m3, m4 = st.columns(4)
-    with m1:
-        st.metric("Total ADR Cases", len(df))
-    with m2:
-        st.metric("🔴 High", counts["HIGH"])
-    with m3:
-        st.metric("🟡 Moderate", counts["MODERATE"])
-    with m4:
-        st.metric("🟢 Low", counts["LOW"])
+    # =====================================================
+    # PROFESSIONAL DASHBOARD HEADER
+    # =====================================================
+
+    st.markdown(
+        """
+        <div class="pg-dashboard-hero">
+
+            <div class="pg-dashboard-icon">🛡️</div>
+
+            <div>
+                <div class="pg-dashboard-title">
+                    Pharmacovigilance Dashboard
+                </div>
+
+                <div class="pg-dashboard-subtitle">
+                    Monitor ADR reports and review-priority signals
+                </div>
+            </div>
+
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # =====================================================
+    # QUICK ACTION
+    # =====================================================
+
+    st.markdown("### Quick Action")
+
+    if st.button(
+        "➕  Start New ADR Analysis",
+        use_container_width=True
+    ):
+        st.session_state["active_page"] = "🔍 New ADR Analysis"
+        st.rerun()
+
+    # =====================================================
+    # SUMMARY CARDS
+    # =====================================================
+
+    st.markdown("### ADR Overview")
+
+    c1, c2, c3, c4 = st.columns(4)
+
+    with c1:
+        st.markdown(
+            f"""
+            <div class="pg-stat-card">
+                <div class="pg-stat-icon">📋</div>
+                <div class="pg-stat-label">Total ADR Cases</div>
+                <div class="pg-stat-value">{len(df)}</div>
+                <div class="pg-stat-note">All recorded cases</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    with c2:
+        st.markdown(
+            f"""
+            <div class="pg-stat-card pg-high-card">
+                <div class="pg-stat-icon">🔴</div>
+                <div class="pg-stat-label">High Priority</div>
+                <div class="pg-stat-value">{counts["HIGH"]}</div>
+                <div class="pg-stat-note">Priority review</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    with c3:
+        st.markdown(
+            f"""
+            <div class="pg-stat-card pg-moderate-card">
+                <div class="pg-stat-icon">🟡</div>
+                <div class="pg-stat-label">Moderate</div>
+                <div class="pg-stat-value">{counts["MODERATE"]}</div>
+                <div class="pg-stat-note">Clinical review signal</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    with c4:
+        st.markdown(
+            f"""
+            <div class="pg-stat-card pg-low-card">
+                <div class="pg-stat-icon">🟢</div>
+                <div class="pg-stat-label">Low Priority</div>
+                <div class="pg-stat-value">{counts["LOW"]}</div>
+                <div class="pg-stat-note">Routine review</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    # =====================================================
+    # PRIORITY DISTRIBUTION
+    # =====================================================
 
     st.markdown("### Priority Distribution")
-    chart = pd.DataFrame({
-        "Priority": ["HIGH", "MODERATE", "LOW"],
-        "Cases": [counts["HIGH"], counts["MODERATE"], counts["LOW"]]
-    }).set_index("Priority")
-    st.bar_chart(chart)
+
+    chart = pd.DataFrame(
+        {
+            "Priority": [
+                "HIGH",
+                "MODERATE",
+                "LOW"
+            ],
+            "Cases": [
+                counts["HIGH"],
+                counts["MODERATE"],
+                counts["LOW"]
+            ]
+        }
+    ).set_index("Priority")
+
+    st.bar_chart(
+        chart,
+        use_container_width=True
+    )
+
+    # =====================================================
+    # RECENT CASES
+    # =====================================================
 
     if df.empty:
-        st.info("No ADR cases are currently available in the app database view.")
+
+        st.markdown(
+            """
+            <div class="pg-empty-state">
+
+                <div class="pg-empty-icon">📭</div>
+
+                <div class="pg-empty-title">
+                    No ADR Reports Yet
+                </div>
+
+                <div class="pg-empty-text">
+                    Start a new ADR analysis to create your
+                    first PHARMAGUARD case.
+                </div>
+
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
         return
 
     st.markdown("### 🕐 Recent ADR Reports")
-    cols = [c for c in [
-        "Case_Reference", "Drug", "ADR", "Priority",
-        "Decision_Source", "Date_Time"
-    ] if c in df.columns]
-    st.dataframe(df[cols].tail(10).iloc[::-1], use_container_width=True, hide_index=True)
 
+    recent_cols = [
+        c for c in [
+            "Case_Reference",
+            "Drug",
+            "ADR",
+            "Priority",
+            "Decision_Source",
+            "Date_Time"
+        ]
+        if c in df.columns
+    ]
+
+    recent_df = (
+        df[recent_cols]
+        .tail(8)
+        .iloc[::-1]
+        .copy()
+    )
+
+    st.dataframe(
+        recent_df,
+        use_container_width=True,
+        hide_index=True
+    )
+
+    # =====================================================
+    # DASHBOARD INFORMATION
+    # =====================================================
+
+    st.markdown(
+        """
+        <div class="pg-dashboard-info">
+
+            <div class="pg-info-title">
+                🛡️ PHARMAGUARD Review Support
+            </div>
+
+            <div class="pg-info-text">
+                PHARMAGUARD combines a predefined Safety Gate
+                with a Random Forest prototype to support
+                pharmacovigilance review prioritization.
+            </div>
+
+            <div class="pg-info-note">
+                Review priority only • Proof of Concept
+            </div>
+
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 def render_history_screen():
     st.markdown("## 📚 ADR History")
