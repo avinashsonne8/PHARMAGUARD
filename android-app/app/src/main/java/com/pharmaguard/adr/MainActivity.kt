@@ -17,6 +17,7 @@ import androidx.appcompat.app.AppCompatActivity
 class MainActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
+    private var backPressedOnce = false
 
     private val pharmaguardUrl =
         "https://pharmaguard-qpfu9vclbstdjg3vmgm2vj.streamlit.app/"
@@ -45,7 +46,7 @@ class MainActivity : AppCompatActivity() {
             loadWithOverviewMode = true
             setSupportZoom(false)
 
-            // Keep WebView optimized for normal mobile pages
+            // Require user interaction for media playback
             mediaPlaybackRequiresUserGesture = true
         }
 
@@ -60,30 +61,44 @@ class MainActivity : AppCompatActivity() {
                 mimeType,
                 _ ->
 
-            val request = DownloadManager.Request(Uri.parse(url))
+            val request =
+                DownloadManager.Request(Uri.parse(url))
 
-            val cookies = CookieManager
-                .getInstance()
-                .getCookie(url)
+            val cookies =
+                CookieManager
+                    .getInstance()
+                    .getCookie(url)
 
             if (!cookies.isNullOrEmpty()) {
-                request.addRequestHeader("Cookie", cookies)
+                request.addRequestHeader(
+                    "Cookie",
+                    cookies
+                )
             }
 
-            request.addRequestHeader("User-Agent", userAgent)
-
-            val fileName = URLUtil.guessFileName(
-                url,
-                contentDisposition,
-                mimeType
+            request.addRequestHeader(
+                "User-Agent",
+                userAgent
             )
 
+            val fileName =
+                URLUtil.guessFileName(
+                    url,
+                    contentDisposition,
+                    mimeType
+                )
+
             request.setTitle(fileName)
-            request.setDescription("Downloading PHARMAGUARD report")
+
+            request.setDescription(
+                "Downloading PHARMAGUARD report"
+            )
+
             request.setMimeType(mimeType)
 
             request.setNotificationVisibility(
-                DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED
+                DownloadManager.Request
+                    .VISIBILITY_VISIBLE_NOTIFY_COMPLETED
             )
 
             request.setDestinationInExternalPublicDir(
@@ -98,9 +113,10 @@ class MainActivity : AppCompatActivity() {
             downloadManager.enqueue(request)
         }
 
+        // Load PHARMAGUARD
         webView.loadUrl(pharmaguardUrl)
 
-        // Android back-button behavior
+        // Professional Android back-button behavior
         onBackPressedDispatcher.addCallback(
             this,
             object : OnBackPressedCallback(true) {
@@ -108,9 +124,35 @@ class MainActivity : AppCompatActivity() {
                 override fun handleOnBackPressed() {
 
                     if (webView.canGoBack()) {
+
                         webView.goBack()
+
+                        backPressedOnce = false
+
                     } else {
-                        finish()
+
+                        if (backPressedOnce) {
+
+                            finish()
+
+                        } else {
+
+                            backPressedOnce = true
+
+                            android.widget.Toast.makeText(
+                                this@MainActivity,
+                                "Press back again to exit",
+                                android.widget.Toast.LENGTH_SHORT
+                            ).show()
+
+                            android.os.Handler(
+                                android.os.Looper.getMainLooper()
+                            ).postDelayed({
+
+                                backPressedOnce = false
+
+                            }, 2000)
+                        }
                     }
                 }
             }
@@ -118,7 +160,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+
         webView.destroy()
+
         super.onDestroy()
     }
 }
