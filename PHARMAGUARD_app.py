@@ -730,9 +730,9 @@ with st.sidebar:
         st.session_state["active_page"] = "🏠 Dashboard"
 
     # Keep the sidebar widget state separate from the application page state.
-    # This allows dashboard Quick Action buttons to change active_page safely.
-    if "navigation_page" not in st.session_state:
-        st.session_state["navigation_page"] = st.session_state["active_page"]
+    # Sync the widget to the application page BEFORE creating the widget.
+    # This lets Quick Action change the page safely across Streamlit reruns.
+    st.session_state["navigation_page"] = st.session_state["active_page"]
 
     selected_page = st.radio(
         "Open screen",
@@ -2205,6 +2205,9 @@ def render_settings_screen():
 # =========================================================
 # SCREEN ROUTING
 # =========================================================
+
+# Read the final application page after sidebar synchronization.
+active_page = st.session_state.get("active_page", "🏠 Dashboard")
 
 if active_page == "🏠 Dashboard":
     render_dashboard_screen()
