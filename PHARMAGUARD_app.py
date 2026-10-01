@@ -590,6 +590,124 @@ st.markdown(textwrap.dedent("""
 """).strip(), unsafe_allow_html=True)
 
 
+
+# =========================================================
+# UI-6 — FINAL MOBILE POLISH
+# =========================================================
+st.markdown(textwrap.dedent("""
+<style>
+.block-container { padding-top: 1rem; padding-bottom: 2.5rem; }
+
+@media (max-width: 700px) {
+    .block-container {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+        padding-top: 0.65rem;
+    }
+    h1 { font-size: 1.55rem !important; }
+    h2 { font-size: 1.30rem !important; }
+    h3 { font-size: 1.10rem !important; }
+    p, li, label, .stMarkdown { line-height: 1.45; }
+}
+
+.pg-ui6-card {
+    padding: 15px 16px;
+    margin: 0 0 13px 0;
+    border: 1px solid #dce6ed;
+    border-radius: 15px;
+    background: #ffffff;
+    box-shadow: 0 2px 10px rgba(30,60,90,.04);
+}
+
+.pg-ui6-title {
+    font-size: 15px;
+    font-weight: 800;
+    color: #17324d;
+}
+
+.pg-ui6-text {
+    margin-top: 4px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #62717d;
+}
+
+section[data-testid="stSidebar"] {
+    border-right: 1px solid #dbe6ee;
+}
+
+section[data-testid="stSidebar"] .stRadio label {
+    font-size: 13px;
+}
+
+@media (max-width: 700px) {
+    section[data-testid="stSidebar"] .stRadio label { font-size: 14px; }
+
+    div.stButton > button,
+    div.stDownloadButton > button {
+        min-height: 46px;
+        width: 100%;
+    }
+
+    .pg-result-hero { padding: 15px; }
+
+    .pg-result-main { align-items: flex-start; }
+
+    .pg-result-main-message { font-size: 12px; }
+}
+
+div.stButton > button,
+div.stDownloadButton > button {
+    min-height: 44px;
+    border-radius: 11px;
+    font-weight: 750;
+}
+
+div[data-baseweb="input"] input,
+div[data-baseweb="select"] > div,
+textarea {
+    border-radius: 10px !important;
+}
+
+textarea { min-height: 105px !important; }
+
+.pg-result-main-label,
+.pg-case-title,
+.pg-stat-value,
+.pg-case-value,
+.pg-assessment-value,
+.pg-signal-text,
+.pg-action-text {
+    overflow-wrap: anywhere;
+}
+
+div[data-testid="stDataFrame"] {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+div[data-testid="stAlert"] { border-radius: 12px; }
+
+hr {
+    margin-top: 0.8rem;
+    margin-bottom: 0.8rem;
+}
+
+.pg-ui6-footer {
+    margin-top: 24px;
+    padding: 11px 13px;
+    border-radius: 11px;
+    background: #f7fafc;
+    border: 1px solid #e1e8ed;
+    text-align: center;
+    font-size: 11px;
+    line-height: 1.45;
+    color: #71808b;
+}
+</style>
+""").strip(), unsafe_allow_html=True)
+
+
 # =========================================================
 # APP NAVIGATION / PROJECT INFO
 # =========================================================
@@ -606,7 +724,6 @@ with st.sidebar:
             "📚 ADR History",
             "📄 Case Reports",
             "☁️ Database",
-            "📄 Case Reports",
             "ℹ️ About / Methodology",
             "⚙️ Settings / Disclaimer"
         ],
@@ -3869,6 +3986,14 @@ Pharmacovigilance Proof of Concept
         st.session_state.adr_history = []
         st.rerun()
 
+
+
+st.markdown("""
+<div class="pg-ui6-footer">
+🛡️ <b>PHARMAGUARD</b> • AI-Assisted ADR Risk Prioritization System<br>
+Pharmacovigilance • Proof of Concept • Review-priority support only
+</div>
+""", unsafe_allow_html=True)
 
 st.markdown("""
 <div class="pg-disclaimer">
