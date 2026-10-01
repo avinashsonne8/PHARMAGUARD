@@ -1,4 +1,6 @@
-import streamlit as st 
+# PHARMAGUARD Professional UI v2
+# Dashboard HTML rendering fix — backend/Safety Gate/ML/database logic preserved.
+import streamlit as st
 import pandas as pd
 import joblib
 import requests
@@ -98,6 +100,10 @@ st.markdown("""
     font-size: 24px;
     font-weight: 800;
     color: #102a43;
+}
+
+.pg-dashboard-copy {
+    min-width: 0;
 }
 
 .pg-dashboard-subtitle {
@@ -976,25 +982,18 @@ def render_dashboard_screen():
     # PROFESSIONAL DASHBOARD HEADER
     # =====================================================
 
+    # Render the dashboard header as HTML through st.markdown.
+    # Do not use st.write() for this block, because the HTML must be
+    # explicitly enabled for Streamlit to render it.
     st.markdown(
-        """
-        <div class="pg-dashboard-hero">
-
-            <div class="pg-dashboard-icon">🛡️</div>
-
-            <div>
-                <div class="pg-dashboard-title">
-                    Pharmacovigilance Dashboard
-                </div>
-
-                <div class="pg-dashboard-subtitle">
-                    Monitor ADR reports and review-priority signals
-                </div>
-            </div>
-
-        </div>
-        """,
-        unsafe_allow_html=True
+        """<div class="pg-dashboard-hero">
+<div class="pg-dashboard-icon">🛡️</div>
+<div class="pg-dashboard-copy">
+<div class="pg-dashboard-title">Pharmacovigilance Dashboard</div>
+<div class="pg-dashboard-subtitle">Monitor ADR reports and review-priority signals</div>
+</div>
+</div>""",
+        unsafe_allow_html=True,
     )
 
     # =====================================================
