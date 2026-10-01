@@ -237,6 +237,132 @@ st.markdown("""
 div.stButton > button { border-radius:10px; font-weight:700; min-height:44px; }
 @media (max-width: 700px) { .pg-appbar { padding:9px 10px; } .pg-hero-title { font-size:21px; } .pg-title { font-size:29px; } .pg-subtitle { font-size:14px; } }
 
+
+/* =========================================================
+   UI-2 — PROFESSIONAL NEW ADR ANALYSIS
+   ========================================================= */
+.pg-analysis-hero {
+    padding: 20px;
+    margin: 8px 0 16px 0;
+    border-radius: 18px;
+    background: linear-gradient(135deg,#f1f8ff 0%,#ffffff 100%);
+    border: 1px solid #d7e7f3;
+    box-shadow: 0 4px 16px rgba(30,60,90,.05);
+}
+.pg-analysis-title {
+    font-size: 25px;
+    font-weight: 800;
+    color: #102a43;
+    margin-bottom: 4px;
+}
+.pg-analysis-subtitle {
+    color: #657786;
+    font-size: 13px;
+    line-height: 1.5;
+}
+.pg-stepbar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 0 0 18px 0;
+}
+.pg-step {
+    flex: 1 1 150px;
+    padding: 9px 11px;
+    border-radius: 10px;
+    background: #f7fafc;
+    border: 1px solid #dbe6ee;
+    color: #52606d;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+}
+.pg-step-active {
+    background: #eaf4fb;
+    border-color: #b9d5e8;
+    color: #174a6b;
+}
+.pg-form-card {
+    padding: 16px;
+    margin: 0 0 14px 0;
+    border-radius: 16px;
+    background: #ffffff;
+    border: 1px solid #dbe7ef;
+    box-shadow: 0 3px 12px rgba(30,60,90,.045);
+}
+.pg-form-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: #243b53;
+    margin-bottom: 3px;
+}
+.pg-form-subtitle {
+    font-size: 12px;
+    color: #7b8794;
+    margin-bottom: 10px;
+}
+.pg-id-card {
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: #f5f9fc;
+    border: 1px solid #d9e8f2;
+    margin: 0 0 12px 0;
+}
+.pg-id-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #657786;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+}
+.pg-id-value {
+    margin-top: 3px;
+    font-size: 15px;
+    font-weight: 800;
+    color: #102a43;
+    word-break: break-word;
+}
+.pg-input-tip {
+    padding: 10px 12px;
+    margin: 8px 0 0 0;
+    border-radius: 10px;
+    background: #f8fbfd;
+    border: 1px solid #e1ebf2;
+    color: #607080;
+    font-size: 12px;
+    line-height: 1.5;
+}
+.pg-analyze-box {
+    padding: 14px;
+    margin-top: 14px;
+    border-radius: 16px;
+    background: linear-gradient(135deg,#f7fbfe 0%,#ffffff 100%);
+    border: 1px solid #d8e7f1;
+}
+.pg-analyze-title {
+    font-size: 15px;
+    font-weight: 800;
+    color: #243b53;
+    margin-bottom: 4px;
+}
+.pg-analyze-subtitle {
+    font-size: 12px;
+    color: #718096;
+    margin-bottom: 10px;
+}
+div.stButton > button[kind="primary"] {
+    min-height: 48px;
+    border-radius: 12px;
+    font-weight: 800;
+    letter-spacing: .2px;
+}
+@media (max-width: 700px) {
+    .pg-analysis-title { font-size: 21px; }
+    .pg-analysis-hero { padding: 16px; }
+    .pg-step { flex-basis: 100%; }
+    .pg-form-card { padding: 13px; }
+}
+
 </style>
 <div class="pg-appbar">
 <div class="pg-brand-mini">🛡️ PHARMAGUARD</div>
@@ -1473,18 +1599,45 @@ if active_page == "ℹ️ About / Methodology":
 
 
 # =========================================================
-# NEW ADR ANALYSIS
+# NEW ADR ANALYSIS — UI-2
 # =========================================================
 
-st.markdown("## 🔍 New ADR Analysis")
-st.caption("1. Enter report → 2. Safety Gate → 3. Random Forest assistance → 4. Final priority → 5. Database")
+st.markdown(
+    textwrap.dedent("""
+    <div class="pg-analysis-hero">
+        <div class="pg-analysis-title">🔍 New ADR Analysis</div>
+        <div class="pg-analysis-subtitle">Enter the ADR report details below. PHARMAGUARD will apply its predefined Safety Gate first and use the Random Forest prototype when appropriate.</div>
+    </div>
+    """).strip(),
+    unsafe_allow_html=True
+)
 
+st.markdown(
+    textwrap.dedent("""
+    <div class="pg-stepbar">
+        <div class="pg-step pg-step-active">1 · Report Details</div>
+        <div class="pg-step">2 · Safety Gate</div>
+        <div class="pg-step">3 · ML Assistance</div>
+        <div class="pg-step">4 · Final Priority</div>
+        <div class="pg-step">5 · Database</div>
+    </div>
+    """).strip(),
+    unsafe_allow_html=True
+)
 
 # =========================================================
 # PATIENT INPUT
 # =========================================================
 
-st.markdown('<div class="pg-section"><b>👤 Patient / Case Information</b></div>', unsafe_allow_html=True)
+st.markdown(
+    textwrap.dedent("""
+    <div class="pg-form-card">
+        <div class="pg-form-title">👤 Patient / Case Information</div>
+        <div class="pg-form-subtitle">Basic report information used by the prioritization workflow.</div>
+    </div>
+    """).strip(),
+    unsafe_allow_html=True
+)
 
 if "current_patient_id" not in st.session_state:
     st.session_state.current_patient_id = f"PHG-{uuid.uuid4().hex[:8].upper()}"
@@ -1497,47 +1650,97 @@ patient_id = st.text_input(
 )
 st.session_state.current_patient_id = patient_id
 
-age = st.number_input(
-    "Patient Age",
-    min_value=0,
-    max_value=120,
-    value=30,
-    step=1
+st.markdown(
+    textwrap.dedent(f"""
+    <div class="pg-id-card">
+        <div class="pg-id-label">Current case identifier</div>
+        <div class="pg-id-value">{patient_id if patient_id else 'Not entered'}</div>
+    </div>
+    """).strip(),
+    unsafe_allow_html=True
 )
 
-sex = st.selectbox(
-    "Sex",
-    ["M", "F", "Unknown"]
-)
+col_age, col_sex = st.columns(2)
+with col_age:
+    age = st.number_input(
+        "Patient Age",
+        min_value=0,
+        max_value=120,
+        value=30,
+        step=1
+    )
 
-st.markdown('<div class="pg-section"><b>💊 Drug Information</b></div>', unsafe_allow_html=True)
+with col_sex:
+    sex = st.selectbox(
+        "Sex",
+        ["M", "F", "Unknown"]
+    )
+
+# =========================================================
+# DRUG INPUT
+# =========================================================
+
+st.markdown(
+    textwrap.dedent("""
+    <div class="pg-form-card">
+        <div class="pg-form-title">💊 Drug Information</div>
+        <div class="pg-form-subtitle">Enter the suspected or reported medicinal product.</div>
+    </div>
+    """).strip(),
+    unsafe_allow_html=True
+)
 
 drug = st.text_input(
     "Drug Name",
     placeholder="Example: Amoxicillin"
 )
 
-st.markdown('<div class="pg-section"><b>⚠️ ADR Report</b></div>', unsafe_allow_html=True)
+# =========================================================
+# ADR INPUT
+# =========================================================
+
+st.markdown(
+    textwrap.dedent("""
+    <div class="pg-form-card">
+        <div class="pg-form-title">⚠️ Adverse Drug Reaction Report</div>
+        <div class="pg-form-subtitle">Describe the reported reaction as clearly and specifically as possible.</div>
+    </div>
+    """).strip(),
+    unsafe_allow_html=True
+)
 
 adr = st.text_area(
     "Adverse Drug Reaction (ADR)",
     placeholder="Example: Anaphylaxis with difficulty breathing",
-    height=140,
+    height=150,
     help="Describe the reported adverse event as clearly as possible."
 )
 
-st.markdown('<div class="pg-note">💡 <b>Tip:</b> Include clinically relevant details available in the report, such as the reported reaction, severity-related information, or relevant outcome information.</div>', unsafe_allow_html=True)
-
+st.markdown(
+    textwrap.dedent("""
+    <div class="pg-input-tip">💡 <b>Reporting tip:</b> Include clinically relevant details available in the report, such as the reported reaction, medical attention, hospitalization, outcome, or other important context.</div>
+    """).strip(),
+    unsafe_allow_html=True
+)
 
 # =========================================================
 # ANALYZE ADR
 # =========================================================
 
-st.caption("Safety Gate → ML Assistance → Priority + Reason → Database")
+st.markdown(
+    textwrap.dedent("""
+    <div class="pg-analyze-box">
+        <div class="pg-analyze-title">🛡️ PHARMAGUARD Review Engine</div>
+        <div class="pg-analyze-subtitle">Safety Gate → Random Forest assistance → Final review priority → Database</div>
+    </div>
+    """).strip(),
+    unsafe_allow_html=True
+)
 
 if st.button(
     "🔍 ANALYZE ADR REPORT",
-    use_container_width=True
+    use_container_width=True,
+    type="primary"
 ):
 
     # -----------------------------------------------------
