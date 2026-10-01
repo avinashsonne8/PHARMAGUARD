@@ -558,6 +558,37 @@ div.stButton > button[kind="primary"] {
 </div>
 """, unsafe_allow_html=True)
 
+# =========================================================
+# UI-5 — CASE REPORTS / ABOUT / SETTINGS STYLES
+# =========================================================
+st.markdown(textwrap.dedent("""
+<style>
+.pg-ui5-hero { padding:18px; border-radius:16px; background:linear-gradient(135deg,#f4faff,#ffffff); border:1px solid #d8e8f4; margin-bottom:16px; }
+.pg-ui5-title { font-size:25px; font-weight:800; margin-bottom:4px; }
+.pg-ui5-sub { color:#65727d; font-size:14px; line-height:1.5; }
+.pg-case-card { padding:18px; border:1px solid #dbe5ec; border-radius:16px; background:#fff; margin:10px 0 16px 0; box-shadow:0 2px 10px rgba(30,60,90,.04); }
+.pg-case-ref { font-size:12px; color:#687682; font-weight:700; letter-spacing:.3px; }
+.pg-case-title { font-size:20px; font-weight:800; margin-top:4px; }
+.pg-case-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:14px; }
+.pg-case-field { padding:10px 12px; background:#f7fafc; border-radius:10px; border:1px solid #e6edf2; }
+.pg-case-label { font-size:11px; color:#71808b; font-weight:700; text-transform:uppercase; }
+.pg-case-value { font-size:14px; font-weight:600; margin-top:3px; word-break:break-word; }
+.pg-priority { display:inline-block; padding:7px 13px; border-radius:999px; font-weight:800; font-size:13px; }
+.pg-high { background:#fff0f0; color:#a61b1b; border:1px solid #f2c7c7; }
+.pg-moderate { background:#fff7df; color:#8a5a00; border:1px solid #eed99b; }
+.pg-low { background:#edf8f0; color:#246b37; border:1px solid #cce7d3; }
+.pg-uncertain { background:#f2f4f6; color:#59646e; border:1px solid #dce1e5; }
+.pg-section-card { padding:16px; border:1px solid #dbe5ec; border-radius:14px; background:#fff; margin:10px 0; }
+.pg-section-card h4 { margin:0 0 6px 0; }
+.pg-method-step { padding:12px 14px; border-left:4px solid #2b6f9f; background:#f7fafc; border-radius:8px; margin:7px 0; }
+.pg-disclaimer-box { padding:16px; border-radius:14px; background:#fff8e8; border:1px solid #ead9a7; line-height:1.55; }
+.pg-setting-row { padding:13px 14px; border-bottom:1px solid #e8edf1; }
+.pg-setting-label { font-size:12px; color:#71808b; font-weight:700; }
+.pg-setting-value { font-size:15px; font-weight:700; margin-top:2px; }
+@media (max-width:700px) { .pg-ui5-title{font-size:21px;} .pg-case-grid{grid-template-columns:1fr;} .pg-case-card{padding:14px;} }
+</style>
+""").strip(), unsafe_allow_html=True)
+
 
 # =========================================================
 # APP NAVIGATION / PROJECT INFO
@@ -575,7 +606,9 @@ with st.sidebar:
             "📚 ADR History",
             "📄 Case Reports",
             "☁️ Database",
-            "ℹ️ About / Methodology"
+            "📄 Case Reports",
+            "ℹ️ About / Methodology",
+            "⚙️ Settings / Disclaimer"
         ],
         index=0,
         label_visibility="collapsed"
@@ -1565,11 +1598,28 @@ def render_history_screen():
     )
 
 def render_case_reports_screen():
-    st.markdown("## 📄 Case Reports")
+    st.markdown(
+        textwrap.dedent("""
+        <div class="pg-ui5-hero">
+            <div class="pg-ui5-title">📄 ADR Case Reports</div>
+            <div class="pg-ui5-sub">Review a saved ADR case and generate a professional report without changing the original database record.</div>
+        </div>
+        """).strip(),
+        unsafe_allow_html=True
+    )
+
     df = pd.DataFrame(st.session_state.get("adr_history", []))
 
     if df.empty:
-        st.info("Analyze at least one ADR case to generate a case report.")
+        st.markdown(
+            textwrap.dedent("""
+            <div class="pg-section-card">
+                <h4>📭 No case reports available</h4>
+                <div>Analyze and save an ADR case first. The saved case will appear here for report generation.</div>
+            </div>
+            """).strip(),
+            unsafe_allow_html=True
+        )
         return
 
     labels = []
@@ -1577,136 +1627,226 @@ def render_case_reports_screen():
         ref = str(row.get("Case_Reference", f"Case {idx + 1}"))
         drug_name = str(row.get("Drug", "Unknown"))
         adr_text = str(row.get("ADR", ""))
-        labels.append((idx, f"{ref} | {drug_name} | {adr_text[:50]}"))
+        labels.append((idx, f"{ref} | {drug_name} | {adr_text[:55]}"))
 
     selected_label = st.selectbox(
-        "Select case",
-        [x[1] for x in labels]
+        "Select saved case",
+        [x[1] for x in labels],
+        help="Select the ADR case for report preview and export."
     )
     selected_idx = next(i for i, label in labels if label == selected_label)
     row = df.loc[selected_idx]
 
     priority = str(row.get("Priority", "UNKNOWN")).upper()
     seriousness = str(row.get("Seriousness", "Uncertain"))
+    decision_source = str(row.get("Decision_Source", ""))
+    reason = str(row.get("Reason", ""))
     recommendation = {
         "HIGH": "Priority pharmacovigilance review required.",
         "MODERATE": "Pharmacovigilance review and clinical assessment recommended.",
         "LOW": "Routine pharmacovigilance review according to the project workflow."
     }.get(priority, "Additional information or professional review may be required.")
 
-    st.markdown(f"### {priority} PRIORITY")
+    badge_class = {
+        "HIGH": "pg-high",
+        "MODERATE": "pg-moderate",
+        "LOW": "pg-low"
+    }.get(priority, "pg-uncertain")
+
+    st.markdown(
+        textwrap.dedent(f"""
+        <div class="pg-case-card">
+            <div class="pg-case-ref">{html.escape(str(row.get("Case_Reference", "")))}</div>
+            <div class="pg-case-title">{html.escape(str(row.get("Drug", "Unknown")))} — ADR Review</div>
+            <div style="margin-top:10px;">
+                <span class="pg-priority {badge_class}">{html.escape(priority)} PRIORITY</span>
+            </div>
+            <div class="pg-case-grid">
+                <div class="pg-case-field"><div class="pg-case-label">Patient / Project ID</div><div class="pg-case-value">{html.escape(str(row.get("Patient_ID", "")))}</div></div>
+                <div class="pg-case-field"><div class="pg-case-label">Date & Time</div><div class="pg-case-value">{html.escape(str(row.get("Date_Time", "")))}</div></div>
+                <div class="pg-case-field"><div class="pg-case-label">Age / Sex</div><div class="pg-case-value">{html.escape(str(row.get("Age", "")))} / {html.escape(str(row.get("Sex", "")))}</div></div>
+                <div class="pg-case-field"><div class="pg-case-label">Seriousness</div><div class="pg-case-value">{html.escape(seriousness)}</div></div>
+            </div>
+        </div>
+        """).strip(),
+        unsafe_allow_html=True
+    )
+
+    st.markdown("### 💊 ADR Information")
+    st.markdown(
+        textwrap.dedent(f"""
+        <div class="pg-section-card">
+            <div class="pg-case-label">Reported Drug</div>
+            <div class="pg-case-title">{html.escape(str(row.get("Drug", "")))}</div>
+            <div style="margin-top:12px;"><div class="pg-case-label">Reported ADR</div><div class="pg-case-value">{html.escape(str(row.get("ADR", "")))}</div></div>
+        </div>
+        """).strip(),
+        unsafe_allow_html=True
+    )
+
     c1, c2 = st.columns(2)
     with c1:
-        st.write("**Case Reference:**", row.get("Case_Reference", ""))
-        st.write("**Patient / Project ID:**", row.get("Patient_ID", ""))
-        st.write("**Age:**", row.get("Age", ""))
-        st.write("**Sex:**", row.get("Sex", ""))
+        st.markdown(
+            textwrap.dedent(f"""
+            <div class="pg-section-card">
+                <h4>🔎 PHARMAGUARD Assessment</h4>
+                <div><b>Priority:</b> {html.escape(priority)}</div>
+                <div style="margin-top:7px;"><b>Seriousness:</b> {html.escape(seriousness)}</div>
+                <div style="margin-top:7px;"><b>Decision Source:</b> {html.escape(decision_source)}</div>
+            </div>
+            """).strip(),
+            unsafe_allow_html=True
+        )
     with c2:
-        st.write("**Drug:**", row.get("Drug", ""))
-        st.write("**ADR:**", row.get("ADR", ""))
-        st.write("**Seriousness:**", seriousness)
-        st.write("**Decision Source:**", row.get("Decision_Source", ""))
+        st.markdown(
+            textwrap.dedent(f"""
+            <div class="pg-section-card">
+                <h4>🧠 Why this priority?</h4>
+                <div>{html.escape(reason) if reason else "No reason recorded."}</div>
+            </div>
+            """).strip(),
+            unsafe_allow_html=True
+        )
 
-    st.info(f"**Reason:** {row.get('Reason', '')}")
-    st.write("**Recommended Action:**", recommendation)
+    st.markdown(
+        textwrap.dedent(f"""
+        <div class="pg-section-card">
+            <h4>📌 Recommended Action</h4>
+            <div>{html.escape(recommendation)}</div>
+        </div>
+        """).strip(),
+        unsafe_allow_html=True
+    )
 
-    report = f"""PHARMAGUARD ADR CASE REPORT
+    st.markdown("### 📥 Export Report")
 
+    report_text = f"""PHARMAGUARD ADR CASE REPORT
+========================================
+
+AI-Assisted ADR Risk Prioritization System
+Pharmacovigilance • Proof of Concept
+
+1. CASE INFORMATION
+----------------------------------------
 Case Reference: {row.get("Case_Reference", "")}
 Patient / Project ID: {row.get("Patient_ID", "")}
 Age: {row.get("Age", "")}
 Sex: {row.get("Sex", "")}
+Date & Time: {row.get("Date_Time", "")}
+
+2. DRUG / ADR INFORMATION
+----------------------------------------
 Drug: {row.get("Drug", "")}
 ADR: {row.get("ADR", "")}
+
+3. PHARMAGUARD ASSESSMENT
+----------------------------------------
 Priority: {priority}
 Seriousness: {seriousness}
-Decision Source: {row.get("Decision_Source", "")}
-Reason: {row.get("Reason", "")}
-Recommended Action: {recommendation}
+Decision Source: {decision_source}
+Reason: {reason}
 
-DISCLAIMER:
+4. RECOMMENDED ACTION
+----------------------------------------
+{recommendation}
+
+IMPORTANT DISCLAIMER
+----------------------------------------
 PHARMAGUARD is a proof-of-concept AI-assisted pharmacovigilance
 review-prioritization system. It does not establish causality,
 diagnosis, treatment, regulatory seriousness, or clinical
 decision-making.
+
+========================================
+Generated by PHARMAGUARD
+========================================
 """
-    st.download_button(
-        "⬇️ Download Case Report (TXT)",
-        data=report,
-        file_name=f"PHARMAGUARD_{row.get('Case_Reference', 'Case')}.txt",
-        mime="text/plain",
-        use_container_width=True
-    )
 
-    # Generate a compact PDF directly from the selected case.
-    try:
-        from io import BytesIO
-        from reportlab.lib.pagesizes import A4
-        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-        from reportlab.lib.enums import TA_CENTER
-        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-        from reportlab.lib import colors
-
-        pdf_buffer = BytesIO()
-        pdf_doc = SimpleDocTemplate(
-            pdf_buffer, pagesize=A4,
-            rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36
-        )
-        styles = getSampleStyleSheet()
-        title_style = ParagraphStyle(
-            "PGTitle", parent=styles["Title"], alignment=TA_CENTER, fontSize=18, spaceAfter=8
-        )
-        sub_style = ParagraphStyle(
-            "PGSub", parent=styles["Normal"], alignment=TA_CENTER, fontSize=9, textColor=colors.grey, spaceAfter=14
-        )
-        normal = styles["BodyText"]
-        normal.fontSize = 9
-        normal.leading = 12
-
-        story = [
-            Paragraph("PHARMAGUARD ADR CASE REPORT", title_style),
-            Paragraph("AI-Assisted ADR Risk Prioritization System • Pharmacovigilance Proof of Concept", sub_style)
-        ]
-        data = [
-            ["Case Reference", str(row.get("Case_Reference", ""))],
-            ["Patient / Project ID", str(row.get("Patient_ID", ""))],
-            ["Age", str(row.get("Age", ""))],
-            ["Sex", str(row.get("Sex", ""))],
-            ["Date & Time", str(row.get("Date_Time", ""))],
-            ["Drug", str(row.get("Drug", ""))],
-            ["ADR", str(row.get("ADR", ""))],
-            ["Priority", priority],
-            ["Seriousness", seriousness],
-            ["Decision Source", str(row.get("Decision_Source", ""))],
-            ["Reason", str(row.get("Reason", ""))],
-            ["Recommended Action", recommendation],
-        ]
-        table = Table(data, colWidths=[135, 365])
-        table.setStyle(TableStyle([
-            ("GRID", (0,0), (-1,-1), 0.4, colors.grey),
-            ("BACKGROUND", (0,0), (0,-1), colors.whitesmoke),
-            ("FONTNAME", (0,0), (0,-1), "Helvetica-Bold"),
-            ("VALIGN", (0,0), (-1,-1), "TOP"),
-            ("FONTSIZE", (0,0), (-1,-1), 8.5),
-            ("LEADING", (0,0), (-1,-1), 11),
-            ("PADDING", (0,0), (-1,-1), 6),
-        ]))
-        story += [table, Spacer(1, 14), Paragraph(
-            "Disclaimer: PHARMAGUARD is a proof-of-concept AI-assisted pharmacovigilance review-prioritization system. It does not establish causality, diagnosis, treatment, regulatory seriousness, or replace professional clinical judgment.",
-            normal
-        )]
-        pdf_doc.build(story)
-        pdf_buffer.seek(0)
+    e1, e2 = st.columns(2)
+    with e1:
         st.download_button(
-            "📥 Download Case Report (PDF)",
-            data=pdf_buffer,
-            file_name=f"PHARMAGUARD_{row.get('Case_Reference', 'Case')}.pdf",
-            mime="application/pdf",
+            "⬇️ Download TXT Report",
+            data=report_text,
+            file_name=f"PHARMAGUARD_{row.get('Case_Reference', 'Case')}.txt",
+            mime="text/plain",
             use_container_width=True
         )
-    except Exception as e:
-        st.warning(f"PDF report generation is unavailable: {e}")
 
+    with e2:
+        try:
+            from io import BytesIO
+            from reportlab.lib.pagesizes import A4
+            from reportlab.lib import colors
+            from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+            from reportlab.lib.enums import TA_CENTER
+            from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+
+            pdf_buffer = BytesIO()
+            pdf_doc = SimpleDocTemplate(
+                pdf_buffer, pagesize=A4,
+                rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36
+            )
+            styles = getSampleStyleSheet()
+            title_style = ParagraphStyle(
+                "PGUI5Title", parent=styles["Title"],
+                alignment=TA_CENTER, fontSize=18, spaceAfter=8
+            )
+            sub_style = ParagraphStyle(
+                "PGUI5Sub", parent=styles["Normal"],
+                alignment=TA_CENTER, fontSize=9, textColor=colors.grey, spaceAfter=14
+            )
+            normal = ParagraphStyle(
+                "PGUI5Normal", parent=styles["BodyText"],
+                fontSize=9, leading=12
+            )
+
+            def P(value):
+                return Paragraph(html.escape(str(value)).replace("\n", "<br/>"), normal)
+
+            story = [
+                Paragraph("PHARMAGUARD ADR CASE REPORT", title_style),
+                Paragraph("AI-Assisted ADR Risk Prioritization System • Pharmacovigilance Proof of Concept", sub_style)
+            ]
+            data = [
+                ["Case Reference", row.get("Case_Reference", "")],
+                ["Patient / Project ID", row.get("Patient_ID", "")],
+                ["Age", row.get("Age", "")],
+                ["Sex", row.get("Sex", "")],
+                ["Date & Time", row.get("Date_Time", "")],
+                ["Drug", row.get("Drug", "")],
+                ["ADR", row.get("ADR", "")],
+                ["Priority", priority],
+                ["Seriousness", seriousness],
+                ["Decision Source", decision_source],
+                ["Reason", reason],
+                ["Recommended Action", recommendation]
+            ]
+            table = Table([[P(a), P(b)] for a, b in data], colWidths=[135, 365])
+            table.setStyle(TableStyle([
+                ("GRID", (0,0), (-1,-1), 0.4, colors.grey),
+                ("BACKGROUND", (0,0), (0,-1), colors.whitesmoke),
+                ("FONTNAME", (0,0), (0,-1), "Helvetica-Bold"),
+                ("VALIGN", (0,0), (-1,-1), "TOP"),
+                ("FONTSIZE", (0,0), (-1,-1), 8.5),
+                ("PADDING", (0,0), (-1,-1), 6)
+            ]))
+            story += [
+                table,
+                Spacer(1, 14),
+                P("Disclaimer: PHARMAGUARD is a proof-of-concept AI-assisted pharmacovigilance review-prioritization system. It does not establish causality, diagnosis, treatment, regulatory seriousness, or replace professional clinical judgment.")
+            ]
+            pdf_doc.build(story)
+            pdf_buffer.seek(0)
+
+            st.download_button(
+                "📥 Download PDF Report",
+                data=pdf_buffer,
+                file_name=f"PHARMAGUARD_{row.get('Case_Reference', 'Case')}.pdf",
+                mime="application/pdf",
+                use_container_width=True
+            )
+        except Exception as e:
+            st.warning(f"PDF report generation is unavailable: {e}")
 
 def render_database_screen():
     st.markdown("## ☁️ PHARMAGUARD Database")
@@ -1803,48 +1943,131 @@ def render_database_screen():
     )
 
 def render_about_screen():
-    st.markdown("## ℹ️ About PHARMAGUARD")
-    st.markdown("### 🛡️ AI-Assisted ADR Risk Prioritization System")
-    st.write(
-        "PHARMAGUARD is a pharmacovigilance proof-of-concept designed to "
-        "prioritize ADR reports for review."
+    st.markdown(
+        textwrap.dedent("""
+        <div class="pg-ui5-hero">
+            <div class="pg-ui5-title">ℹ️ About PHARMAGUARD</div>
+            <div class="pg-ui5-sub">Project methodology, workflow and scientific scope.</div>
+        </div>
+        """).strip(),
+        unsafe_allow_html=True
     )
 
-    with st.expander("What is an ADR?"):
-        st.write(
-            "An adverse drug reaction is a harmful or unintended response "
-            "associated with the use of a medicinal product."
+    st.markdown(
+        textwrap.dedent("""
+        <div class="pg-section-card">
+            <h4>🛡️ AI-Assisted ADR Risk Prioritization System</h4>
+            <div>PHARMAGUARD is a pharmacovigilance proof-of-concept designed to prioritize ADR reports for review using a predefined Safety Gate with Random Forest prototype assistance.</div>
+        </div>
+        """).strip(),
+        unsafe_allow_html=True
+    )
+
+    st.markdown("### 🔬 How PHARMAGUARD Works")
+    steps = [
+        ("1", "ADR Report", "Enter the reported drug, patient/project information and ADR description."),
+        ("2", "Input Validation", "The report is checked for required ADR information and selected terminology issues."),
+        ("3", "Safety Gate", "Project-defined serious and moderate-review signals are screened before ML assistance."),
+        ("4", "Random Forest", "When no predefined signal is detected, the embedded Random Forest provides prototype priority assistance."),
+        ("5", "Final Review Priority", "PHARMAGUARD records HIGH, MODERATE, LOW or UNKNOWN according to the project workflow."),
+        ("6", "Database & Reports", "The case can be stored, searched and exported for project review.")
+    ]
+    for n, title, desc in steps:
+        st.markdown(
+            f'<div class="pg-method-step"><b>{n}. {html.escape(title)}</b><br><span>{html.escape(desc)}</span></div>',
+            unsafe_allow_html=True
         )
 
-    with st.expander("How PHARMAGUARD works"):
-        st.write(
-            "ADR report → Input validation → Safety Gate → Random Forest "
-            "assistance when no predefined signal is detected → Final review priority → Database."
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown(
+            textwrap.dedent("""
+            <div class="pg-section-card">
+                <h4>💊 What is an ADR?</h4>
+                <div>An adverse drug reaction is a harmful or unintended response associated with the use of a medicinal product.</div>
+            </div>
+            """).strip(),
+            unsafe_allow_html=True
+        )
+    with c2:
+        st.markdown(
+            textwrap.dedent("""
+            <div class="pg-section-card">
+                <h4>🧠 Random Forest</h4>
+                <div>The embedded model provides prototype ML assistance. Its output is not a clinical probability or a validated regulatory classification.</div>
+            </div>
+            """).strip(),
+            unsafe_allow_html=True
         )
 
-    with st.expander("Safety Gate"):
-        st.write(
-            "The Safety Gate screens for project-defined serious and moderate-review "
-            "signals and protects selected serious signals from being downgraded by the ML model."
+    st.markdown(
+        textwrap.dedent("""
+        <div class="pg-section-card">
+            <h4>🛡️ Safety Gate</h4>
+            <div>The Safety Gate screens for project-defined serious and moderate-review signals and protects selected serious signals from being downgraded by the ML model.</div>
+        </div>
+        """).strip(),
+        unsafe_allow_html=True
+    )
+
+    st.markdown("### ⚠️ Project Scope & Limitations")
+    st.markdown(
+        textwrap.dedent("""
+        <div class="pg-disclaimer-box">
+        PHARMAGUARD is a proof-of-concept project. Its HIGH/MODERATE/LOW outputs are project-defined review priorities. The prototype does not establish ADR causality, diagnosis, treatment, clinical validity, or regulatory seriousness, and it does not replace professional clinical judgment.
+        </div>
+        """).strip(),
+        unsafe_allow_html=True
+    )
+
+
+def render_settings_screen():
+    st.markdown(
+        textwrap.dedent("""
+        <div class="pg-ui5-hero">
+            <div class="pg-ui5-title">⚙️ Settings & Scientific Disclaimer</div>
+            <div class="pg-ui5-sub">Project status and important usage information.</div>
+        </div>
+        """).strip(),
+        unsafe_allow_html=True
+    )
+
+    df = pd.DataFrame(st.session_state.get("adr_history", []))
+    counts = _priority_counts(df)
+    loaded = bool(st.session_state.get("database_loaded"))
+
+    st.markdown("### 📊 Project Status")
+    status_rows = [
+        ("Application", "PHARMAGUARD"),
+        ("Database", "Loaded" if loaded else "Not loaded"),
+        ("Records available", str(len(df))),
+        ("High priority", str(counts["HIGH"])),
+        ("Moderate priority", str(counts["MODERATE"])),
+        ("Low priority", str(counts["LOW"])),
+        ("Review engine", "Safety Gate + Random Forest prototype")
+    ]
+    for label, value in status_rows:
+        st.markdown(
+            f'<div class="pg-setting-row"><div class="pg-setting-label">{html.escape(label)}</div><div class="pg-setting-value">{html.escape(value)}</div></div>',
+            unsafe_allow_html=True
         )
 
-    with st.expander("Random Forest"):
-        st.write(
-            "The embedded Random Forest model provides prototype ML assistance. "
-            "Its output is not a clinical probability or a validated regulatory classification."
-        )
+    st.markdown("### ⚠️ Scientific Disclaimer")
+    st.markdown(
+        textwrap.dedent("""
+        <div class="pg-disclaimer-box">
+        <b>PHARMAGUARD is a pharmacovigilance proof-of-concept.</b><br><br>
+        The system provides project-defined review-priority outputs intended to support pharmacovigilance workflow. These outputs do not establish ADR causality, diagnosis, treatment, regulatory seriousness, or clinical decision-making.<br><br>
+        The Random Forest component is a prototype ML assistant and should not be interpreted as a calibrated clinical probability. Professional clinical and pharmacovigilance assessment remains necessary.
+        </div>
+        """).strip(),
+        unsafe_allow_html=True
+    )
 
-    with st.expander("Project limitations"):
-        st.write(
-            "The current prototype has not established clinical validity or real-world "
-            "regulatory performance. Independent evaluation with an appropriately labeled "
-            "dataset would be required for such claims."
-        )
-
-    st.warning(
-        "PHARMAGUARD supports pharmacovigilance review. It does not replace "
-        "professional clinical judgment, causality assessment, diagnosis, treatment, "
-        "or regulatory assessment."
+    st.markdown("### 🔐 Data Note")
+    st.info(
+        "Use project identifiers rather than unnecessary personally identifiable information. "
+        "The configured Google Sheets integration is used as the project database."
     )
 
 
@@ -1870,6 +2093,10 @@ if active_page == "☁️ Database":
 
 if active_page == "ℹ️ About / Methodology":
     render_about_screen()
+    st.stop()
+
+if active_page == "⚙️ Settings / Disclaimer":
+    render_settings_screen()
     st.stop()
 
 
