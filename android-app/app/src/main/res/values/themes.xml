@@ -2,6 +2,24 @@
 
 <resources>
 
+    <!-- Splash Screen Theme -->
+    <style name="Theme.PHARMAGUARD.Starting"
+        parent="Theme.SplashScreen">
+
+        <item name="windowSplashScreenBackground">#FFFFFF</item>
+
+        <item name="windowSplashScreenAnimatedIcon">
+            @drawable/ic_launcher
+        </item>
+
+        <item name="postSplashScreenTheme">
+            @style/Theme.PHARMAGUARD
+        </item>
+
+    </style>
+
+
+    <!-- Main App Theme -->
     <style name="Theme.PHARMAGUARD"
         parent="Theme.AppCompat.Light.NoActionBar">
 
