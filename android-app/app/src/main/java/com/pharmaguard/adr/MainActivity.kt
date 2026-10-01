@@ -13,6 +13,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 
 class MainActivity : AppCompatActivity() {
 
@@ -23,6 +24,10 @@ class MainActivity : AppCompatActivity() {
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
+
+        // Start Android splash screen
+        installSplashScreen()
+
         super.onCreate(savedInstanceState)
 
         webView = WebView(this)
@@ -42,11 +47,14 @@ class MainActivity : AppCompatActivity() {
         webView.webViewClient = WebViewClient()
         webView.webChromeClient = WebChromeClient()
 
+        // Handle CSV / PDF / TXT downloads
         webView.setDownloadListener { url, userAgent, contentDisposition, mimeType, _ ->
 
             val request = DownloadManager.Request(Uri.parse(url))
 
-            val cookies = CookieManager.getInstance().getCookie(url)
+            val cookies = CookieManager
+                .getInstance()
+                .getCookie(url)
 
             if (!cookies.isNullOrEmpty()) {
                 request.addRequestHeader("Cookie", cookies)
@@ -63,6 +71,7 @@ class MainActivity : AppCompatActivity() {
             request.setTitle(fileName)
             request.setDescription("Downloading PHARMAGUARD report")
             request.setMimeType(mimeType)
+
             request.setNotificationVisibility(
                 DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED
             )
@@ -73,13 +82,15 @@ class MainActivity : AppCompatActivity() {
             )
 
             val downloadManager =
-                getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+                getSystemService(Context.DOWNLOAD_SERVICE)
+                        as DownloadManager
 
             downloadManager.enqueue(request)
         }
 
         webView.loadUrl(pharmaguardUrl)
 
+        // Back button behavior
         onBackPressedDispatcher.addCallback(
             this,
             object : OnBackPressedCallback(true) {
