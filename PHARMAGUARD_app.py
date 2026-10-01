@@ -6,6 +6,7 @@ import joblib
 import requests
 import re
 import uuid
+import textwrap
 from pathlib import Path
 
 from datetime import datetime
@@ -1155,25 +1156,23 @@ def render_dashboard_screen():
     # =====================================================
 
     st.markdown(
-        """
-        <div class="pg-dashboard-info">
-
-            <div class="pg-info-title">
-                🛡️ PHARMAGUARD Review Support
+        textwrap.dedent(
+            """
+            <div class="pg-dashboard-info">
+                <div class="pg-info-title">
+                    🛡️ PHARMAGUARD Review Support
+                </div>
+                <div class="pg-info-text">
+                    PHARMAGUARD combines a predefined Safety Gate
+                    with a Random Forest prototype to support
+                    pharmacovigilance review prioritization.
+                </div>
+                <div class="pg-info-note">
+                    Review priority only • Proof of Concept
+                </div>
             </div>
-
-            <div class="pg-info-text">
-                PHARMAGUARD combines a predefined Safety Gate
-                with a Random Forest prototype to support
-                pharmacovigilance review prioritization.
-            </div>
-
-            <div class="pg-info-note">
-                Review priority only • Proof of Concept
-            </div>
-
-        </div>
-        """,
+            """
+        ).strip(),
         unsafe_allow_html=True
     )
 
@@ -1886,16 +1885,21 @@ if active_page == "🔍 New ADR Analysis" and st.session_state.get(
 
     st.markdown("---")
 
-    st.markdown("""
-    <div class="pg-dashboard-header">
-        <div class="pg-dashboard-icon">📊</div>
-        <div>
-            <div class="pg-dashboard-title">PHARMAGUARD Dashboard</div>
-            <div class="pg-dashboard-subtitle">ADR monitoring • Priority overview • Pharmacovigilance review support</div>
-        </div>
-    </div>
-    <div class="pg-note">📌 Dashboard metrics are based on ADR cases currently available in the app session/database view.</div>
-    """, unsafe_allow_html=True)
+    st.markdown(
+        textwrap.dedent(
+            """
+            <div class="pg-dashboard-header">
+                <div class="pg-dashboard-icon">📊</div>
+                <div>
+                    <div class="pg-dashboard-title">PHARMAGUARD Dashboard</div>
+                    <div class="pg-dashboard-subtitle">ADR monitoring • Priority overview • Pharmacovigilance review support</div>
+                </div>
+            </div>
+            <div class="pg-note">📌 Dashboard metrics are based on ADR cases currently available in the app session/database view.</div>
+            """
+        ).strip(),
+        unsafe_allow_html=True
+    )
 
 
     dashboard_df = pd.DataFrame(
