@@ -1474,8 +1474,11 @@ def render_dashboard_screen():
         "➕  Start New ADR Analysis",
         use_container_width=True
     ):
+        # Change only the application page state here.
+        # navigation_page is a Streamlit widget key, so it must NOT be
+        # modified after the radio widget has been created. On the next
+        # rerun, the sidebar syncs navigation_page from active_page.
         st.session_state["active_page"] = "🔍 New ADR Analysis"
-        st.session_state["navigation_page"] = "🔍 New ADR Analysis"
         st.rerun()
 
     # =====================================================
