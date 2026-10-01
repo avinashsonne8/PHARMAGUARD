@@ -716,20 +716,33 @@ with st.sidebar:
     st.markdown("## 🛡️ PHARMAGUARD")
     st.caption("AI-Assisted ADR Risk Prioritization")
     st.markdown("### Navigation")
-    active_page = st.radio(
+    nav_options = [
+        "🏠 Dashboard",
+        "🔍 New ADR Analysis",
+        "📚 ADR History",
+        "📄 Case Reports",
+        "☁️ Database",
+        "ℹ️ About / Methodology",
+        "⚙️ Settings / Disclaimer"
+    ]
+
+    if "active_page" not in st.session_state:
+        st.session_state["active_page"] = "🏠 Dashboard"
+
+    # Keep the sidebar widget state separate from the application page state.
+    # This allows dashboard Quick Action buttons to change active_page safely.
+    if "navigation_page" not in st.session_state:
+        st.session_state["navigation_page"] = st.session_state["active_page"]
+
+    selected_page = st.radio(
         "Open screen",
-        [
-            "🏠 Dashboard",
-            "🔍 New ADR Analysis",
-            "📚 ADR History",
-            "📄 Case Reports",
-            "☁️ Database",
-            "ℹ️ About / Methodology",
-            "⚙️ Settings / Disclaimer"
-        ],
-        key="active_page",
+        nav_options,
+        key="navigation_page",
         label_visibility="collapsed"
     )
+
+    if selected_page != st.session_state["active_page"]:
+        st.session_state["active_page"] = selected_page
     st.divider()
     st.info(
         "Prototype: review-priority support only. "
@@ -1462,6 +1475,7 @@ def render_dashboard_screen():
         use_container_width=True
     ):
         st.session_state["active_page"] = "🔍 New ADR Analysis"
+        st.session_state["navigation_page"] = "🔍 New ADR Analysis"
         st.rerun()
 
     # =====================================================
