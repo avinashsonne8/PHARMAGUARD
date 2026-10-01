@@ -586,6 +586,146 @@ st.markdown(textwrap.dedent("""
 .pg-setting-label { font-size:12px; color:#71808b; font-weight:700; }
 .pg-setting-value { font-size:15px; font-weight:700; margin-top:2px; }
 @media (max-width:700px) { .pg-ui5-title{font-size:21px;} .pg-case-grid{grid-template-columns:1fr;} .pg-case-card{padding:14px;} }
+
+/* =========================================================
+   UI-7 — PROFESSIONAL SIDEBAR NAVIGATION
+   ========================================================= */
+section[data-testid="stSidebar"] {
+    background: #f8fbfd;
+    border-right: 1px solid #dce7ee;
+}
+
+section[data-testid="stSidebar"] > div {
+    padding-top: 1.1rem;
+}
+
+.pg-sidebar-brand {
+    padding: 4px 2px 14px 2px;
+}
+
+.pg-sidebar-brand-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.pg-sidebar-logo {
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 13px;
+    background: #102a43;
+    font-size: 22px;
+    box-shadow: 0 5px 14px rgba(16,42,67,.12);
+}
+
+.pg-sidebar-name {
+    font-size: 17px;
+    font-weight: 850;
+    letter-spacing: .35px;
+    color: #102a43;
+}
+
+.pg-sidebar-subtitle {
+    margin-top: 2px;
+    font-size: 10px;
+    font-weight: 650;
+    color: #71808b;
+}
+
+.pg-sidebar-status {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 4px 9px;
+    border-radius: 999px;
+    background: #eaf6ef;
+    border: 1px solid #cfe8d8;
+    color: #276749;
+    font-size: 10px;
+    font-weight: 750;
+}
+
+.pg-sidebar-section {
+    margin: 16px 2px 6px 2px;
+    font-size: 9px;
+    line-height: 1.2;
+    font-weight: 850;
+    letter-spacing: 1.15px;
+    color: #8292a2;
+}
+
+section[data-testid="stSidebar"] div.stButton > button {
+    min-height: 42px;
+    margin: 2px 0;
+    padding: 0 12px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    text-align: left;
+    justify-content: flex-start;
+    font-size: 13px;
+    font-weight: 700;
+    box-shadow: none;
+}
+
+section[data-testid="stSidebar"] div.stButton > button[kind="secondary"] {
+    background: transparent;
+    color: #425466;
+}
+
+section[data-testid="stSidebar"] div.stButton > button[kind="secondary"]:hover {
+    background: #edf4f8;
+    border-color: #d8e5ec;
+    color: #102a43;
+}
+
+section[data-testid="stSidebar"] div.stButton > button[kind="primary"] {
+    background: #102a43;
+    border-color: #102a43;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(16,42,67,.14);
+}
+
+section[data-testid="stSidebar"] div.stButton > button[kind="primary"]:hover {
+    background: #173d5f;
+    border-color: #173d5f;
+}
+
+.pg-sidebar-divider {
+    height: 1px;
+    margin: 18px 2px 12px 2px;
+    background: #dce7ee;
+}
+
+.pg-sidebar-note {
+    padding: 12px;
+    border-radius: 12px;
+    background: #ffffff;
+    border: 1px solid #dce7ee;
+}
+
+.pg-sidebar-note-title {
+    font-size: 11px;
+    font-weight: 800;
+    color: #243b53;
+}
+
+.pg-sidebar-note-text {
+    margin-top: 4px;
+    font-size: 10px;
+    line-height: 1.45;
+    color: #71808b;
+}
+
+@media (max-width: 700px) {
+    .pg-sidebar-name { font-size: 16px; }
+    .pg-sidebar-section { margin-top: 13px; }
+    section[data-testid="stSidebar"] div.stButton > button {
+        min-height: 44px;
+    }
+}
+
 </style>
 """).strip(), unsafe_allow_html=True)
 
@@ -712,41 +852,100 @@ hr {
 # APP NAVIGATION / PROJECT INFO
 # =========================================================
 
-with st.sidebar:
-    st.markdown("## 🛡️ PHARMAGUARD")
-    st.caption("AI-Assisted ADR Risk Prioritization")
-    st.markdown("### Navigation")
-    nav_options = [
-        "🏠 Dashboard",
-        "🔍 New ADR Analysis",
-        "📚 ADR History",
-        "📄 Case Reports",
-        "☁️ Database",
-        "ℹ️ About / Methodology",
-        "⚙️ Settings / Disclaimer"
-    ]
+# =========================================================
+# PROFESSIONAL SIDEBAR NAVIGATION
+# =========================================================
 
+def _navigate_to(page):
+    st.session_state["active_page"] = page
+
+
+with st.sidebar:
     if "active_page" not in st.session_state:
         st.session_state["active_page"] = "🏠 Dashboard"
 
-    # Keep the sidebar widget state separate from the application page state.
-    # Sync the widget to the application page BEFORE creating the widget.
-    # This lets Quick Action change the page safely across Streamlit reruns.
-    st.session_state["navigation_page"] = st.session_state["active_page"]
+    current_page = st.session_state["active_page"]
 
-    selected_page = st.radio(
-        "Open screen",
-        nav_options,
-        key="navigation_page",
-        label_visibility="collapsed"
+    st.markdown(
+        """
+        <div class="pg-sidebar-brand">
+            <div class="pg-sidebar-brand-row">
+                <div class="pg-sidebar-logo">🛡️</div>
+                <div>
+                    <div class="pg-sidebar-name">PHARMAGUARD</div>
+                    <div class="pg-sidebar-subtitle">ADR Risk Prioritization</div>
+                </div>
+            </div>
+            <div class="pg-sidebar-status">● Prototype • Active</div>
+        </div>
+        """,
+        unsafe_allow_html=True
     )
 
-    if selected_page != st.session_state["active_page"]:
-        st.session_state["active_page"] = selected_page
-    st.divider()
-    st.info(
-        "Prototype: review-priority support only. "
-        "It does not replace clinical, causality, or regulatory assessment."
+    st.markdown('<div class="pg-sidebar-section">WORKSPACE</div>', unsafe_allow_html=True)
+
+    workspace_items = [
+        ("🏠 Dashboard", "Dashboard"),
+        ("🔍 New ADR Analysis", "New Analysis"),
+    ]
+
+    for page, label in workspace_items:
+        st.button(
+            page,
+            key=f"nav_{page}",
+            use_container_width=True,
+            type="primary" if current_page == page else "secondary",
+            on_click=_navigate_to,
+            args=(page,)
+        )
+
+    st.markdown('<div class="pg-sidebar-section">RECORDS & REPORTS</div>', unsafe_allow_html=True)
+
+    record_items = [
+        ("📚 ADR History", "ADR History"),
+        ("📄 Case Reports", "Case Reports"),
+        ("☁️ Database", "Database"),
+    ]
+
+    for page, label in record_items:
+        st.button(
+            page,
+            key=f"nav_{page}",
+            use_container_width=True,
+            type="primary" if current_page == page else "secondary",
+            on_click=_navigate_to,
+            args=(page,)
+        )
+
+    st.markdown('<div class="pg-sidebar-section">PROJECT & SYSTEM</div>', unsafe_allow_html=True)
+
+    system_items = [
+        ("ℹ️ About / Methodology", "About / Methodology"),
+        ("⚙️ Settings / Disclaimer", "Settings / Disclaimer"),
+    ]
+
+    for page, label in system_items:
+        st.button(
+            page,
+            key=f"nav_{page}",
+            use_container_width=True,
+            type="primary" if current_page == page else "secondary",
+            on_click=_navigate_to,
+            args=(page,)
+        )
+
+    st.markdown('<div class="pg-sidebar-divider"></div>', unsafe_allow_html=True)
+    st.markdown(
+        """
+        <div class="pg-sidebar-note">
+            <div class="pg-sidebar-note-title">Safety-first workflow</div>
+            <div class="pg-sidebar-note-text">
+                Review-priority support only. PHARMAGUARD does not replace
+                clinical, causality, or regulatory assessment.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
     )
 
 
