@@ -2146,6 +2146,64 @@ def render_case_reports_screen():
     )
 
     # =====================================================
+    # INNOVATION 2 — PHARMACIST REVIEW CHECKLIST
+    # =====================================================
+    st.markdown("### 🧑‍⚕️ Pharmacist Review Checklist")
+    st.markdown(
+        """
+        <div class="pg-section-card">
+            <h4>Structured review before pharmacovigilance follow-up</h4>
+            <div>
+                Use this checklist to document the key review steps for the selected ADR case.
+                Checklist completion does not replace professional or regulatory assessment.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    checklist_items = [
+        ("patient_info", "Patient information reviewed"),
+        ("drug_verified", "Suspected / reported drug verified"),
+        ("adr_description", "ADR description reviewed"),
+        ("seriousness_checked", "Seriousness criteria checked"),
+        ("outcome_assessed", "Patient outcome assessed"),
+        ("medical_info", "Relevant medical / clinical information reviewed"),
+        ("follow_up", "Follow-up information required / considered"),
+    ]
+
+    checklist_state_key = f"review_checklist_{selected_idx}"
+    if checklist_state_key not in st.session_state:
+        st.session_state[checklist_state_key] = {key: False for key, _ in checklist_items}
+
+    checklist_state = st.session_state[checklist_state_key]
+    checklist_cols = st.columns(2)
+    for i, (item_key, item_label) in enumerate(checklist_items):
+        with checklist_cols[i % 2]:
+            checklist_state[item_key] = st.checkbox(
+                item_label,
+                value=checklist_state.get(item_key, False),
+                key=f"{checklist_state_key}_{item_key}"
+            )
+
+    completed_count = sum(bool(checklist_state.get(key, False)) for key, _ in checklist_items)
+    total_count = len(checklist_items)
+    reviewer_note = st.text_area(
+        "Reviewer comments (optional)",
+        key=f"reviewer_note_{selected_idx}",
+        placeholder="Example: Seriousness reviewed; additional clinical follow-up may be required."
+    )
+
+    if completed_count == total_count:
+        st.success(f"✅ Review checklist complete — {completed_count}/{total_count} items")
+    else:
+        st.info(f"📋 Review checklist progress — {completed_count}/{total_count} items completed")
+
+    st.caption(
+        "Prototype note: checklist status and reviewer comments are maintained for the current app session and are not added to the Google Sheet database in v18."
+    )
+
+    # =====================================================
     # INNOVATION 1 — DYNAMIC ADR RISK REASSESSMENT
     # =====================================================
     st.markdown("### 🔄 Dynamic ADR Risk Reassessment")
