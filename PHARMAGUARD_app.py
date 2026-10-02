@@ -1985,6 +1985,123 @@ def render_dashboard_screen():
     )
 
     # =====================================================
+    # V25 — QUALITY & AUDIT DASHBOARD
+    # =====================================================
+    # Descriptive prototype audit indicators only; not clinical performance metrics.
+    qa_total = int(len(df))
+
+    if qa_total > 0:
+        qa_priority_known = int(
+            df["Priority"].astype(str).str.upper().isin(
+                ["HIGH", "MODERATE", "LOW"]
+            ).sum()
+            if "Priority" in df.columns else 0
+        )
+        qa_source_known = int(
+            df["Decision_Source"].astype(str).str.strip().ne("").sum()
+            if "Decision_Source" in df.columns else 0
+        )
+        qa_case_ref_known = int(
+            df["Case_Reference"].astype(str).str.strip().ne("").sum()
+            if "Case_Reference" in df.columns else 0
+        )
+        qa_adr_known = int(
+            df["ADR"].astype(str).str.strip().ne("").sum()
+            if "ADR" in df.columns else 0
+        )
+        qa_drug_known = int(
+            df["Drug"].astype(str).str.strip().ne("").sum()
+            if "Drug" in df.columns else 0
+        )
+    else:
+        qa_priority_known = qa_source_known = qa_case_ref_known = 0
+        qa_adr_known = qa_drug_known = 0
+
+    qa_reassessment_linked = int(
+        df["Reassessment_Of"].astype(str).str.strip().ne("").sum()
+        if "Reassessment_Of" in df.columns else 0
+    )
+    qa_original_linked = int(
+        df["Original_Case_Reference"].astype(str).str.strip().ne("").sum()
+        if "Original_Case_Reference" in df.columns else 0
+    )
+
+    st.markdown("### 🧪 PHARMAGUARD Quality & Audit Dashboard")
+    st.caption(
+        "Descriptive audit indicators for the prototype records currently available in the app. "
+        "These indicators do not represent clinical validation, model accuracy, or regulatory performance."
+    )
+
+    qa1, qa2, qa3, qa4 = st.columns(4)
+    with qa1:
+        st.metric("📋 Total Records", qa_total)
+    with qa2:
+        st.metric("🎯 Priority Recorded", qa_priority_known)
+    with qa3:
+        st.metric("🧭 Decision Source", qa_source_known)
+    with qa4:
+        st.metric("🔗 Reassessment Links", qa_reassessment_linked)
+
+    qa5, qa6, qa7, qa8 = st.columns(4)
+    with qa5:
+        st.metric("🆔 Case References", qa_case_ref_known)
+    with qa6:
+        st.metric("⚠️ ADR Recorded", qa_adr_known)
+    with qa7:
+        st.metric("💊 Drug Recorded", qa_drug_known)
+    with qa8:
+        st.metric("🧬 Original Links", qa_original_linked)
+
+    if qa_total:
+        completeness = round(
+            (qa_priority_known + qa_source_known + qa_case_ref_known + qa_adr_known + qa_drug_known)
+            / (5 * qa_total) * 100,
+            1
+        )
+        st.progress(
+            min(completeness / 100, 1.0),
+            text=f"Core record-field coverage: {completeness}%"
+        )
+
+    qa_audit = pd.DataFrame({
+        "Audit Indicator": [
+            "Priority recorded",
+            "Decision source recorded",
+            "Case reference recorded",
+            "ADR recorded",
+            "Drug recorded",
+            "Reassessment-linked records"
+        ],
+        "Count": [
+            qa_priority_known,
+            qa_source_known,
+            qa_case_ref_known,
+            qa_adr_known,
+            qa_drug_known,
+            qa_reassessment_linked
+        ]
+    })
+
+    st.dataframe(
+        qa_audit,
+        use_container_width=True,
+        hide_index=True
+    )
+
+    st.download_button(
+        label="⬇️ Download Quality & Audit Summary",
+        data=qa_audit.to_csv(index=False),
+        file_name="PHARMAGUARD_Quality_Audit_Summary.csv",
+        mime="text/csv",
+        use_container_width=True
+    )
+
+    st.info(
+        "Audit indicators are intended to support prototype documentation and demonstration. "
+        "They should not be interpreted as evidence of clinical validity or model performance."
+    )
+
+    # =====================================================
     # RECENT CASES
     # =====================================================
 
