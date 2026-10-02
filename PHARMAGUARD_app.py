@@ -2558,6 +2558,61 @@ def render_case_reports_screen():
             hide_index=True
         )
 
+    # =========================================================
+    # INNOVATION 3 — LONGITUDINAL ADR CASE TIMELINE
+    # =========================================================
+    # This summarizes the complete linked case journey without changing
+    # any priority or clinical decision logic.
+    if timeline_records:
+        st.markdown("### 🔗 Longitudinal ADR Case Timeline")
+        st.caption(
+            "A version-by-version view of the same ADR case from the original report "
+            "through reassessment. This is a record-tracking view, not a clinical outcome prediction."
+        )
+
+        first_record = timeline_records[0]
+        latest_record = timeline_records[-1]
+        first_priority = str(first_record.get("Priority", "UNKNOWN"))
+        latest_priority = str(latest_record.get("Priority", "UNKNOWN"))
+
+        tl1, tl2, tl3 = st.columns(3)
+        with tl1:
+            st.metric("📌 Versions", len(timeline_records))
+        with tl2:
+            st.metric("Initial Priority", first_priority)
+        with tl3:
+            st.metric("Current Priority", latest_priority)
+
+        timeline_display = []
+        for position, item in enumerate(timeline_records, start=1):
+            reassessment_no = str(item.get("Reassessment_Number", "")).strip()
+            version_label = "Initial Report" if not reassessment_no else f"Reassessment {reassessment_no}"
+            timeline_display.append({
+                "Step": position,
+                "Version": version_label,
+                "Priority": item.get("Priority", "UNKNOWN"),
+                "ADR / New Information": item.get("ADR", ""),
+                "Decision Source": item.get("Decision_Source", ""),
+                "Date & Time": item.get("Date_Time", ""),
+            })
+
+        st.dataframe(
+            pd.DataFrame(timeline_display),
+            use_container_width=True,
+            hide_index=True
+        )
+
+        if first_priority != latest_priority:
+            st.info(
+                f"🔄 Priority changed across recorded versions: "
+                f"**{first_priority} → {latest_priority}**. "
+                "The change reflects the reassessment record and does not modify the original case version."
+            )
+        else:
+            st.info(
+                f"ℹ️ Priority remained **{latest_priority}** across the recorded versions."
+            )
+
     st.markdown("### 📥 Export Report")
 
     report_text = f"""PHARMAGUARD ADR CASE REPORT
