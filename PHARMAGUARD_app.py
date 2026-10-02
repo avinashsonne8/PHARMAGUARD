@@ -1233,7 +1233,7 @@ def validate_adr_input(adr_text):
 # SAVE DATA TO GOOGLE SHEET
 # =========================================================
 
-def save_to_google_sheet(data):
+def save_to_google_sheet(data, return_details=False):
 
     try:
 
@@ -1243,9 +1243,21 @@ def save_to_google_sheet(data):
             timeout=15
         )
 
-        return response.status_code == 200
+        ok = response.status_code in {200, 201}
 
-    except Exception:
+        if return_details:
+            return (
+                ok,
+                response.status_code,
+                response.text[:500] if response.text else ""
+            )
+
+        return ok
+
+    except Exception as exc:
+
+        if return_details:
+            return False, None, str(exc)[:500]
 
         return False
 
@@ -2234,7 +2246,25 @@ def render_case_reports_screen():
                         "Follow_Up_Note": reassessment_note.strip(),
                     }
 
-                    saved = save_to_google_sheet(new_record)
+                    # Show the reassessment result independently of database saving.
+                    # This prevents a database/API failure from hiding the Safety Gate result.
+                    st.markdown(
+                        f"**Previous:** {priority}  →  **Updated:** {new_priority}"
+                    )
+                    st.markdown(
+                        f"**Decision Source:** {new_decision_source}"
+                    )
+                    st.markdown(
+                        f"**Detected signal:** {new_reason}"
+                    )
+                    st.markdown(
+                        f"**Recommended action:** {new_recommendation}"
+                    )
+
+                    saved, save_status, save_response = save_to_google_sheet(
+                        new_record,
+                        return_details=True
+                    )
 
                     if saved:
                         try:
@@ -2259,14 +2289,17 @@ def render_case_reports_screen():
                                 f"Priority remains **{new_priority}** after reassessment."
                             )
 
-                        st.markdown(
-                            f"**Previous:** {priority}  →  **Updated:** {new_priority}  "
-                            f"\n\n**Decision Source:** {new_decision_source}  "
-                            f"\n\n**Reason:** {new_reason}"
-                        )
                     else:
                         st.error(
-                            "❌ Reassessment was analyzed but could not be saved to the database."
+                            "❌ Reassessment was analyzed, but the database save failed."
+                        )
+                        if save_status is not None:
+                            st.caption(f"Database response status: HTTP {save_status}")
+                        if save_response:
+                            st.code(save_response)
+                        st.info(
+                            "The reassessment result above is still the PHARMAGUARD engine result. "
+                            "Only the database save failed. Use the HTTP response above to identify the server-side issue."
                         )
 
     # Linked reassessment timeline for the selected case.
