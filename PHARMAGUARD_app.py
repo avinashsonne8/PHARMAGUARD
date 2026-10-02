@@ -25,6 +25,259 @@ st.set_page_config(
 
 
 # =========================================================
+# DARK MODE READABILITY PATCH — UI ONLY
+# =========================================================
+
+st.markdown(r"""
+<style>
+/* Streamlit dark theme: keep custom PHARMAGUARD surfaces readable. */
+html[data-theme="dark"] .pg-header,
+body[data-theme="dark"] .pg-header,
+[data-theme="dark"] .pg-header {
+    background: linear-gradient(135deg, #172536 0%, #111827 100%) !important;
+    border-color: #334155 !important;
+}
+
+html[data-theme="dark"] .pg-header *,
+body[data-theme="dark"] .pg-header *,
+[data-theme="dark"] .pg-header * {
+    color: #f1f5f9 !important;
+}
+
+html[data-theme="dark"] .pg-tag,
+[data-theme="dark"] .pg-tag {
+    background: #26384b !important;
+    color: #e2e8f0 !important;
+}
+
+html[data-theme="dark"] .pg-section,
+html[data-theme="dark"] .pg-note,
+html[data-theme="dark"] .pg-dashboard-header,
+html[data-theme="dark"] .pg-kpi,
+html[data-theme="dark"] .pg-appbar,
+html[data-theme="dark"] .pg-hero,
+html[data-theme="dark"] .pg-dashboard-hero,
+html[data-theme="dark"] .pg-stat-card,
+html[data-theme="dark"] .pg-recent-card,
+html[data-theme="dark"] .pg-result-detail,
+html[data-theme="dark"] .pg-case-card,
+html[data-theme="dark"] .pg-case-field,
+html[data-theme="dark"] .pg-section-card,
+html[data-theme="dark"] .pg-method-step,
+html[data-theme="dark"] .pg-disclaimer,
+html[data-theme="dark"] .pg-disclaimer-box,
+html[data-theme="dark"] .pg-input-tip,
+html[data-theme="dark"] .pg-db-status,
+html[data-theme="dark"] .pg-ui6-footer,
+[data-theme="dark"] .pg-section,
+[data-theme="dark"] .pg-note,
+[data-theme="dark"] .pg-dashboard-header,
+[data-theme="dark"] .pg-kpi,
+[data-theme="dark"] .pg-appbar,
+[data-theme="dark"] .pg-hero,
+[data-theme="dark"] .pg-dashboard-hero,
+[data-theme="dark"] .pg-stat-card,
+[data-theme="dark"] .pg-recent-card,
+[data-theme="dark"] .pg-result-detail,
+[data-theme="dark"] .pg-case-card,
+[data-theme="dark"] .pg-case-field,
+[data-theme="dark"] .pg-section-card,
+[data-theme="dark"] .pg-method-step,
+[data-theme="dark"] .pg-disclaimer,
+[data-theme="dark"] .pg-disclaimer-box,
+[data-theme="dark"] .pg-input-tip,
+[data-theme="dark"] .pg-db-status,
+[data-theme="dark"] .pg-ui6-footer {
+    background: #18212b !important;
+    border-color: #344454 !important;
+    color: #e5edf5 !important;
+}
+
+html[data-theme="dark"] .pg-dashboard-title,
+html[data-theme="dark"] .pg-dashboard-copy,
+html[data-theme="dark"] .pg-dashboard-subtitle,
+html[data-theme="dark"] .pg-hero-title,
+html[data-theme="dark"] .pg-hero-text,
+html[data-theme="dark"] .pg-dashboard-copy *,
+html[data-theme="dark"] .pg-kpi-label,
+html[data-theme="dark"] .pg-kpi-value,
+html[data-theme="dark"] .pg-kpi-foot,
+html[data-theme="dark"] .pg-recent-ref,
+html[data-theme="dark"] .pg-recent-drug,
+html[data-theme="dark"] .pg-recent-adr,
+html[data-theme="dark"] .pg-recent-date,
+html[data-theme="dark"] .pg-case-ref,
+html[data-theme="dark"] .pg-case-label,
+html[data-theme="dark"] .pg-setting-label,
+html[data-theme="dark"] .pg-ui6-footer,
+[data-theme="dark"] .pg-dashboard-title,
+[data-theme="dark"] .pg-dashboard-copy,
+[data-theme="dark"] .pg-dashboard-subtitle,
+[data-theme="dark"] .pg-hero-title,
+[data-theme="dark"] .pg-hero-text,
+[data-theme="dark"] .pg-dashboard-copy *,
+[data-theme="dark"] .pg-kpi-label,
+[data-theme="dark"] .pg-kpi-value,
+[data-theme="dark"] .pg-kpi-foot,
+[data-theme="dark"] .pg-recent-ref,
+[data-theme="dark"] .pg-recent-drug,
+[data-theme="dark"] .pg-recent-adr,
+[data-theme="dark"] .pg-recent-date,
+[data-theme="dark"] .pg-case-ref,
+[data-theme="dark"] .pg-case-label,
+[data-theme="dark"] .pg-setting-label,
+[data-theme="dark"] .pg-ui6-footer {
+    color: #e5edf5 !important;
+}
+
+html[data-theme="dark"] .pg-result-message,
+html[data-theme="dark"] .pg-note,
+html[data-theme="dark"] .pg-hero-text,
+html[data-theme="dark"] .pg-dashboard-subtitle,
+[data-theme="dark"] .pg-result-message,
+[data-theme="dark"] .pg-note,
+[data-theme="dark"] .pg-hero-text,
+[data-theme="dark"] .pg-dashboard-subtitle {
+    color: #b7c4d1 !important;
+}
+
+/* Priority/result surfaces */
+html[data-theme="dark"] .pg-result-high,
+[data-theme="dark"] .pg-result-high,
+html[data-theme="dark"] .pg-result-high-main,
+[data-theme="dark"] .pg-result-high-main {
+    background: #3a2023 !important;
+    border-color: #7f3438 !important;
+}
+html[data-theme="dark"] .pg-result-moderate,
+[data-theme="dark"] .pg-result-moderate,
+html[data-theme="dark"] .pg-result-moderate-main,
+[data-theme="dark"] .pg-result-moderate-main {
+    background: #3a301b !important;
+    border-color: #806a22 !important;
+}
+html[data-theme="dark"] .pg-result-low,
+[data-theme="dark"] .pg-result-low,
+html[data-theme="dark"] .pg-result-low-main,
+[data-theme="dark"] .pg-result-low-main {
+    background: #1c3527 !important;
+    border-color: #3f7650 !important;
+}
+html[data-theme="dark"] .pg-result-unknown,
+[data-theme="dark"] .pg-result-unknown-main {
+    background: #242b33 !important;
+    border-color: #465363 !important;
+}
+
+/* Native Streamlit controls */
+html[data-theme="dark"] .stTextInput input,
+html[data-theme="dark"] .stTextArea textarea,
+html[data-theme="dark"] .stNumberInput input,
+html[data-theme="dark"] .stDateInput input,
+html[data-theme="dark"] .stTimeInput input,
+[data-theme="dark"] .stTextInput input,
+[data-theme="dark"] .stTextArea textarea,
+[data-theme="dark"] .stNumberInput input,
+[data-theme="dark"] .stDateInput input,
+[data-theme="dark"] .stTimeInput input {
+    background: #111923 !important;
+    color: #f1f5f9 !important;
+    border-color: #465667 !important;
+    caret-color: #ffffff !important;
+}
+
+html[data-theme="dark"] input::placeholder,
+html[data-theme="dark"] textarea::placeholder,
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+    color: #94a3b8 !important;
+    opacity: 1 !important;
+}
+
+html[data-theme="dark"] [data-baseweb="select"] > div,
+[data-theme="dark"] [data-baseweb="select"] > div {
+    background: #111923 !important;
+    color: #f1f5f9 !important;
+    border-color: #465667 !important;
+}
+
+html[data-theme="dark"] [data-baseweb="popover"] > div,
+html[data-theme="dark"] [role="listbox"],
+[data-theme="dark"] [data-baseweb="popover"] > div,
+[data-theme="dark"] [role="listbox"] {
+    background: #18212b !important;
+    color: #f1f5f9 !important;
+}
+
+html[data-theme="dark"] [role="option"],
+[data-theme="dark"] [role="option"] {
+    color: #e5edf5 !important;
+}
+
+/* Buttons and expanders */
+html[data-theme="dark"] .stButton > button,
+html[data-theme="dark"] .stDownloadButton > button,
+[data-theme="dark"] .stButton > button,
+[data-theme="dark"] .stDownloadButton > button {
+    background: #18212b !important;
+    color: #f1f5f9 !important;
+    border-color: #465667 !important;
+}
+
+html[data-theme="dark"] .stButton > button:hover,
+html[data-theme="dark"] .stDownloadButton > button:hover,
+[data-theme="dark"] .stButton > button:hover,
+[data-theme="dark"] .stDownloadButton > button:hover {
+    background: #243241 !important;
+    border-color: #6b7f93 !important;
+}
+
+html[data-theme="dark"] [data-testid="stExpander"],
+[data-theme="dark"] [data-testid="stExpander"] {
+    background: #18212b !important;
+    border-color: #3b4b5c !important;
+}
+
+html[data-theme="dark"] [data-testid="stExpander"] summary,
+[data-theme="dark"] [data-testid="stExpander"] summary {
+    color: #f1f5f9 !important;
+}
+
+/* Alerts */
+html[data-theme="dark"] [data-testid="stAlert"],
+[data-theme="dark"] [data-testid="stAlert"] {
+    color: #e5edf5 !important;
+}
+
+/* Tables/dataframes */
+html[data-theme="dark"] [data-testid="stDataFrame"],
+[data-theme="dark"] [data-testid="stDataFrame"] {
+    border-color: #3b4b5c !important;
+}
+
+/* Sidebar */
+html[data-theme="dark"] [data-testid="stSidebar"],
+[data-theme="dark"] [data-testid="stSidebar"] {
+    background: #0f1720 !important;
+}
+
+html[data-theme="dark"] [data-testid="stSidebar"] *,
+[data-theme="dark"] [data-testid="stSidebar"] * {
+    color: #e5edf5;
+}
+
+/* General muted text inside app */
+html[data-theme="dark"] .stCaption,
+html[data-theme="dark"] [data-testid="stCaptionContainer"],
+[data-theme="dark"] .stCaption,
+[data-theme="dark"] [data-testid="stCaptionContainer"] {
+    color: #a9b7c5 !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+
+# =========================================================
 # PROFESSIONAL HEADER
 # =========================================================
 
