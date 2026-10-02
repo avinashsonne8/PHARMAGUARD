@@ -1855,29 +1855,20 @@ def _priority_counts(df):
 
 
 def render_dashboard_screen():
-    """Clean executive dashboard: overview and navigation only.
-
-    Detailed analytics, safety intelligence, and quality/audit information
-    live on the Analytics page so the dashboard remains uncluttered.
-    """
+    """Minimal executive dashboard: identity, actions, case overview and recent cases."""
     df = pd.DataFrame(st.session_state.get("adr_history", []))
     counts = _priority_counts(df)
 
     # =====================================================
-    # HEADER
+    # DASHBOARD INTRO
     # =====================================================
     st.markdown(
-        """<div class="pg-dashboard-hero">
-<div class="pg-dashboard-icon">🛡️</div>
-<div class="pg-dashboard-copy">
-<div class="pg-dashboard-title">PHARMAGUARD</div>
-<div class="pg-dashboard-subtitle">AI-Assisted ADR Risk Prioritization System</div>
-</div>
+        """<div class="pg-dashboard-intro">
+<div class="pg-dashboard-intro-title">ADR Review Dashboard</div>
+<div class="pg-dashboard-intro-text">A quick overview of recorded ADR reports and direct access to the main PHARMAGUARD workflows.</div>
 </div>""",
         unsafe_allow_html=True,
     )
-
-    st.caption("Pharmacovigilance • Review-priority support • Proof of Concept")
 
     # =====================================================
     # QUICK ACTIONS
@@ -1901,10 +1892,10 @@ def render_dashboard_screen():
             st.rerun()
 
     # =====================================================
-    # CORE OVERVIEW — KEEP DASHBOARD SIMPLE
+    # CASE OVERVIEW — COMPACT 2 x 2 LAYOUT
     # =====================================================
     st.markdown("### Case Overview")
-    c1, c2, c3, c4 = st.columns(4)
+    c1, c2 = st.columns(2)
 
     with c1:
         st.markdown(
@@ -1916,6 +1907,16 @@ def render_dashboard_screen():
 </div>""",
             unsafe_allow_html=True,
         )
+        st.markdown(
+            f"""<div class="pg-stat-card pg-moderate-card">
+<div class="pg-stat-icon">🟡</div>
+<div class="pg-stat-label">Moderate</div>
+<div class="pg-stat-value">{counts['MODERATE']}</div>
+<div class="pg-stat-note">Clinical review signal</div>
+</div>""",
+            unsafe_allow_html=True,
+        )
+
     with c2:
         st.markdown(
             f"""<div class="pg-stat-card pg-high-card">
@@ -1926,17 +1927,6 @@ def render_dashboard_screen():
 </div>""",
             unsafe_allow_html=True,
         )
-    with c3:
-        st.markdown(
-            f"""<div class="pg-stat-card pg-moderate-card">
-<div class="pg-stat-icon">🟡</div>
-<div class="pg-stat-label">Moderate</div>
-<div class="pg-stat-value">{counts['MODERATE']}</div>
-<div class="pg-stat-note">Clinical review signal</div>
-</div>""",
-            unsafe_allow_html=True,
-        )
-    with c4:
         st.markdown(
             f"""<div class="pg-stat-card pg-low-card">
 <div class="pg-stat-icon">🟢</div>
@@ -1948,35 +1938,7 @@ def render_dashboard_screen():
         )
 
     # =====================================================
-    # REVIEW ACTIVITY — SMALL SUMMARY ONLY
-    # =====================================================
-    source_series = (
-        df["Decision_Source"].astype(str).str.strip()
-        if "Decision_Source" in df.columns
-        else pd.Series(dtype=str)
-    )
-    safety_gate_cases = int(source_series.str.startswith("Safety Gate", na=False).sum())
-    reassessment_cases = int(
-        df["Reassessment_Of"].astype(str).str.strip().ne("").sum()
-        if "Reassessment_Of" in df.columns else 0
-    )
-
-    st.markdown("### Review Activity")
-    r1, r2, r3 = st.columns(3)
-    with r1:
-        st.metric("🛡️ Safety Gate Cases", safety_gate_cases)
-    with r2:
-        st.metric("🔄 Reassessments", reassessment_cases)
-    with r3:
-        st.metric("📊 Detailed Insights", "Analytics")
-
-    st.caption(
-        "For detailed priority distributions, ADR/drug trends, Safety Intelligence, "
-        "and Quality & Audit indicators, open Analytics."
-    )
-
-    # =====================================================
-    # RECENT CASES — COMPACT PREVIEW ONLY
+    # RECENT CASES — PREVIEW ONLY
     # =====================================================
     if df.empty:
         st.markdown(
@@ -1991,9 +1953,8 @@ def render_dashboard_screen():
 
     st.markdown("### 🕐 Recent Cases")
     recent_cols = [
-        c for c in [
-            "Case_Reference", "Drug", "ADR", "Priority", "Date_Time"
-        ] if c in df.columns
+        c for c in ["Case_Reference", "Drug", "ADR", "Priority", "Date_Time"]
+        if c in df.columns
     ]
     recent_df = df[recent_cols].tail(5).iloc[::-1].copy()
     st.dataframe(
