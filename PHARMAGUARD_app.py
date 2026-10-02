@@ -204,6 +204,27 @@ div.stButton > button * {
 
 /* Native Streamlit inputs, selects, alerts, dataframes and sidebar remain
    owned by Streamlit's theme. */
+
+/* v42 — safe navigation: style only our custom navigation content.
+   Do not paint the sidebar or page background; Streamlit owns those surfaces. */
+section[data-testid="stSidebar"] .pg-sidebar-name,
+section[data-testid="stSidebar"] .pg-sidebar-section,
+section[data-testid="stSidebar"] .pg-sidebar-note-title {
+    color: var(--text-color) !important;
+}
+section[data-testid="stSidebar"] .pg-sidebar-subtitle,
+section[data-testid="stSidebar"] .pg-sidebar-note-text {
+    color: var(--secondary-text-color) !important;
+}
+section[data-testid="stSidebar"] .pg-sidebar-divider {
+    background: var(--border-color) !important;
+}
+section[data-testid="stSidebar"] div.stButton > button {
+    color: var(--text-color) !important;
+}
+section[data-testid="stSidebar"] .pg-sidebar-status {
+    color: var(--text-color) !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -1135,46 +1156,7 @@ with st.sidebar:
         </div>""", unsafe_allow_html=True
     )
 
-# v41: let Streamlit's native theme control the sidebar surface and custom nav text.
-st.markdown("""
-<style>
-section[data-testid="stSidebar"] {
-    background: var(--secondary-background-color) !important;
-    border-right: 1px solid var(--border-color) !important;
-}
-section[data-testid="stSidebar"] .pg-sidebar-name,
-section[data-testid="stSidebar"] .pg-sidebar-section,
-section[data-testid="stSidebar"] .pg-sidebar-note-title { color: var(--text-color) !important; }
-section[data-testid="stSidebar"] .pg-sidebar-subtitle,
-section[data-testid="stSidebar"] .pg-sidebar-note-text { color: var(--secondary-text-color) !important; }
-section[data-testid="stSidebar"] .pg-sidebar-note {
-    background: var(--background-color) !important;
-    border-color: var(--border-color) !important;
-}
-section[data-testid="stSidebar"] .pg-sidebar-divider { background: var(--border-color) !important; }
-section[data-testid="stSidebar"] div.stButton > button[kind="secondary"] {
-    background: transparent !important;
-    color: var(--text-color) !important;
-    border-color: transparent !important;
-}
-section[data-testid="stSidebar"] div.stButton > button[kind="secondary"]:hover {
-    background: var(--secondary-background-color) !important;
-    border-color: var(--border-color) !important;
-    color: var(--text-color) !important;
-}
-section[data-testid="stSidebar"] div.stButton > button[kind="primary"] {
-    background: var(--primary-color) !important;
-    border-color: var(--primary-color) !important;
-    color: #ffffff !important;
-}
-section[data-testid="stSidebar"] .pg-sidebar-status {
-    background: var(--secondary-background-color) !important;
-    border-color: var(--border-color) !important;
-    color: var(--text-color) !important;
-}
-</style>
-""", unsafe_allow_html=True)
-
+# v42: navigation uses Streamlit native sidebar surface; no sidebar surface override.
 
 # =========================================================
 # V28 — THEME / DARK-MODE READABILITY OVERRIDES
