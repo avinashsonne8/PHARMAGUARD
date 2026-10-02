@@ -1,4 +1,4 @@
-# PHARMAGUARD Professional UI v2
+# PHARMAGUARD Professional UI v27 — Clean Professional Navigation
 # Dashboard HTML rendering fix — backend/Safety Gate/ML/database logic preserved.
 import streamlit as st
 import pandas as pd
@@ -726,6 +726,10 @@ section[data-testid="stSidebar"] div.stButton > button[kind="primary"]:hover {
     }
 }
 
+
+.pg-sidebar-section { margin-top: 12px; margin-bottom: 6px; font-size: 10px; letter-spacing: 1.2px; font-weight: 800; color: #7a8793; }
+.pg-sidebar-note-text { font-size: 11px; line-height: 1.45; color: #71808b; }
+button[data-baseweb="tab"] { font-weight: 700; }
 </style>
 """).strip(), unsafe_allow_html=True)
 
@@ -853,7 +857,7 @@ hr {
 # =========================================================
 
 # =========================================================
-# PROFESSIONAL SIDEBAR NAVIGATION
+# CLEAN PROFESSIONAL SIDEBAR NAVIGATION
 # =========================================================
 
 def _navigate_to(page):
@@ -882,14 +886,12 @@ with st.sidebar:
         unsafe_allow_html=True
     )
 
-    st.markdown('<div class="pg-sidebar-section">WORKSPACE</div>', unsafe_allow_html=True)
-
-    workspace_items = [
+    st.markdown('<div class="pg-sidebar-section">MAIN</div>', unsafe_allow_html=True)
+    main_items = [
         ("🏠 Dashboard", "Dashboard"),
         ("🔍 New ADR Analysis", "New Analysis"),
     ]
-
-    for page, label in workspace_items:
+    for page, _label in main_items:
         st.button(
             page,
             key=f"nav_{page}",
@@ -899,15 +901,12 @@ with st.sidebar:
             args=(page,)
         )
 
-    st.markdown('<div class="pg-sidebar-section">RECORDS & REPORTS</div>', unsafe_allow_html=True)
-
-    record_items = [
-        ("📚 ADR History", "ADR History"),
-        ("📄 Case Reports", "Case Reports"),
+    st.markdown('<div class="pg-sidebar-section">CASES</div>', unsafe_allow_html=True)
+    case_items = [
+        ("📂 Cases", "Cases"),
         ("☁️ Database", "Database"),
     ]
-
-    for page, label in record_items:
+    for page, _label in case_items:
         st.button(
             page,
             key=f"nav_{page}",
@@ -917,22 +916,16 @@ with st.sidebar:
             args=(page,)
         )
 
-    st.markdown('<div class="pg-sidebar-section">PROJECT & SYSTEM</div>', unsafe_allow_html=True)
-
-    system_items = [
-        ("ℹ️ About / Methodology", "About / Methodology"),
-        ("⚙️ Settings / Disclaimer", "Settings / Disclaimer"),
-    ]
-
-    for page, label in system_items:
-        st.button(
-            page,
-            key=f"nav_{page}",
-            use_container_width=True,
-            type="primary" if current_page == page else "secondary",
-            on_click=_navigate_to,
-            args=(page,)
-        )
+    st.markdown('<div class="pg-sidebar-section">PROJECT</div>', unsafe_allow_html=True)
+    project_page = "ℹ️ Project Info"
+    st.button(
+        project_page,
+        key="nav_project_info",
+        use_container_width=True,
+        type="primary" if current_page == project_page else "secondary",
+        on_click=_navigate_to,
+        args=(project_page,)
+    )
 
     st.markdown('<div class="pg-sidebar-divider"></div>', unsafe_allow_html=True)
     st.markdown(
@@ -940,8 +933,7 @@ with st.sidebar:
         <div class="pg-sidebar-note">
             <div class="pg-sidebar-note-title">Safety-first workflow</div>
             <div class="pg-sidebar-note-text">
-                Review-priority support only. PHARMAGUARD does not replace
-                clinical, causality, or regulatory assessment.
+                Review-priority support only. Not a diagnostic, causality or regulatory assessment tool.
             </div>
         </div>
         """,
@@ -1747,7 +1739,7 @@ if "database_loaded" not in st.session_state:
 
 
 # =========================================================
-# V29 SCREEN RENDERERS
+# SCREEN RENDERERS
 # =========================================================
 
 def _priority_counts(df):
@@ -1917,72 +1909,27 @@ def render_dashboard_screen():
         else 0
     )
 
-    st.markdown("### 🛡️ PHARMAGUARD Safety Intelligence")
-    st.caption(
-        "Descriptive summary of how the prototype review architecture is represented in stored ADR records."
-    )
-
-    si1, si2, si3, si4 = st.columns(4)
-    with si1:
-        st.metric("🛡️ Safety Gate", safety_gate_cases)
-    with si2:
-        st.metric("🤖 RF-Assisted", rf_assisted_cases)
-    with si3:
-        st.metric("🔄 Reassessments", reassessment_cases)
-    with si4:
-        st.metric("🔗 Linked Cases", linked_cases)
-
-    st.info(
-        "The counts above use the stored Decision Source and reassessment fields. "
-        "Historical Safety Gate-vs-Random Forest conflicts are not counted because the database does not store the separate RF output for every case. "
-        "Use the live comparison panel on the Analysis Result screen to demonstrate Safety Gate precedence."
-    )
-
-    # =====================================================
-    # V21 — PHARMACIST REVIEW WORKFLOW SUMMARY
-    # =====================================================
-    review_status_values = []
-    checklist_completed_cases = 0
-    checklist_total_cases = 0
-
-    for key, value in st.session_state.items():
-        if str(key).startswith("review_status_"):
-            review_status_values.append(str(value))
-        if str(key).startswith("review_checklist_") and isinstance(value, dict):
-            checklist_total_cases += 1
-            if all(bool(v) for v in value.values()):
-                checklist_completed_cases += 1
-
-    review_completed = sum(v == "Completed" for v in review_status_values)
-    review_in_progress = sum(v == "In Progress" for v in review_status_values)
-    review_pending = sum(v == "Not Started" for v in review_status_values)
-
-    st.markdown("### 🧑‍⚕️ Pharmacist Review Workflow")
-    st.caption(
-        "Session-level workflow summary for cases reviewed in the current app session."
-    )
-
-    rw1, rw2, rw3, rw4 = st.columns(4)
-    with rw1:
-        st.metric("⏳ Pending", review_pending)
-    with rw2:
-        st.metric("🔄 In Progress", review_in_progress)
-    with rw3:
-        st.metric("✅ Completed", review_completed)
-    with rw4:
-        st.metric("☑️ Checklist Complete", checklist_completed_cases)
-
-    if review_status_values:
-        st.progress(
-            min(review_completed / len(review_status_values), 1.0),
-            text=f"Review completion: {review_completed}/{len(review_status_values)} cases"
+    with st.expander("🛡️ Safety Intelligence", expanded=False):
+        st.markdown("### 🛡️ PHARMAGUARD Safety Intelligence")
+        st.caption(
+            "Descriptive summary of how the prototype review architecture is represented in stored ADR records."
         )
-    else:
-        st.caption("No pharmacist review status has been recorded in this session yet.")
 
-    st.warning(
-        "Workflow status is a prototype documentation aid. It does not represent regulatory review completion or a clinical decision."
-    )
+        si1, si2, si3, si4 = st.columns(4)
+        with si1:
+            st.metric("🛡️ Safety Gate", safety_gate_cases)
+        with si2:
+            st.metric("🤖 RF-Assisted", rf_assisted_cases)
+        with si3:
+            st.metric("🔄 Reassessments", reassessment_cases)
+        with si4:
+            st.metric("🔗 Linked Cases", linked_cases)
+
+        st.info(
+            "The counts above use the stored Decision Source and reassessment fields. "
+            "Historical Safety Gate-vs-Random Forest conflicts are not counted because the database does not store the separate RF output for every case. "
+            "Use the live comparison panel on the Analysis Result screen to demonstrate Safety Gate precedence."
+        )
 
     # =====================================================
     # V25 — QUALITY & AUDIT DASHBOARD
@@ -2026,80 +1973,81 @@ def render_dashboard_screen():
         if "Original_Case_Reference" in df.columns else 0
     )
 
-    st.markdown("### 🧪 PHARMAGUARD Quality & Audit Dashboard")
-    st.caption(
-        "Descriptive audit indicators for the prototype records currently available in the app. "
-        "These indicators do not represent clinical validation, model accuracy, or regulatory performance."
-    )
-
-    qa1, qa2, qa3, qa4 = st.columns(4)
-    with qa1:
-        st.metric("📋 Total Records", qa_total)
-    with qa2:
-        st.metric("🎯 Priority Recorded", qa_priority_known)
-    with qa3:
-        st.metric("🧭 Decision Source", qa_source_known)
-    with qa4:
-        st.metric("🔗 Reassessment Links", qa_reassessment_linked)
-
-    qa5, qa6, qa7, qa8 = st.columns(4)
-    with qa5:
-        st.metric("🆔 Case References", qa_case_ref_known)
-    with qa6:
-        st.metric("⚠️ ADR Recorded", qa_adr_known)
-    with qa7:
-        st.metric("💊 Drug Recorded", qa_drug_known)
-    with qa8:
-        st.metric("🧬 Original Links", qa_original_linked)
-
-    if qa_total:
-        completeness = round(
-            (qa_priority_known + qa_source_known + qa_case_ref_known + qa_adr_known + qa_drug_known)
-            / (5 * qa_total) * 100,
-            1
-        )
-        st.progress(
-            min(completeness / 100, 1.0),
-            text=f"Core record-field coverage: {completeness}%"
+    with st.expander("🧪 Quality & Audit", expanded=False):
+        st.markdown("### 🧪 PHARMAGUARD Quality & Audit Dashboard")
+        st.caption(
+            "Descriptive audit indicators for the prototype records currently available in the app. "
+            "These indicators do not represent clinical validation, model accuracy, or regulatory performance."
         )
 
-    qa_audit = pd.DataFrame({
-        "Audit Indicator": [
-            "Priority recorded",
-            "Decision source recorded",
-            "Case reference recorded",
-            "ADR recorded",
-            "Drug recorded",
-            "Reassessment-linked records"
-        ],
-        "Count": [
-            qa_priority_known,
-            qa_source_known,
-            qa_case_ref_known,
-            qa_adr_known,
-            qa_drug_known,
-            qa_reassessment_linked
-        ]
-    })
+        qa1, qa2, qa3, qa4 = st.columns(4)
+        with qa1:
+            st.metric("📋 Total Records", qa_total)
+        with qa2:
+            st.metric("🎯 Priority Recorded", qa_priority_known)
+        with qa3:
+            st.metric("🧭 Decision Source", qa_source_known)
+        with qa4:
+            st.metric("🔗 Reassessment Links", qa_reassessment_linked)
 
-    st.dataframe(
-        qa_audit,
-        use_container_width=True,
-        hide_index=True
-    )
+        qa5, qa6, qa7, qa8 = st.columns(4)
+        with qa5:
+            st.metric("🆔 Case References", qa_case_ref_known)
+        with qa6:
+            st.metric("⚠️ ADR Recorded", qa_adr_known)
+        with qa7:
+            st.metric("💊 Drug Recorded", qa_drug_known)
+        with qa8:
+            st.metric("🧬 Original Links", qa_original_linked)
 
-    st.download_button(
-        label="⬇️ Download Quality & Audit Summary",
-        data=qa_audit.to_csv(index=False),
-        file_name="PHARMAGUARD_Quality_Audit_Summary.csv",
-        mime="text/csv",
-        use_container_width=True
-    )
+        if qa_total:
+            completeness = round(
+                (qa_priority_known + qa_source_known + qa_case_ref_known + qa_adr_known + qa_drug_known)
+                / (5 * qa_total) * 100,
+                1
+            )
+            st.progress(
+                min(completeness / 100, 1.0),
+                text=f"Core record-field coverage: {completeness}%"
+            )
 
-    st.info(
-        "Audit indicators are intended to support prototype documentation and demonstration. "
-        "They should not be interpreted as evidence of clinical validity or model performance."
-    )
+        qa_audit = pd.DataFrame({
+            "Audit Indicator": [
+                "Priority recorded",
+                "Decision source recorded",
+                "Case reference recorded",
+                "ADR recorded",
+                "Drug recorded",
+                "Reassessment-linked records"
+            ],
+            "Count": [
+                qa_priority_known,
+                qa_source_known,
+                qa_case_ref_known,
+                qa_adr_known,
+                qa_drug_known,
+                qa_reassessment_linked
+            ]
+        })
+
+        st.dataframe(
+            qa_audit,
+            use_container_width=True,
+            hide_index=True
+        )
+
+        st.download_button(
+            label="⬇️ Download Quality & Audit Summary",
+            data=qa_audit.to_csv(index=False),
+            file_name="PHARMAGUARD_Quality_Audit_Summary.csv",
+            mime="text/csv",
+            use_container_width=True
+        )
+
+        st.info(
+            "Audit indicators are intended to support prototype documentation and demonstration. "
+            "They should not be interpreted as evidence of clinical validity or model performance."
+        )
 
     # =====================================================
     # RECENT CASES
@@ -3049,6 +2997,42 @@ def render_database_screen():
         use_container_width=True
     )
 
+def render_cases_hub_screen():
+    st.markdown(
+        textwrap.dedent("""
+        <div class="pg-ui5-hero">
+            <div class="pg-ui5-title">📂 Cases</div>
+            <div class="pg-ui5-sub">Find saved ADR cases, review case reports, reassess cases and track their timeline.</div>
+        </div>
+        """).strip(),
+        unsafe_allow_html=True
+    )
+
+    tab_history, tab_report = st.tabs(["📋 Case History", "📄 Case Report"])
+    with tab_history:
+        render_history_screen()
+    with tab_report:
+        render_case_reports_screen()
+
+
+def render_project_info_screen():
+    st.markdown(
+        textwrap.dedent("""
+        <div class="pg-ui5-hero">
+            <div class="pg-ui5-title">ℹ️ Project Info</div>
+            <div class="pg-ui5-sub">Methodology, system status and scientific disclaimer.</div>
+        </div>
+        """).strip(),
+        unsafe_allow_html=True
+    )
+
+    tab_method, tab_status = st.tabs(["🔬 Methodology", "⚙️ Status & Disclaimer"])
+    with tab_method:
+        render_about_screen()
+    with tab_status:
+        render_settings_screen()
+
+
 def render_about_screen():
     st.markdown(
         textwrap.dedent("""
@@ -3182,31 +3166,22 @@ def render_settings_screen():
 # SCREEN ROUTING
 # =========================================================
 
-# Read the final application page after sidebar synchronization.
 active_page = st.session_state.get("active_page", "🏠 Dashboard")
 
 if active_page == "🏠 Dashboard":
     render_dashboard_screen()
     st.stop()
 
-if active_page == "📚 ADR History":
-    render_history_screen()
-    st.stop()
-
-if active_page == "📄 Case Reports":
-    render_case_reports_screen()
+if active_page == "📂 Cases":
+    render_cases_hub_screen()
     st.stop()
 
 if active_page == "☁️ Database":
     render_database_screen()
     st.stop()
 
-if active_page == "ℹ️ About / Methodology":
-    render_about_screen()
-    st.stop()
-
-if active_page == "⚙️ Settings / Disclaimer":
-    render_settings_screen()
+if active_page == "ℹ️ Project Info":
+    render_project_info_screen()
     st.stop()
 
 
