@@ -1074,17 +1074,15 @@ hr {
 # =========================================================
 
 # =========================================================
-# CLEAN PROFESSIONAL SIDEBAR NAVIGATION
+# PROFESSIONAL SIDEBAR NAVIGATION — v41 RESTORED
 # =========================================================
 
 def _navigate_to(page):
     st.session_state["active_page"] = page
 
-
 with st.sidebar:
     if "active_page" not in st.session_state:
         st.session_state["active_page"] = "🏠 Dashboard"
-
     current_page = st.session_state["active_page"]
 
     st.markdown(
@@ -1099,74 +1097,83 @@ with st.sidebar:
             </div>
             <div class="pg-sidebar-status">● Prototype • Active</div>
         </div>
-        """,
-        unsafe_allow_html=True
+        """, unsafe_allow_html=True
     )
 
-    st.markdown('<div class="pg-sidebar-section">MAIN</div>', unsafe_allow_html=True)
-    main_items = [
-        ("🏠 Dashboard", "Dashboard"),
-        ("🔍 New ADR Analysis", "New Analysis"),
-    ]
-    for page, _label in main_items:
-        st.button(
-            page,
-            key=f"nav_{page}",
-            use_container_width=True,
-            type="primary" if current_page == page else "secondary",
-            on_click=_navigate_to,
-            args=(page,)
-        )
+    st.markdown('<div class="pg-sidebar-section">WORKSPACE</div>', unsafe_allow_html=True)
+    for page in ["🏠 Dashboard", "🔍 New ADR Analysis"]:
+        st.button(page, key=f"nav_{page}", use_container_width=True,
+                  type="primary" if current_page == page else "secondary",
+                  on_click=_navigate_to, args=(page,))
 
-    st.markdown('<div class="pg-sidebar-section">CASES</div>', unsafe_allow_html=True)
-    case_items = [
-        ("📂 Cases", "Cases"),
-        ("☁️ Database", "Database"),
-    ]
-    for page, _label in case_items:
-        st.button(
-            page,
-            key=f"nav_{page}",
-            use_container_width=True,
-            type="primary" if current_page == page else "secondary",
-            on_click=_navigate_to,
-            args=(page,)
-        )
+    st.markdown('<div class="pg-sidebar-section">RECORDS & REPORTS</div>', unsafe_allow_html=True)
+    for page in ["📚 ADR History", "📄 Case Reports", "☁️ Database"]:
+        st.button(page, key=f"nav_{page}", use_container_width=True,
+                  type="primary" if current_page == page else "secondary",
+                  on_click=_navigate_to, args=(page,))
 
     st.markdown('<div class="pg-sidebar-section">INSIGHTS</div>', unsafe_allow_html=True)
-    analytics_page = "📊 Analytics"
-    st.button(
-        analytics_page,
-        key="nav_analytics",
-        use_container_width=True,
-        type="primary" if current_page == analytics_page else "secondary",
-        on_click=_navigate_to,
-        args=(analytics_page,)
-    )
+    page = "📊 Analytics"
+    st.button(page, key="nav_analytics", use_container_width=True,
+              type="primary" if current_page == page else "secondary",
+              on_click=_navigate_to, args=(page,))
 
-    st.markdown('<div class="pg-sidebar-section">PROJECT</div>', unsafe_allow_html=True)
-    project_page = "ℹ️ Project Info"
-    st.button(
-        project_page,
-        key="nav_project_info",
-        use_container_width=True,
-        type="primary" if current_page == project_page else "secondary",
-        on_click=_navigate_to,
-        args=(project_page,)
-    )
+    st.markdown('<div class="pg-sidebar-section">PROJECT & SYSTEM</div>', unsafe_allow_html=True)
+    for page in ["ℹ️ About / Methodology", "⚙️ Settings / Disclaimer"]:
+        st.button(page, key=f"nav_{page}", use_container_width=True,
+                  type="primary" if current_page == page else "secondary",
+                  on_click=_navigate_to, args=(page,))
 
     st.markdown('<div class="pg-sidebar-divider"></div>', unsafe_allow_html=True)
     st.markdown(
-        """
-        <div class="pg-sidebar-note">
+        """<div class="pg-sidebar-note">
             <div class="pg-sidebar-note-title">Safety-first workflow</div>
             <div class="pg-sidebar-note-text">
-                Review-priority support only. Not a diagnostic, causality or regulatory assessment tool.
+                Review-priority support only. PHARMAGUARD does not replace
+                clinical, causality, or regulatory assessment.
             </div>
-        </div>
-        """,
-        unsafe_allow_html=True
+        </div>""", unsafe_allow_html=True
     )
+
+# v41: let Streamlit's native theme control the sidebar surface and custom nav text.
+st.markdown("""
+<style>
+section[data-testid="stSidebar"] {
+    background: var(--secondary-background-color) !important;
+    border-right: 1px solid var(--border-color) !important;
+}
+section[data-testid="stSidebar"] .pg-sidebar-name,
+section[data-testid="stSidebar"] .pg-sidebar-section,
+section[data-testid="stSidebar"] .pg-sidebar-note-title { color: var(--text-color) !important; }
+section[data-testid="stSidebar"] .pg-sidebar-subtitle,
+section[data-testid="stSidebar"] .pg-sidebar-note-text { color: var(--secondary-text-color) !important; }
+section[data-testid="stSidebar"] .pg-sidebar-note {
+    background: var(--background-color) !important;
+    border-color: var(--border-color) !important;
+}
+section[data-testid="stSidebar"] .pg-sidebar-divider { background: var(--border-color) !important; }
+section[data-testid="stSidebar"] div.stButton > button[kind="secondary"] {
+    background: transparent !important;
+    color: var(--text-color) !important;
+    border-color: transparent !important;
+}
+section[data-testid="stSidebar"] div.stButton > button[kind="secondary"]:hover {
+    background: var(--secondary-background-color) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-color) !important;
+}
+section[data-testid="stSidebar"] div.stButton > button[kind="primary"] {
+    background: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+    color: #ffffff !important;
+}
+section[data-testid="stSidebar"] .pg-sidebar-status {
+    background: var(--secondary-background-color) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-color) !important;
+}
+</style>
+""", unsafe_allow_html=True)
 
 
 # =========================================================
@@ -2089,7 +2096,7 @@ def render_dashboard_screen():
 
     with q2:
         if st.button("📂  View Cases", use_container_width=True):
-            st.session_state["active_page"] = "📂 Cases"
+            st.session_state["active_page"] = "📚 ADR History"
             st.rerun()
 
     with q3:
@@ -2164,7 +2171,7 @@ def render_dashboard_screen():
     st.markdown('<div class="pg-recent-grid">' + "".join(recent_cards) + '</div>', unsafe_allow_html=True)
 
     if st.button("📂 View All Cases →", use_container_width=True, key="dashboard_view_all_cases"):
-        st.session_state["active_page"] = "📂 Cases"
+        st.session_state["active_page"] = "📚 ADR History"
         st.rerun()
 
     st.markdown(
@@ -3397,8 +3404,12 @@ if active_page == "🏠 Dashboard":
     render_dashboard_screen()
     st.stop()
 
-if active_page == "📂 Cases":
-    render_cases_hub_screen()
+if active_page == "📚 ADR History":
+    render_history_screen()
+    st.stop()
+
+if active_page == "📄 Case Reports":
+    render_case_reports_screen()
     st.stop()
 
 if active_page == "📊 Analytics":
@@ -3409,8 +3420,12 @@ if active_page == "☁️ Database":
     render_database_screen()
     st.stop()
 
-if active_page == "ℹ️ Project Info":
-    render_project_info_screen()
+if active_page == "ℹ️ About / Methodology":
+    render_about_screen()
+    st.stop()
+
+if active_page == "⚙️ Settings / Disclaimer":
+    render_settings_screen()
     st.stop()
 
 
