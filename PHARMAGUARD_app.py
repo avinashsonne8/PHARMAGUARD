@@ -1909,6 +1909,52 @@ def render_dashboard_screen():
     )
 
     # =====================================================
+    # V21 — PHARMACIST REVIEW WORKFLOW SUMMARY
+    # =====================================================
+    review_status_values = []
+    checklist_completed_cases = 0
+    checklist_total_cases = 0
+
+    for key, value in st.session_state.items():
+        if str(key).startswith("review_status_"):
+            review_status_values.append(str(value))
+        if str(key).startswith("review_checklist_") and isinstance(value, dict):
+            checklist_total_cases += 1
+            if all(bool(v) for v in value.values()):
+                checklist_completed_cases += 1
+
+    review_completed = sum(v == "Completed" for v in review_status_values)
+    review_in_progress = sum(v == "In Progress" for v in review_status_values)
+    review_pending = sum(v == "Not Started" for v in review_status_values)
+
+    st.markdown("### 🧑‍⚕️ Pharmacist Review Workflow")
+    st.caption(
+        "Session-level workflow summary for cases reviewed in the current app session."
+    )
+
+    rw1, rw2, rw3, rw4 = st.columns(4)
+    with rw1:
+        st.metric("⏳ Pending", review_pending)
+    with rw2:
+        st.metric("🔄 In Progress", review_in_progress)
+    with rw3:
+        st.metric("✅ Completed", review_completed)
+    with rw4:
+        st.metric("☑️ Checklist Complete", checklist_completed_cases)
+
+    if review_status_values:
+        st.progress(
+            min(review_completed / len(review_status_values), 1.0),
+            text=f"Review completion: {review_completed}/{len(review_status_values)} cases"
+        )
+    else:
+        st.caption("No pharmacist review status has been recorded in this session yet.")
+
+    st.warning(
+        "Workflow status is a prototype documentation aid. It does not represent regulatory review completion or a clinical decision."
+    )
+
+    # =====================================================
     # RECENT CASES
     # =====================================================
 
@@ -2225,6 +2271,27 @@ def render_case_reports_screen():
         st.session_state[checklist_state_key] = {key: False for key, _ in checklist_items}
 
     checklist_state = st.session_state[checklist_state_key]
+
+    review_status_key = f"review_status_{selected_idx}"
+    if review_status_key not in st.session_state:
+        st.session_state[review_status_key] = "Not Started"
+
+    review_status = st.selectbox(
+        "📝 Pharmacist Review Status",
+        ["Not Started", "In Progress", "Completed"],
+        key=review_status_key,
+        help="Session-only workflow status for this prototype case."
+    )
+
+    if priority == "HIGH":
+        st.warning(
+            "🔴 HIGH-priority case: review the Safety Gate signal and complete the pharmacist checklist before follow-up."
+        )
+    elif priority == "MODERATE":
+        st.info(
+            "🟠 MODERATE-priority case: review the clinical context and complete the pharmacist checklist."
+        )
+
     checklist_cols = st.columns(2)
     for i, (item_key, item_label) in enumerate(checklist_items):
         with checklist_cols[i % 2]:
@@ -2236,6 +2303,9 @@ def render_case_reports_screen():
 
     completed_count = sum(bool(checklist_state.get(key, False)) for key, _ in checklist_items)
     total_count = len(checklist_items)
+
+    if completed_count == total_count and review_status != "Completed":
+        st.caption("💡 All checklist items are complete. You can mark the review status as Completed.")
     reviewer_note = st.text_area(
         "Reviewer comments (optional)",
         key=f"reviewer_note_{selected_idx}",
@@ -2248,7 +2318,7 @@ def render_case_reports_screen():
         st.info(f"📋 Review checklist progress — {completed_count}/{total_count} items completed")
 
     st.caption(
-        "Prototype note: checklist status and reviewer comments are maintained for the current app session and are not added to the Google Sheet database in v18."
+        "Prototype note: review status, checklist status and reviewer comments are maintained for the current app session and are not added to the Google Sheet database."
     )
 
     # =====================================================
