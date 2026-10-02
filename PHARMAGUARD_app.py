@@ -2695,13 +2695,27 @@ def render_analytics_screen():
     counts = _priority_counts(df)
 
     with st.expander("📌 Overview", expanded=True):
-        c1, c2 = st.columns(2)
-        with c1:
-            st.metric("Total Cases", len(df))
-            st.metric("🔴 HIGH", counts["HIGH"])
-        with c2:
-            st.metric("🟡 MODERATE", counts["MODERATE"])
-            st.metric("🟢 LOW", counts["LOW"])
+        overview_cards = [
+            ("📋", "Total Cases", len(df), "Recorded reports", "total"),
+            ("🔴", "HIGH", counts["HIGH"], "Priority review", "high"),
+            ("🟡", "MODERATE", counts["MODERATE"], "Clinical review", "moderate"),
+            ("🟢", "LOW", counts["LOW"], "Routine review", "low"),
+        ]
+        cards_html = []
+        for icon, label, value, note, kind in overview_cards:
+            card = (
+                f'<div class="pg-kpi-grid-card pg-kpi-{kind}">'
+                f'<div class="pg-kpi-grid-icon">{icon}</div>'
+                f'<div class="pg-kpi-grid-label">{html.escape(str(label))}</div>'
+                f'<div class="pg-kpi-grid-value">{html.escape(str(value))}</div>'
+                f'<div class="pg-kpi-grid-note">{html.escape(str(note))}</div>'
+                f'</div>'
+            )
+            cards_html.append(card)
+        st.markdown(
+            '<div class="pg-kpi-grid analytics-overview-grid">' + "".join(cards_html) + '</div>',
+            unsafe_allow_html=True,
+        )
         st.caption("Recorded project priorities only; these are descriptive summaries, not clinical risk estimates.")
 
     with st.expander("🎯 Priority Analytics", expanded=False):
