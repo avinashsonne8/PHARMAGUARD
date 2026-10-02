@@ -1229,6 +1229,36 @@ def validate_adr_input(adr_text):
     )
 
 
+def assess_information_completeness(patient_id, age, sex, drug, adr):
+    """Check whether core ADR-report inputs are sufficiently populated.
+
+    This is an information-quality alert only. It does not change
+    Safety Gate or Random Forest priority.
+    """
+    missing = []
+
+    if not str(patient_id).strip():
+        missing.append("Patient ID")
+
+    age_text = str(age).strip().lower()
+    if age_text in {"", "nan", "none", "unknown"}:
+        missing.append("Age")
+
+    sex_text = str(sex).strip().lower()
+    if sex_text in {"", "unknown", "nan", "none"}:
+        missing.append("Sex")
+
+    drug_text = str(drug).strip().lower()
+    if drug_text in {"", "unknown", "nan", "none"}:
+        missing.append("Suspected/reported drug")
+
+    adr_text = " ".join(str(adr).strip().split())
+    if not adr_text or adr_text.lower() in {"unknown", "none", "nan"}:
+        missing.append("ADR description")
+
+    return missing
+
+
 # =========================================================
 # SAVE DATA TO GOOGLE SHEET
 # =========================================================
@@ -3191,6 +3221,35 @@ if st.button(
         st.warning(validation_message)
 
         st.stop()
+
+    # =====================================================
+    # V22 — ADR INFORMATION COMPLETENESS CHECK
+    # =====================================================
+    information_gaps = assess_information_completeness(
+        patient_id,
+        age,
+        sex,
+        drug,
+        adr,
+    )
+
+    if information_gaps:
+        st.warning(
+            "⚠️ Information Gap Detected — "
+            "additional information may be needed before completing pharmacovigilance review."
+        )
+        st.markdown(
+            "**Missing / unspecified core information:** "
+            + ", ".join(information_gaps)
+        )
+        st.caption(
+            "This alert does not change the Safety Gate or Random Forest priority. "
+            "It is a reviewer-support information-quality check."
+        )
+    else:
+        st.success(
+            "✅ Core ADR information appears complete for this prototype review."
+        )
 
     # -----------------------------------------------------
     # RUN THE SHARED SAFETY-FIRST PRIORITY ENGINE
