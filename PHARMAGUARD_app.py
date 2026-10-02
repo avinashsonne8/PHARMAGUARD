@@ -2966,6 +2966,30 @@ def render_analytics_screen():
     drug_table = drug_table.sort_values("TOTAL", ascending=False).head(10).drop(columns="TOTAL")
     st.bar_chart(drug_table, use_container_width=True)
 
+    st.markdown("### 💊 Most Reported Drugs")
+    drug_frequency = (
+        df["Drug"]
+        .astype(str)
+        .str.strip()
+        .replace("", "Unknown")
+        .value_counts()
+        .head(10)
+    )
+    drug_frequency_df = drug_frequency.rename("Cases").to_frame()
+    st.bar_chart(drug_frequency_df, use_container_width=True, horizontal=True)
+
+    st.markdown("### ⚠️ Most Frequent ADRs")
+    adr_frequency = (
+        df["ADR"]
+        .astype(str)
+        .str.strip()
+        .replace("", "Unknown")
+        .value_counts()
+        .head(10)
+    )
+    adr_frequency_df = adr_frequency.rename("Cases").to_frame()
+    st.bar_chart(adr_frequency_df, use_container_width=True, horizontal=True)
+
     st.markdown("### ⚠️ ADR-wise Priority Distribution")
     adr_df = df.copy()
     adr_df["ADR"] = adr_df.get("ADR", "Unknown").astype(str).str.strip().replace("", "Unknown")
@@ -3956,74 +3980,6 @@ if active_page == "🔍 New ADR Analysis" and st.session_state.get(
         )
     )
     # =====================================================
-    # MOST REPORTED DRUGS
-    # =====================================================
-
-    st.markdown(
-        "#### 💊 Most Reported Drugs"
-    )
-
-    drug_counts = (
-        dashboard_df["Drug"]
-        .astype(str)
-        .str.strip()
-        .replace("", "Unknown")
-        .value_counts()
-        .head(10)
-    )
-
-    drug_chart_df = (
-        drug_counts
-        .rename("Cases")
-        .reset_index()
-    )
-
-    drug_chart_df.columns = [
-        "Drug",
-        "Cases"
-    ]
-
-    st.bar_chart(
-        drug_chart_df.set_index(
-            "Drug"
-        ),
-        horizontal=True
-        )
-        # =====================================================
-    # MOST FREQUENT ADRs
-    # =====================================================
-
-    st.markdown(
-        "#### ⚠️ Most Frequent ADRs"
-    )
-
-    adr_counts = (
-        dashboard_df["ADR"]
-        .astype(str)
-        .str.strip()
-        .replace("", "Unknown")
-        .value_counts()
-        .head(10)
-    )
-
-    adr_chart_df = (
-        adr_counts
-        .rename("Cases")
-        .reset_index()
-    )
-
-    adr_chart_df.columns = [
-        "ADR",
-        "Cases"
-    ]
-
-    st.bar_chart(
-        adr_chart_df.set_index(
-            "ADR"
-        ),
-        horizontal=True
-    )
-        # =====================================================
     # RECENT ADR REPORTS
     # =====================================================
 
