@@ -1233,13 +1233,28 @@ def validate_adr_input(adr_text):
 # SAVE DATA TO GOOGLE SHEET
 # =========================================================
 
+def _json_safe(value):
+    """Convert pandas/NumPy scalar values into standard JSON-safe Python values."""
+    if isinstance(value, dict):
+        return {str(k): _json_safe(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_safe(v) for v in value]
+    if hasattr(value, "item"):
+        try:
+            return _json_safe(value.item())
+        except Exception:
+            pass
+    return value
+
+
 def save_to_google_sheet(data, return_details=False):
 
     try:
+        safe_data = _json_safe(data)
 
         response = requests.post(
             GOOGLE_SHEET_URL,
-            json=data,
+            json=safe_data,
             timeout=15
         )
 
