@@ -1596,6 +1596,73 @@ def model_predict(age, sex, drug, adr):
         return "UNKNOWN"
 
 
+
+# =========================================================
+# INNOVATION 1 — SAFETY-FIRST PRIORITY ENGINE
+# =========================================================
+
+def evaluate_adr_priority(age, sex, drug, adr):
+    """Run the same PHARMAGUARD priority engine for new or reassessed cases."""
+    serious_matches = matches(adr, SERIOUS_PATTERNS)
+    serious_hits = [
+        pattern for pattern in serious_matches
+        if not has_context_protection(adr, pattern)
+        and not has_death_causality_protection(adr, pattern)
+        and not (
+            pattern == "shock"
+            and has_nonmedical_shock_context(adr)
+        )
+    ]
+    serious_hits = remove_redundant_hits(serious_hits)
+
+    moderate_matches = matches(adr, MODERATE_PATTERNS)
+    moderate_context_matches = matches(adr, MODERATE_CONTEXT_PATTERNS)
+    moderate_hits = [
+        pattern
+        for pattern in (moderate_matches + moderate_context_matches)
+        if not has_context_protection(adr, pattern)
+    ]
+    moderate_hits = remove_redundant_hits(moderate_hits)
+    moderate_hits = prioritize_specific_moderate_hits(moderate_hits)
+
+    if serious_hits:
+        priority = "HIGH"
+        flag = "Potentially serious medical event signal"
+        reason = "Serious ADR indicator detected: " + ", ".join(serious_hits)
+        recommendation = "Priority pharmacovigilance review required."
+        decision_source = "Safety Gate — serious signal"
+    elif moderate_hits:
+        priority = "MODERATE"
+        flag = "Non-serious but clinically meaningful review signal"
+        reason = (
+            "Project-defined moderate-review indicator detected: "
+            + ", ".join(moderate_hits)
+        )
+        recommendation = (
+            "Pharmacovigilance review and clinical assessment recommended."
+        )
+        decision_source = "Safety Gate — moderate signal"
+    else:
+        priority = model_predict(age, sex, drug, adr)
+        if priority not in {"LOW", "MODERATE", "HIGH"}:
+            priority = "UNKNOWN"
+        flag = "No predefined serious signal detected"
+        reason = "Priority assigned by the Random Forest prototype."
+        recommendation = (
+            "Routine pharmacovigilance review according to the project workflow."
+        )
+        decision_source = "Random Forest prototype"
+
+    return (
+        priority,
+        flag,
+        reason,
+        recommendation,
+        decision_source,
+        serious_hits,
+        moderate_hits,
+    )
+
 # =========================================================
 # SESSION HISTORY
 # =========================================================
@@ -2050,6 +2117,192 @@ def render_case_reports_screen():
         """).strip(),
         unsafe_allow_html=True
     )
+
+    # =====================================================
+    # INNOVATION 1 — DYNAMIC ADR RISK REASSESSMENT
+    # =====================================================
+    st.markdown("### 🔄 Dynamic ADR Risk Reassessment")
+    st.markdown(
+        """
+        <div class="pg-section-card">
+            <h4>Update the case when new clinical information becomes available</h4>
+            <div>
+                Reassessment creates a new linked case version rather than silently
+                changing the original record. This preserves the review history.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    with st.expander("🔄 Reassess this ADR case", expanded=False):
+        st.caption(
+            "Example: an initial rash may later be followed by facial swelling or "
+            "difficulty breathing. Enter the updated ADR information here."
+        )
+        reassessment_adr = st.text_area(
+            "Updated ADR / new clinical information",
+            value="",
+            key=f"reassessment_adr_{selected_idx}",
+            placeholder="Example: Rash progressed to facial swelling and difficulty breathing."
+        )
+        reassessment_note = st.text_input(
+            "Follow-up note (optional)",
+            key=f"reassessment_note_{selected_idx}",
+            placeholder="Example: Follow-up information received from the clinical team."
+        )
+
+        if st.button(
+            "🔄 Reassess & Create New Version",
+            key=f"reassess_button_{selected_idx}",
+            use_container_width=True,
+            type="primary"
+        ):
+            if not reassessment_adr.strip():
+                st.warning("Please enter the updated ADR / new clinical information.")
+            else:
+                validation_status, suggestion, validation_message = validate_adr_input(
+                    reassessment_adr
+                )
+
+                if validation_status == "POSSIBLE_TYPO":
+                    st.warning(validation_message)
+                elif validation_status == "UNKNOWN":
+                    st.warning(validation_message)
+                else:
+                    (
+                        new_priority,
+                        new_flag,
+                        new_reason,
+                        new_recommendation,
+                        new_decision_source,
+                        _,
+                        _,
+                    ) = evaluate_adr_priority(
+                        row.get("Age", ""),
+                        row.get("Sex", "Unknown"),
+                        row.get("Drug", ""),
+                        reassessment_adr,
+                    )
+
+                    previous_reference = str(
+                        row.get("Case_Reference", "")
+                    )
+                    original_reference = str(
+                        row.get("Original_Case_Reference", "")
+                        or previous_reference
+                    )
+
+                    existing_records = st.session_state.get(
+                        "adr_history", []
+                    )
+                    reassessment_count = sum(
+                        str(item.get("Original_Case_Reference", ""))
+                        == original_reference
+                        for item in existing_records
+                    )
+                    if str(row.get("Original_Case_Reference", "")) == original_reference:
+                        reassessment_number = reassessment_count + 1
+                    else:
+                        reassessment_number = 1
+
+                    new_case_reference = (
+                        f"PHG-CASE-{datetime.now().strftime('%Y%m%d-%H%M%S')}-"
+                        f"{uuid.uuid4().hex[:8].upper()}"
+                    )
+
+                    new_record = {
+                        "Date_Time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "Patient_ID": row.get("Patient_ID", ""),
+                        "Age": row.get("Age", ""),
+                        "Sex": row.get("Sex", "Unknown"),
+                        "Drug": row.get("Drug", ""),
+                        "ADR": reassessment_adr.strip(),
+                        "Seriousness": (
+                            "Yes" if new_priority == "HIGH"
+                            else "No" if new_priority in {"MODERATE", "LOW"}
+                            else "Uncertain"
+                        ),
+                        "Decision_Source": new_decision_source,
+                        "Priority": new_priority,
+                        "Reason": new_reason,
+                        "Case_Reference": new_case_reference,
+                        "Reassessment_Of": previous_reference,
+                        "Original_Case_Reference": original_reference,
+                        "Reassessment_Number": reassessment_number,
+                        "Previous_Priority": priority,
+                        "Follow_Up_Note": reassessment_note.strip(),
+                    }
+
+                    saved = save_to_google_sheet(new_record)
+
+                    if saved:
+                        try:
+                            st.cache_data.clear()
+                        except Exception:
+                            pass
+
+                        st.session_state.adr_history.append(new_record.copy())
+
+                        st.success(
+                            f"✅ Reassessment saved. {previous_reference} → "
+                            f"{new_case_reference} ({priority} → {new_priority})"
+                        )
+
+                        if priority != new_priority:
+                            st.warning(
+                                f"🔺 Review priority changed from **{priority}** to "
+                                f"**{new_priority}** based on the updated information."
+                            )
+                        else:
+                            st.info(
+                                f"Priority remains **{new_priority}** after reassessment."
+                            )
+
+                        st.markdown(
+                            f"**Previous:** {priority}  →  **Updated:** {new_priority}  "
+                            f"\n\n**Decision Source:** {new_decision_source}  "
+                            f"\n\n**Reason:** {new_reason}"
+                        )
+                    else:
+                        st.error(
+                            "❌ Reassessment was analyzed but could not be saved to the database."
+                        )
+
+    # Linked reassessment timeline for the selected case.
+    root_reference = str(
+        row.get("Original_Case_Reference", "")
+        or row.get("Case_Reference", "")
+    )
+    timeline_records = []
+    for item in st.session_state.get("adr_history", []):
+        item_root = str(
+            item.get("Original_Case_Reference", "")
+            or item.get("Case_Reference", "")
+        )
+        if item_root == root_reference:
+            timeline_records.append(item)
+
+    if timeline_records:
+        timeline_records = sorted(
+            timeline_records,
+            key=lambda x: str(x.get("Date_Time", ""))
+        )
+        st.markdown("### 📈 ADR Priority Timeline")
+        timeline_rows = []
+        for item in timeline_records:
+            timeline_rows.append({
+                "Version": "Initial" if not item.get("Reassessment_Of") else f"Reassessment {item.get('Reassessment_Number', '')}",
+                "Date & Time": item.get("Date_Time", ""),
+                "Priority": item.get("Priority", "UNKNOWN"),
+                "ADR / New Information": item.get("ADR", ""),
+                "Case Reference": item.get("Case_Reference", ""),
+            })
+        st.dataframe(
+            pd.DataFrame(timeline_rows),
+            use_container_width=True,
+            hide_index=True
+        )
 
     st.markdown("### 📥 Export Report")
 
@@ -2621,137 +2874,18 @@ if st.button(
         st.stop()
 
     # -----------------------------------------------------
-    # FIND SERIOUS + MODERATE SIGNALS
+    # RUN THE SHARED SAFETY-FIRST PRIORITY ENGINE
     # -----------------------------------------------------
 
-    serious_matches = matches(
-    adr,
-    SERIOUS_PATTERNS
-)
-
-    serious_hits = [
-    pattern
-    for pattern in serious_matches
-    if not has_context_protection(adr, pattern)
-    and not has_death_causality_protection(adr, pattern)
-    and not (
-        pattern == "shock"
-        and has_nonmedical_shock_context(adr)
-    )
-]
-
-    # Keep only the most specific serious signal in the reason.
-    serious_hits = remove_redundant_hits(serious_hits)
-
-
-    moderate_matches = matches(
-        adr,
-        MODERATE_PATTERNS
-    )
-
-    moderate_context_matches = matches(
-        adr,
-        MODERATE_CONTEXT_PATTERNS
-    )
-
-    moderate_hits = [
-    pattern
-    for pattern in (
-        moderate_matches + moderate_context_matches
-    )
-    if not has_context_protection(adr, pattern)
-    ]
-
-    # Keep the most specific moderate signal in the reason.
-    moderate_hits = remove_redundant_hits(moderate_hits)
-
-    # Prefer specific clinical/contextual signals over generic phrases
-    # when both are present. This changes explanation text only.
-    moderate_hits = prioritize_specific_moderate_hits(moderate_hits)
-
-  
-    # -----------------------------------------------------
-    # PRIORITY LOGIC
-    # -----------------------------------------------------
-
-    if serious_hits:
-
-        priority = "HIGH"
-
-        flag = (
-            "Potentially serious medical event signal"
-        )
-
-        reason = (
-            "Serious ADR indicator detected: "
-            + ", ".join(serious_hits)
-        )
-
-        recommendation = (
-            "Priority pharmacovigilance review required."
-        )
-
-        decision_source = "Safety Gate — serious signal"
-
-
-    elif moderate_hits:
-
-        priority = "MODERATE"
-
-        flag = (
-            "Non-serious but clinically meaningful "
-            "review signal"
-        )
-
-        reason = (
-            "Project-defined moderate-review "
-            "indicator detected: "
-            + ", ".join(moderate_hits)
-        )
-
-        recommendation = (
-            "Pharmacovigilance review and clinical "
-            "assessment recommended."
-        )
-
-        decision_source = "Safety Gate — moderate signal"
-
-
-    else:
-
-        priority = model_predict(
-            age,
-            sex,
-            drug,
-            adr
-        )
-
-
-        if priority not in {
-            "LOW",
-            "MODERATE",
-            "HIGH"
-        }:
-
-            priority = "UNKNOWN"
-
-
-        flag = (
-            "No predefined serious signal detected"
-        )
-
-        reason = (
-            "Priority assigned by the "
-            "Random Forest prototype."
-        )
-
-        recommendation = (
-            "Routine pharmacovigilance review "
-            "according to the project workflow."
-        )
-
-        decision_source = "Random Forest prototype"
-
+    (
+        priority,
+        flag,
+        reason,
+        recommendation,
+        decision_source,
+        serious_hits,
+        moderate_hits,
+    ) = evaluate_adr_priority(age, sex, drug, adr)
 
     # =====================================================
     # DISPLAY RESULT — UI-3 PROFESSIONAL RESULT
