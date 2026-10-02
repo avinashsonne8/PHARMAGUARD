@@ -1,4 +1,4 @@
-# PHARMAGUARD Professional UI v28 — Clean Analytics + Dark Mode
+# PHARMAGUARD Professional UI v32 — Dashboard Mobile Polish
 # Dashboard HTML rendering fix — backend/Safety Gate/ML/database logic preserved.
 import streamlit as st
 import pandas as pd
@@ -234,6 +234,39 @@ st.markdown("""
 
 }
 
+
+
+/* =========================================================
+   v32 — MOBILE-FIRST DASHBOARD GRID + RECENT CASE CARDS
+   ========================================================= */
+.pg-kpi-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:4px 0 18px 0; }
+.pg-kpi-grid-card { min-width:0; min-height:118px; padding:14px; border-radius:15px; background:var(--pg-surface,#fff); border:1px solid var(--pg-border,#dbe7ef); box-shadow:0 3px 12px rgba(30,60,90,.05); overflow:hidden; }
+.pg-kpi-grid-icon { font-size:20px; line-height:1; }
+.pg-kpi-grid-label { margin-top:8px; font-size:11px; font-weight:750; color:var(--pg-text,#657786); opacity:.78; }
+.pg-kpi-grid-value { margin-top:2px; font-size:25px; line-height:1.15; font-weight:850; color:var(--pg-text,#102a43); }
+.pg-kpi-grid-note { margin-top:5px; font-size:10px; line-height:1.3; color:var(--pg-text,#7b8794); opacity:.68; }
+.pg-kpi-total { border-top:4px solid #7b8794; }
+.pg-kpi-high { border-top:4px solid #d64545; }
+.pg-kpi-moderate { border-top:4px solid #d49b00; }
+.pg-kpi-low { border-top:4px solid #2f855a; }
+.pg-recent-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:4px; }
+.pg-recent-card { min-width:0; padding:13px 14px; border-radius:14px; background:var(--pg-surface,#fff); border:1px solid var(--pg-border,#dbe7ef); box-shadow:0 2px 10px rgba(30,60,90,.04); overflow:hidden; }
+.pg-recent-ref { font-size:11px; font-weight:800; color:var(--pg-text,#243b53); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.pg-recent-drug { margin-top:7px; font-size:13px; font-weight:750; color:var(--pg-text,#102a43); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.pg-recent-adr { margin-top:4px; min-height:18px; font-size:11px; line-height:1.35; color:var(--pg-text,#52606d); opacity:.78; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.pg-recent-bottom { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:10px; }
+.pg-priority-badge { display:inline-flex; align-items:center; gap:3px; padding:4px 7px; border-radius:999px; font-size:10px; font-weight:800; white-space:nowrap; }
+.pg-priority-high { background:rgba(214,69,69,.12); color:#a82f2f; }
+.pg-priority-moderate { background:rgba(212,155,0,.14); color:#8b6700; }
+.pg-priority-low { background:rgba(47,133,90,.13); color:#236b48; }
+.pg-priority-unknown { background:rgba(123,135,148,.13); color:#65717d; }
+.pg-recent-date { min-width:0; font-size:9px; color:var(--pg-text,#7b8794); opacity:.62; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+@media (max-width:700px) {
+  .pg-kpi-grid { gap:9px; }
+  .pg-kpi-grid-card { min-height:105px; padding:12px; }
+  .pg-kpi-grid-value { font-size:23px; }
+  .pg-recent-grid { grid-template-columns:1fr; gap:9px; }
+}
 
 /* =========================================================
    UI-3 — PROFESSIONAL ANALYSIS RESULT
@@ -1855,20 +1888,9 @@ def _priority_counts(df):
 
 
 def render_dashboard_screen():
-    """Minimal executive dashboard: identity, actions, case overview and recent cases."""
+    """Clean mobile-first dashboard: actions, compact KPIs and recent case cards."""
     df = pd.DataFrame(st.session_state.get("adr_history", []))
     counts = _priority_counts(df)
-
-    # =====================================================
-    # DASHBOARD INTRO
-    # =====================================================
-    st.markdown(
-        """<div class="pg-dashboard-intro">
-<div class="pg-dashboard-intro-title">ADR Review Dashboard</div>
-<div class="pg-dashboard-intro-text">A quick overview of recorded ADR reports and direct access to the main PHARMAGUARD workflows.</div>
-</div>""",
-        unsafe_allow_html=True,
-    )
 
     # =====================================================
     # QUICK ACTIONS
@@ -1892,53 +1914,30 @@ def render_dashboard_screen():
             st.rerun()
 
     # =====================================================
-    # CASE OVERVIEW — COMPACT 2 x 2 LAYOUT
+    # CASE OVERVIEW — TRUE 2 x 2 RESPONSIVE GRID
     # =====================================================
     st.markdown("### Case Overview")
-    c1, c2 = st.columns(2)
-
-    with c1:
-        st.markdown(
-            f"""<div class="pg-stat-card">
-<div class="pg-stat-icon">📋</div>
-<div class="pg-stat-label">Total Cases</div>
-<div class="pg-stat-value">{len(df)}</div>
-<div class="pg-stat-note">Recorded ADR reports</div>
-</div>""",
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            f"""<div class="pg-stat-card pg-moderate-card">
-<div class="pg-stat-icon">🟡</div>
-<div class="pg-stat-label">Moderate</div>
-<div class="pg-stat-value">{counts['MODERATE']}</div>
-<div class="pg-stat-note">Clinical review signal</div>
-</div>""",
-            unsafe_allow_html=True,
-        )
-
-    with c2:
-        st.markdown(
-            f"""<div class="pg-stat-card pg-high-card">
-<div class="pg-stat-icon">🔴</div>
-<div class="pg-stat-label">High Priority</div>
-<div class="pg-stat-value">{counts['HIGH']}</div>
-<div class="pg-stat-note">Priority review</div>
-</div>""",
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            f"""<div class="pg-stat-card pg-low-card">
-<div class="pg-stat-icon">🟢</div>
-<div class="pg-stat-label">Low Priority</div>
-<div class="pg-stat-value">{counts['LOW']}</div>
-<div class="pg-stat-note">Routine review</div>
-</div>""",
-            unsafe_allow_html=True,
-        )
+    overview_cards = [
+        ("📋", "Total Cases", len(df), "Recorded ADR reports", "total"),
+        ("🔴", "High Priority", counts["HIGH"], "Priority review", "high"),
+        ("🟡", "Moderate", counts["MODERATE"], "Clinical review signal", "moderate"),
+        ("🟢", "Low Priority", counts["LOW"], "Routine review", "low"),
+    ]
+    cards_html = []
+    for icon, label, value, note, kind in overview_cards:
+        cards_html.append(f'''<div class="pg-kpi-grid-card pg-kpi-{kind}">
+<div class="pg-kpi-grid-icon">{icon}</div>
+<div class="pg-kpi-grid-label">{html.escape(str(label))}</div>
+<div class="pg-kpi-grid-value">{html.escape(str(value))}</div>
+<div class="pg-kpi-grid-note">{html.escape(str(note))}</div>
+</div>''')
+    st.markdown(
+        '<div class="pg-kpi-grid">' + "".join(cards_html) + '</div>',
+        unsafe_allow_html=True,
+    )
 
     # =====================================================
-    # RECENT CASES — PREVIEW ONLY
+    # RECENT CASES — MOBILE-FRIENDLY CARDS, NO HORIZONTAL SCROLL
     # =====================================================
     if df.empty:
         st.markdown(
@@ -1952,16 +1951,31 @@ def render_dashboard_screen():
         return
 
     st.markdown("### 🕐 Recent Cases")
-    recent_cols = [
-        c for c in ["Case_Reference", "Drug", "ADR", "Priority", "Date_Time"]
-        if c in df.columns
-    ]
+    recent_cols = [c for c in ["Case_Reference", "Drug", "ADR", "Priority", "Date_Time"] if c in df.columns]
     recent_df = df[recent_cols].tail(5).iloc[::-1].copy()
-    st.dataframe(
-        recent_df,
-        use_container_width=True,
-        hide_index=True,
-    )
+
+    priority_class = {"HIGH": "pg-priority-high", "MODERATE": "pg-priority-moderate", "LOW": "pg-priority-low"}
+    priority_icon = {"HIGH": "🔴", "MODERATE": "🟡", "LOW": "🟢"}
+    recent_cards = []
+    for _, row in recent_df.iterrows():
+        case_ref = html.escape(str(row.get("Case_Reference", "—")))
+        drug = html.escape(str(row.get("Drug", "—")))
+        adr = html.escape(str(row.get("ADR", "—")))
+        priority = str(row.get("Priority", "UNKNOWN")).upper().strip()
+        pclass = priority_class.get(priority, "pg-priority-unknown")
+        picon = priority_icon.get(priority, "⚪")
+        dt = html.escape(str(row.get("Date_Time", "")))
+        recent_cards.append(f'''<div class="pg-recent-card">
+<div class="pg-recent-ref" title="{case_ref}">{case_ref}</div>
+<div class="pg-recent-drug">💊 {drug}</div>
+<div class="pg-recent-adr">{adr}</div>
+<div class="pg-recent-bottom">
+<span class="pg-priority-badge {pclass}">{picon} {html.escape(priority)}</span>
+<span class="pg-recent-date">{dt}</span>
+</div>
+</div>''')
+
+    st.markdown('<div class="pg-recent-grid">' + "".join(recent_cards) + '</div>', unsafe_allow_html=True)
 
     st.markdown(
         """<div class="pg-dashboard-info">
