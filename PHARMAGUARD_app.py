@@ -2681,7 +2681,7 @@ def render_analytics_screen():
             <div class="pg-dashboard-icon">📊</div>
             <div class="pg-dashboard-copy">
                 <div class="pg-dashboard-title">Safety & Priority Analytics</div>
-                <div class="pg-dashboard-subtitle">All priority-distribution and review-intelligence views in one place</div>
+                <div class="pg-dashboard-subtitle">Priority, ADR, drug, safety-intelligence and audit insights in one organized workspace</div>
             </div>
         </div>
         """,
@@ -2693,91 +2693,182 @@ def render_analytics_screen():
         return
 
     counts = _priority_counts(df)
+
+    st.markdown("### 📌 Overview")
     c1, c2, c3, c4 = st.columns(4)
     with c1:
         st.metric("Total Cases", len(df))
     with c2:
-        st.metric("HIGH", counts["HIGH"])
+        st.metric("🔴 HIGH", counts["HIGH"])
     with c3:
-        st.metric("MODERATE", counts["MODERATE"])
+        st.metric("🟡 MODERATE", counts["MODERATE"])
     with c4:
-        st.metric("LOW", counts["LOW"])
+        st.metric("🟢 LOW", counts["LOW"])
 
-    st.markdown("### 🎯 Priority Distribution")
-    priority_df = pd.DataFrame({"Priority": ["HIGH", "MODERATE", "LOW"], "Cases": [counts["HIGH"], counts["MODERATE"], counts["LOW"]]}).set_index("Priority")
-    st.bar_chart(priority_df, use_container_width=True)
+    # -----------------------------------------------------
+    # Priority & demographic analytics
+    # -----------------------------------------------------
+    with st.expander("🎯 Priority Analytics", expanded=True):
+        st.caption("Distribution of recorded review-priority categories. These are descriptive prototype records, not clinical risk estimates.")
 
-    st.markdown("### 👥 Priority by Sex")
-    sex_df = df.copy()
-    sex_df["Sex"] = sex_df.get("Sex", "Unknown").astype(str).str.upper().replace("", "UNKNOWN")
-    sex_table = pd.crosstab(sex_df["Sex"], sex_df["Priority"]).reindex(columns=["HIGH", "MODERATE", "LOW"], fill_value=0)
-    st.bar_chart(sex_table, use_container_width=True)
+        st.markdown("**Priority Distribution**")
+        priority_df = pd.DataFrame(
+            {"Priority": ["HIGH", "MODERATE", "LOW"], "Cases": [counts["HIGH"], counts["MODERATE"], counts["LOW"]]}
+        ).set_index("Priority")
+        st.bar_chart(priority_df, use_container_width=True)
 
-    st.markdown("### 📈 Priority by Age Group")
-    age_df = df.copy()
-    age_df["Age"] = pd.to_numeric(age_df.get("Age"), errors="coerce")
-    age_df["Age Group"] = pd.cut(age_df["Age"], bins=[-1, 17, 30, 45, 60, 120], labels=["0–17", "18–30", "31–45", "46–60", "61–120"])
-    age_table = pd.crosstab(age_df["Age Group"], age_df["Priority"]).reindex(columns=["HIGH", "MODERATE", "LOW"], fill_value=0)
-    st.bar_chart(age_table, use_container_width=True)
+        st.markdown("**Priority by Sex**")
+        sex_df = df.copy()
+        sex_df["Sex"] = sex_df.get("Sex", "Unknown").astype(str).str.upper().replace("", "UNKNOWN")
+        sex_table = pd.crosstab(sex_df["Sex"], sex_df["Priority"]).reindex(columns=["HIGH", "MODERATE", "LOW"], fill_value=0)
+        st.bar_chart(sex_table, use_container_width=True)
 
-    st.markdown("### 💊 Drug-wise Priority Distribution")
-    drug_df = df.copy()
-    drug_df["Drug"] = drug_df.get("Drug", "Unknown").astype(str).str.strip().replace("", "Unknown")
-    drug_table = pd.crosstab(drug_df["Drug"], drug_df["Priority"]).reindex(columns=["HIGH", "MODERATE", "LOW"], fill_value=0)
-    drug_table["TOTAL"] = drug_table[["HIGH", "MODERATE", "LOW"]].sum(axis=1)
-    drug_table = drug_table.sort_values("TOTAL", ascending=False).head(10).drop(columns="TOTAL")
-    st.bar_chart(drug_table, use_container_width=True)
+        st.markdown("**Priority by Age Group**")
+        age_df = df.copy()
+        age_df["Age"] = pd.to_numeric(age_df.get("Age"), errors="coerce")
+        age_df["Age Group"] = pd.cut(
+            age_df["Age"],
+            bins=[-1, 17, 30, 45, 60, 120],
+            labels=["0–17", "18–30", "31–45", "46–60", "61–120"],
+        )
+        age_table = pd.crosstab(age_df["Age Group"], age_df["Priority"]).reindex(columns=["HIGH", "MODERATE", "LOW"], fill_value=0)
+        st.bar_chart(age_table, use_container_width=True)
 
-    st.markdown("### 💊 Most Reported Drugs")
-    drug_frequency = (
-        df["Drug"]
-        .astype(str)
-        .str.strip()
-        .replace("", "Unknown")
-        .value_counts()
-        .head(10)
-    )
-    drug_frequency_df = drug_frequency.rename("Cases").to_frame()
-    st.bar_chart(drug_frequency_df, use_container_width=True, horizontal=True)
+    # -----------------------------------------------------
+    # ADR and drug analytics
+    # -----------------------------------------------------
+    with st.expander("💊 ADR & Drug Analytics", expanded=True):
+        st.caption("Most frequently recorded drugs and ADR descriptions in the available project records.")
 
-    st.markdown("### ⚠️ Most Frequent ADRs")
-    adr_frequency = (
-        df["ADR"]
-        .astype(str)
-        .str.strip()
-        .replace("", "Unknown")
-        .value_counts()
-        .head(10)
-    )
-    adr_frequency_df = adr_frequency.rename("Cases").to_frame()
-    st.bar_chart(adr_frequency_df, use_container_width=True, horizontal=True)
+        st.markdown("**Most Reported Drugs**")
+        drug_frequency = (
+            df.get("Drug", pd.Series(dtype=str))
+            .astype(str)
+            .str.strip()
+            .replace("", "Unknown")
+            .value_counts()
+            .head(10)
+        )
+        st.bar_chart(drug_frequency.rename("Cases").to_frame(), use_container_width=True, horizontal=True)
 
-    st.markdown("### ⚠️ ADR-wise Priority Distribution")
-    adr_df = df.copy()
-    adr_df["ADR"] = adr_df.get("ADR", "Unknown").astype(str).str.strip().replace("", "Unknown")
-    adr_table = pd.crosstab(adr_df["ADR"], adr_df["Priority"]).reindex(columns=["HIGH", "MODERATE", "LOW"], fill_value=0)
-    adr_table["TOTAL"] = adr_table[["HIGH", "MODERATE", "LOW"]].sum(axis=1)
-    adr_table = adr_table.sort_values("TOTAL", ascending=False).head(10).drop(columns="TOTAL")
-    st.bar_chart(adr_table, use_container_width=True)
+        st.markdown("**Most Frequent ADRs**")
+        adr_frequency = (
+            df.get("ADR", pd.Series(dtype=str))
+            .astype(str)
+            .str.strip()
+            .replace("", "Unknown")
+            .value_counts()
+            .head(10)
+        )
+        st.bar_chart(adr_frequency.rename("Cases").to_frame(), use_container_width=True, horizontal=True)
 
-    st.markdown("### 🚨 Seriousness Distribution")
-    seriousness = df.get("Seriousness", pd.Series(dtype=str)).astype(str).str.strip().str.upper().replace("", "UNKNOWN").value_counts()
-    st.bar_chart(seriousness.rename("Cases").to_frame(), use_container_width=True)
+        st.markdown("**Drug-wise Priority Distribution — Top 10 by Record Count**")
+        drug_df = df.copy()
+        drug_df["Drug"] = drug_df.get("Drug", "Unknown").astype(str).str.strip().replace("", "Unknown")
+        drug_table = pd.crosstab(drug_df["Drug"], drug_df["Priority"]).reindex(columns=["HIGH", "MODERATE", "LOW"], fill_value=0)
+        drug_table["TOTAL"] = drug_table[["HIGH", "MODERATE", "LOW"]].sum(axis=1)
+        drug_table = drug_table.sort_values("TOTAL", ascending=False).head(10).drop(columns="TOTAL")
+        st.bar_chart(drug_table, use_container_width=True)
 
-    st.markdown("### 🛡️ Review Architecture")
-    source = df.get("Decision_Source", pd.Series(dtype=str)).astype(str).str.strip()
-    s1, s2, s3, s4 = st.columns(4)
-    with s1:
-        st.metric("Safety Gate", int(source.str.startswith("Safety Gate", na=False).sum()))
-    with s2:
-        st.metric("RF-Assisted", int((source == "Random Forest prototype").sum()))
-    with s3:
-        st.metric("Reassessments", int(df.get("Reassessment_Of", pd.Series(dtype=str)).astype(str).str.strip().ne("").sum()))
-    with s4:
-        st.metric("Linked Cases", int(df.get("Original_Case_Reference", pd.Series(dtype=str)).astype(str).str.strip().ne("").sum()))
+        st.markdown("**ADR-wise Priority Distribution — Top 10 by Record Count**")
+        adr_df = df.copy()
+        adr_df["ADR"] = adr_df.get("ADR", "Unknown").astype(str).str.strip().replace("", "Unknown")
+        adr_table = pd.crosstab(adr_df["ADR"], adr_df["Priority"]).reindex(columns=["HIGH", "MODERATE", "LOW"], fill_value=0)
+        adr_table["TOTAL"] = adr_table[["HIGH", "MODERATE", "LOW"]].sum(axis=1)
+        adr_table = adr_table.sort_values("TOTAL", ascending=False).head(10).drop(columns="TOTAL")
+        st.bar_chart(adr_table, use_container_width=True)
 
-    st.caption("These are descriptive prototype-record analytics. They do not represent clinical risk estimates, calibrated probabilities, model accuracy, or regulatory performance.")
+    # -----------------------------------------------------
+    # Safety intelligence
+    # -----------------------------------------------------
+    with st.expander("🛡️ Safety Intelligence", expanded=False):
+        source = df.get("Decision_Source", pd.Series(dtype=str)).astype(str).str.strip()
+        s1, s2, s3, s4 = st.columns(4)
+        with s1:
+            st.metric("Safety Gate", int(source.str.startswith("Safety Gate", na=False).sum()))
+        with s2:
+            st.metric("RF-Assisted", int((source == "Random Forest prototype").sum()))
+        with s3:
+            st.metric("Reassessments", int(df.get("Reassessment_Of", pd.Series(dtype=str)).astype(str).str.strip().ne("").sum()))
+        with s4:
+            st.metric("Linked Cases", int(df.get("Original_Case_Reference", pd.Series(dtype=str)).astype(str).str.strip().ne("").sum()))
 
+        st.markdown("**Seriousness Distribution**")
+        seriousness = (
+            df.get("Seriousness", pd.Series(dtype=str))
+            .astype(str)
+            .str.strip()
+            .str.upper()
+            .replace("", "UNKNOWN")
+            .value_counts()
+        )
+        st.bar_chart(seriousness.rename("Cases").to_frame(), use_container_width=True)
+        st.info("Safety Intelligence summarizes recorded workflow decisions. It does not represent clinical risk, calibrated probability, or regulatory performance.")
+
+    # -----------------------------------------------------
+    # Quality and audit
+    # -----------------------------------------------------
+    with st.expander("🔎 Quality & Audit", expanded=False):
+        priority_recorded = int(df.get("Priority", pd.Series(dtype=str)).astype(str).str.strip().ne("").sum())
+        decision_recorded = int(df.get("Decision_Source", pd.Series(dtype=str)).astype(str).str.strip().ne("").sum())
+        case_reference_recorded = int(df.get("Case_Reference", pd.Series(dtype=str)).astype(str).str.strip().ne("").sum())
+        adr_recorded = int(df.get("ADR", pd.Series(dtype=str)).astype(str).str.strip().ne("").sum())
+        drug_recorded = int(df.get("Drug", pd.Series(dtype=str)).astype(str).str.strip().ne("").sum())
+        reassessment_links = int(df.get("Reassessment_Of", pd.Series(dtype=str)).astype(str).str.strip().ne("").sum())
+        original_links = int(df.get("Original_Case_Reference", pd.Series(dtype=str)).astype(str).str.strip().ne("").sum())
+
+        q1, q2, q3, q4 = st.columns(4)
+        with q1:
+            st.metric("Priority Recorded", priority_recorded)
+        with q2:
+            st.metric("Decision Source", decision_recorded)
+        with q3:
+            st.metric("Case References", case_reference_recorded)
+        with q4:
+            st.metric("ADR Recorded", adr_recorded)
+
+        q5, q6, q7 = st.columns(3)
+        with q5:
+            st.metric("Drug Recorded", drug_recorded)
+        with q6:
+            st.metric("Reassessment Links", reassessment_links)
+        with q7:
+            st.metric("Original Case Links", original_links)
+
+        audit_df = pd.DataFrame(
+            {
+                "Audit Field": [
+                    "Priority Recorded",
+                    "Decision Source Recorded",
+                    "Case Reference Recorded",
+                    "ADR Recorded",
+                    "Drug Recorded",
+                    "Reassessment Links",
+                    "Original Case Links",
+                ],
+                "Records": [
+                    priority_recorded,
+                    decision_recorded,
+                    case_reference_recorded,
+                    adr_recorded,
+                    drug_recorded,
+                    reassessment_links,
+                    original_links,
+                ],
+            }
+        )
+        st.dataframe(audit_df, use_container_width=True, hide_index=True)
+
+        csv_bytes = audit_df.to_csv(index=False).encode("utf-8")
+        st.download_button(
+            "📥 Download Quality & Audit CSV",
+            data=csv_bytes,
+            file_name="PHARMAGUARD_Quality_Audit.csv",
+            mime="text/csv",
+            use_container_width=True,
+        )
+
+    st.caption("All analytics are descriptive prototype-record summaries. They do not represent clinical risk estimates, calibrated probabilities, model accuracy, or regulatory performance.")
 
 def render_database_screen():
     st.markdown("## ☁️ PHARMAGUARD Database")
