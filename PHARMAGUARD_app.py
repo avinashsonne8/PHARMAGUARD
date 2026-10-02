@@ -4192,6 +4192,62 @@ if active_page == "🔍 New ADR Analysis" and st.session_state.get(
 selected_row = locals().get("selected_row", None)
 
 st.markdown("---")
+
+# =====================================================
+# EXPLAINABLE DECISION SUMMARY — v24
+# =====================================================
+st.markdown("### 🧠 Explainable Decision Summary")
+
+if selected_row is not None:
+    _exp_priority = str(selected_row.get("Priority", "UNKNOWN")).upper()
+    _exp_source = str(selected_row.get("Decision_Source", "Not available"))
+    _exp_reason = str(selected_row.get("Reason", "Not available"))
+    _exp_seriousness = str(selected_row.get("Seriousness", "Uncertain"))
+    _exp_adr = str(selected_row.get("ADR", ""))
+
+    if _exp_source == "Safety Gate — serious signal":
+        _exp_path = "Safety Gate detected a predefined serious-signal pattern before ML assistance."
+    elif _exp_source == "Safety Gate — moderate signal":
+        _exp_path = "Safety Gate detected a project-defined moderate review signal before ML assistance."
+    elif _exp_source == "Random Forest prototype":
+        _exp_path = "No predefined Safety Gate signal was detected; the Random Forest prototype supplied the review priority."
+    else:
+        _exp_path = "Decision pathway information is limited for this record."
+
+    st.info(
+        "This explanation describes the PHARMAGUARD prototype decision pathway. "
+        "It is not a clinical causality assessment or regulatory seriousness determination."
+    )
+
+    _explain_col1, _explain_col2 = st.columns(2)
+    with _explain_col1:
+        st.markdown("**🏁 Assigned Review Priority**")
+        st.markdown(f"### {_exp_priority}")
+        st.markdown(f"**⚕️ Seriousness:** {_exp_seriousness}")
+    with _explain_col2:
+        st.markdown("**🔎 Decision Source**")
+        st.write(_exp_source)
+        st.markdown("**🧭 Decision Pathway**")
+        st.write(_exp_path)
+
+    st.markdown("**⚠️ Reported ADR**")
+    st.write(_exp_adr)
+
+    st.markdown("**💡 Why was this priority assigned?**")
+    st.write(_exp_reason)
+
+    if _exp_source.startswith("Safety Gate"):
+        st.success(
+            "Safety Gate precedence applied: a predefined Safety Gate signal is not downgraded by the prototype Random Forest output."
+        )
+    elif _exp_source == "Random Forest prototype":
+        st.warning(
+            "This priority comes from the prototype Random Forest and should be interpreted as review-priority assistance, not a calibrated clinical probability."
+        )
+else:
+    st.caption("Select a saved ADR case above to view its explainable decision summary.")
+
+st.markdown("---")
 st.markdown("### 📄 ADR Case Report")
 
 if st.button(
