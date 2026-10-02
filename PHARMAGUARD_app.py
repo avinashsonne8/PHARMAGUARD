@@ -1,4 +1,4 @@
-# PHARMAGUARD Professional UI v32 — Dashboard Mobile Polish
+# PHARMAGUARD Professional UI v39 — Dark Mode Contrast Fix
 # Dashboard HTML rendering fix — backend/Safety Gate/ML/database logic preserved.
 import streamlit as st
 import pandas as pd
@@ -168,6 +168,38 @@ html[data-theme="dark"] .pg-sidebar-note {
 html[data-theme="dark"] .pg-sidebar-note {
     background: #18212b !important;
     border-color: #344454 !important;
+}
+
+/* v39 — targeted contrast fix for native Streamlit buttons and headings.
+   Keep Streamlit native widgets/theme behavior, but ensure custom workflow
+   buttons and markdown section headings remain readable on the dark canvas. */
+html[data-theme="dark"] div.stButton > button {
+    background: #18212b !important;
+    color: #f3f7fb !important;
+    border-color: #526171 !important;
+}
+html[data-theme="dark"] div.stButton > button:hover {
+    background: #22303e !important;
+    color: #ffffff !important;
+    border-color: #718197 !important;
+}
+html[data-theme="dark"] div.stButton > button:focus {
+    color: #ffffff !important;
+    border-color: #8ea9c2 !important;
+}
+html[data-theme="dark"] div.stButton > button * {
+    color: inherit !important;
+}
+html[data-theme="dark"] div.stButton > button[kind="primary"] {
+    color: #ffffff !important;
+}
+html[data-theme="dark"] .stMarkdown h1,
+html[data-theme="dark"] .stMarkdown h2,
+html[data-theme="dark"] .stMarkdown h3,
+html[data-theme="dark"] .stMarkdown h4,
+html[data-theme="dark"] .stMarkdown h5,
+html[data-theme="dark"] .stMarkdown h6 {
+    color: #eaf2f8 !important;
 }
 
 /* Do NOT style .stButton, .stTextInput, BaseWeb selects, DataFrame,
