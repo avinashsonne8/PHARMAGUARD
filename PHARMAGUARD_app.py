@@ -2567,6 +2567,101 @@ def render_database_screen():
         hide_index=True
     )
 
+    # -----------------------------------------------------
+    # V17: REASSESSMENT DETAILS
+    # Keep the main database table compact, while exposing
+    # longitudinal reassessment fields for the selected case.
+    # -----------------------------------------------------
+    reassessment_candidates = filtered[
+        filtered["Case_Reference"].astype(str).str.strip() != ""
+    ].copy() if "Case_Reference" in filtered.columns else pd.DataFrame()
+
+    if not reassessment_candidates.empty:
+        st.markdown("### 🔄 Reassessment Details")
+        st.caption(
+            "Select a case to view linked reassessment/version information. "
+            "The main database table remains unchanged."
+        )
+
+        case_options = reassessment_candidates["Case_Reference"].astype(str).tolist()
+        selected_case_ref = st.selectbox(
+            "Select Case Reference",
+            case_options,
+            key="database_reassessment_case"
+        )
+
+        selected_rows = df[
+            df["Case_Reference"].astype(str) == str(selected_case_ref)
+        ] if "Case_Reference" in df.columns else pd.DataFrame()
+
+        if not selected_rows.empty:
+            selected_record = selected_rows.iloc[-1].to_dict()
+
+            reassessment_of = str(selected_record.get("Reassessment_Of", "")).strip()
+            original_ref = str(
+                selected_record.get("Original_Case_Reference", "")
+                or selected_record.get("Case_Reference", "")
+            ).strip()
+            reassessment_number = str(selected_record.get("Reassessment_Number", "")).strip()
+            previous_priority = str(selected_record.get("Previous_Priority", "")).strip()
+            follow_up_note = str(selected_record.get("Follow_Up_Note", "")).strip()
+
+            is_reassessment = bool(reassessment_of)
+
+            if is_reassessment:
+                st.success(
+                    f"🔄 This is Reassessment {reassessment_number or '—'}: "
+                    f"{previous_priority or 'UNKNOWN'} → "
+                    f"{selected_record.get('Priority', 'UNKNOWN')}"
+                )
+            else:
+                st.info("🟢 This is the initial ADR case version.")
+
+            d1, d2 = st.columns(2)
+            with d1:
+                st.markdown(f"**Previous Priority:** {previous_priority or '—'}")
+                st.markdown(f"**Reassessment Of:** {reassessment_of or '—'}")
+                st.markdown(f"**Reassessment Number:** {reassessment_number or 'Initial'}")
+            with d2:
+                st.markdown(f"**Original Case Reference:** {original_ref or '—'}")
+                st.markdown(f"**Current Priority:** {selected_record.get('Priority', 'UNKNOWN')}")
+                st.markdown(f"**Decision Source:** {selected_record.get('Decision_Source', '—')}")
+
+            st.markdown("**Follow-up / New Clinical Information:**")
+            if follow_up_note:
+                st.info(follow_up_note)
+            else:
+                st.caption("No follow-up note recorded for this case version.")
+
+            # Show the complete linked timeline from the loaded database.
+            timeline_root = original_ref or str(selected_case_ref)
+            linked = df.copy()
+            if "Case_Reference" in linked.columns:
+                linked_root = linked.get("Original_Case_Reference", pd.Series("", index=linked.index)).fillna("").astype(str).str.strip()
+                linked_case = linked["Case_Reference"].astype(str).str.strip()
+                timeline_mask = (linked_root == timeline_root) | (linked_case == timeline_root)
+                timeline = linked[timeline_mask].copy()
+            else:
+                timeline = pd.DataFrame()
+
+            if not timeline.empty:
+                st.markdown("#### 📈 Linked ADR Priority Timeline")
+                timeline_rows = []
+                for _, item in timeline.sort_values("Date_Time" if "Date_Time" in timeline.columns else timeline.index).iterrows():
+                    reassess_no = str(item.get("Reassessment_Number", "")).strip()
+                    timeline_rows.append({
+                        "Version": f"Reassessment {reassess_no}" if reassess_no else "Initial",
+                        "Date & Time": item.get("Date_Time", ""),
+                        "Priority": item.get("Priority", "UNKNOWN"),
+                        "ADR / New Information": item.get("ADR", ""),
+                        "Case Reference": item.get("Case_Reference", ""),
+                    })
+                st.dataframe(
+                    pd.DataFrame(timeline_rows),
+                    use_container_width=True,
+                    hide_index=True
+                )
+
     st.markdown("### 📤 Export Database")
     st.download_button(
         "⬇️ Download Database CSV",
