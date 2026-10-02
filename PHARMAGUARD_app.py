@@ -1855,379 +1855,160 @@ def _priority_counts(df):
 
 
 def render_dashboard_screen():
+    """Clean executive dashboard: overview and navigation only.
 
-    df = pd.DataFrame(
-        st.session_state.get("adr_history", [])
-    )
-
+    Detailed analytics, safety intelligence, and quality/audit information
+    live on the Analytics page so the dashboard remains uncluttered.
+    """
+    df = pd.DataFrame(st.session_state.get("adr_history", []))
     counts = _priority_counts(df)
 
     # =====================================================
-    # PROFESSIONAL DASHBOARD HEADER
+    # HEADER
     # =====================================================
-
-    # Render the dashboard header as HTML through st.markdown.
-    # Do not use st.write() for this block, because the HTML must be
-    # explicitly enabled for Streamlit to render it.
     st.markdown(
         """<div class="pg-dashboard-hero">
 <div class="pg-dashboard-icon">🛡️</div>
 <div class="pg-dashboard-copy">
-<div class="pg-dashboard-title">Pharmacovigilance Dashboard</div>
-<div class="pg-dashboard-subtitle">Monitor ADR reports and review-priority signals</div>
+<div class="pg-dashboard-title">PHARMAGUARD</div>
+<div class="pg-dashboard-subtitle">AI-Assisted ADR Risk Prioritization System</div>
 </div>
 </div>""",
         unsafe_allow_html=True,
     )
 
-    # =====================================================
-    # QUICK ACTION
-    # =====================================================
-
-    st.markdown("### Quick Action")
-
-    if st.button(
-        "➕  Start New ADR Analysis",
-        use_container_width=True
-    ):
-        # Change only the application page state here.
-        # navigation_page is a Streamlit widget key, so it must NOT be
-        # modified after the radio widget has been created. On the next
-        # rerun, the sidebar syncs navigation_page from active_page.
-        st.session_state["active_page"] = "🔍 New ADR Analysis"
-        st.rerun()
+    st.caption("Pharmacovigilance • Review-priority support • Proof of Concept")
 
     # =====================================================
-    # SUMMARY CARDS
+    # QUICK ACTIONS
     # =====================================================
+    st.markdown("### Quick Actions")
+    q1, q2, q3 = st.columns(3)
 
-    st.markdown("### ADR Overview")
+    with q1:
+        if st.button("➕  New ADR Analysis", use_container_width=True):
+            st.session_state["active_page"] = "🔍 New ADR Analysis"
+            st.rerun()
 
+    with q2:
+        if st.button("📂  View Cases", use_container_width=True):
+            st.session_state["active_page"] = "📂 Cases"
+            st.rerun()
+
+    with q3:
+        if st.button("📊  View Analytics", use_container_width=True):
+            st.session_state["active_page"] = "📊 Analytics"
+            st.rerun()
+
+    # =====================================================
+    # CORE OVERVIEW — KEEP DASHBOARD SIMPLE
+    # =====================================================
+    st.markdown("### Case Overview")
     c1, c2, c3, c4 = st.columns(4)
 
     with c1:
         st.markdown(
-            f"""
-            <div class="pg-stat-card">
-                <div class="pg-stat-icon">📋</div>
-                <div class="pg-stat-label">Total ADR Cases</div>
-                <div class="pg-stat-value">{len(df)}</div>
-                <div class="pg-stat-note">All recorded cases</div>
-            </div>
-            """,
-            unsafe_allow_html=True
+            f"""<div class="pg-stat-card">
+<div class="pg-stat-icon">📋</div>
+<div class="pg-stat-label">Total Cases</div>
+<div class="pg-stat-value">{len(df)}</div>
+<div class="pg-stat-note">Recorded ADR reports</div>
+</div>""",
+            unsafe_allow_html=True,
         )
-
     with c2:
         st.markdown(
-            f"""
-            <div class="pg-stat-card pg-high-card">
-                <div class="pg-stat-icon">🔴</div>
-                <div class="pg-stat-label">High Priority</div>
-                <div class="pg-stat-value">{counts["HIGH"]}</div>
-                <div class="pg-stat-note">Priority review</div>
-            </div>
-            """,
-            unsafe_allow_html=True
+            f"""<div class="pg-stat-card pg-high-card">
+<div class="pg-stat-icon">🔴</div>
+<div class="pg-stat-label">High Priority</div>
+<div class="pg-stat-value">{counts['HIGH']}</div>
+<div class="pg-stat-note">Priority review</div>
+</div>""",
+            unsafe_allow_html=True,
         )
-
     with c3:
         st.markdown(
-            f"""
-            <div class="pg-stat-card pg-moderate-card">
-                <div class="pg-stat-icon">🟡</div>
-                <div class="pg-stat-label">Moderate</div>
-                <div class="pg-stat-value">{counts["MODERATE"]}</div>
-                <div class="pg-stat-note">Clinical review signal</div>
-            </div>
-            """,
-            unsafe_allow_html=True
+            f"""<div class="pg-stat-card pg-moderate-card">
+<div class="pg-stat-icon">🟡</div>
+<div class="pg-stat-label">Moderate</div>
+<div class="pg-stat-value">{counts['MODERATE']}</div>
+<div class="pg-stat-note">Clinical review signal</div>
+</div>""",
+            unsafe_allow_html=True,
         )
-
     with c4:
         st.markdown(
-            f"""
-            <div class="pg-stat-card pg-low-card">
-                <div class="pg-stat-icon">🟢</div>
-                <div class="pg-stat-label">Low Priority</div>
-                <div class="pg-stat-value">{counts["LOW"]}</div>
-                <div class="pg-stat-note">Routine review</div>
-            </div>
-            """,
-            unsafe_allow_html=True
+            f"""<div class="pg-stat-card pg-low-card">
+<div class="pg-stat-icon">🟢</div>
+<div class="pg-stat-label">Low Priority</div>
+<div class="pg-stat-value">{counts['LOW']}</div>
+<div class="pg-stat-note">Routine review</div>
+</div>""",
+            unsafe_allow_html=True,
         )
 
     # =====================================================
-    # PRIORITY DISTRIBUTION
+    # REVIEW ACTIVITY — SMALL SUMMARY ONLY
     # =====================================================
-
-    st.markdown("### Priority Distribution")
-
-    chart = pd.DataFrame(
-        {
-            "Priority": [
-                "HIGH",
-                "MODERATE",
-                "LOW"
-            ],
-            "Cases": [
-                counts["HIGH"],
-                counts["MODERATE"],
-                counts["LOW"]
-            ]
-        }
-    ).set_index("Priority")
-
-    st.bar_chart(
-        chart,
-        use_container_width=True
-    )
-
-    # =====================================================
-    # V20 — SAFETY INTELLIGENCE SUMMARY
-    # =====================================================
-    # Descriptive project-record summary only; not a clinical risk estimate.
     source_series = (
         df["Decision_Source"].astype(str).str.strip()
         if "Decision_Source" in df.columns
         else pd.Series(dtype=str)
     )
-
-    safety_gate_cases = int(
-        source_series.str.startswith("Safety Gate", na=False).sum()
-    )
-    rf_assisted_cases = int(
-        (source_series == "Random Forest prototype").sum()
-    )
+    safety_gate_cases = int(source_series.str.startswith("Safety Gate", na=False).sum())
     reassessment_cases = int(
-        df["Reassessment_Of"].astype(str).str.strip().ne("").sum()
-        if "Reassessment_Of" in df.columns
-        else 0
-    )
-    linked_cases = int(
-        df["Original_Case_Reference"].astype(str).str.strip().ne("").sum()
-        if "Original_Case_Reference" in df.columns
-        else 0
-    )
-
-    with st.expander("🛡️ Safety Intelligence", expanded=False):
-        st.markdown("### 🛡️ PHARMAGUARD Safety Intelligence")
-        st.caption(
-            "Descriptive summary of how the prototype review architecture is represented in stored ADR records."
-        )
-
-        si1, si2, si3, si4 = st.columns(4)
-        with si1:
-            st.metric("🛡️ Safety Gate", safety_gate_cases)
-        with si2:
-            st.metric("🤖 RF-Assisted", rf_assisted_cases)
-        with si3:
-            st.metric("🔄 Reassessments", reassessment_cases)
-        with si4:
-            st.metric("🔗 Linked Cases", linked_cases)
-
-        st.info(
-            "The counts above use the stored Decision Source and reassessment fields. "
-            "Historical Safety Gate-vs-Random Forest conflicts are not counted because the database does not store the separate RF output for every case. "
-            "Use the live comparison panel on the Analysis Result screen to demonstrate Safety Gate precedence."
-        )
-
-    # =====================================================
-    # V25 — QUALITY & AUDIT DASHBOARD
-    # =====================================================
-    # Descriptive prototype audit indicators only; not clinical performance metrics.
-    qa_total = int(len(df))
-
-    if qa_total > 0:
-        qa_priority_known = int(
-            df["Priority"].astype(str).str.upper().isin(
-                ["HIGH", "MODERATE", "LOW"]
-            ).sum()
-            if "Priority" in df.columns else 0
-        )
-        qa_source_known = int(
-            df["Decision_Source"].astype(str).str.strip().ne("").sum()
-            if "Decision_Source" in df.columns else 0
-        )
-        qa_case_ref_known = int(
-            df["Case_Reference"].astype(str).str.strip().ne("").sum()
-            if "Case_Reference" in df.columns else 0
-        )
-        qa_adr_known = int(
-            df["ADR"].astype(str).str.strip().ne("").sum()
-            if "ADR" in df.columns else 0
-        )
-        qa_drug_known = int(
-            df["Drug"].astype(str).str.strip().ne("").sum()
-            if "Drug" in df.columns else 0
-        )
-    else:
-        qa_priority_known = qa_source_known = qa_case_ref_known = 0
-        qa_adr_known = qa_drug_known = 0
-
-    qa_reassessment_linked = int(
         df["Reassessment_Of"].astype(str).str.strip().ne("").sum()
         if "Reassessment_Of" in df.columns else 0
     )
-    qa_original_linked = int(
-        df["Original_Case_Reference"].astype(str).str.strip().ne("").sum()
-        if "Original_Case_Reference" in df.columns else 0
+
+    st.markdown("### Review Activity")
+    r1, r2, r3 = st.columns(3)
+    with r1:
+        st.metric("🛡️ Safety Gate Cases", safety_gate_cases)
+    with r2:
+        st.metric("🔄 Reassessments", reassessment_cases)
+    with r3:
+        st.metric("📊 Detailed Insights", "Analytics")
+
+    st.caption(
+        "For detailed priority distributions, ADR/drug trends, Safety Intelligence, "
+        "and Quality & Audit indicators, open Analytics."
     )
 
-    with st.expander("🧪 Quality & Audit", expanded=False):
-        st.markdown("### 🧪 PHARMAGUARD Quality & Audit Dashboard")
-        st.caption(
-            "Descriptive audit indicators for the prototype records currently available in the app. "
-            "These indicators do not represent clinical validation, model accuracy, or regulatory performance."
-        )
-
-        qa1, qa2, qa3, qa4 = st.columns(4)
-        with qa1:
-            st.metric("📋 Total Records", qa_total)
-        with qa2:
-            st.metric("🎯 Priority Recorded", qa_priority_known)
-        with qa3:
-            st.metric("🧭 Decision Source", qa_source_known)
-        with qa4:
-            st.metric("🔗 Reassessment Links", qa_reassessment_linked)
-
-        qa5, qa6, qa7, qa8 = st.columns(4)
-        with qa5:
-            st.metric("🆔 Case References", qa_case_ref_known)
-        with qa6:
-            st.metric("⚠️ ADR Recorded", qa_adr_known)
-        with qa7:
-            st.metric("💊 Drug Recorded", qa_drug_known)
-        with qa8:
-            st.metric("🧬 Original Links", qa_original_linked)
-
-        if qa_total:
-            completeness = round(
-                (qa_priority_known + qa_source_known + qa_case_ref_known + qa_adr_known + qa_drug_known)
-                / (5 * qa_total) * 100,
-                1
-            )
-            st.progress(
-                min(completeness / 100, 1.0),
-                text=f"Core record-field coverage: {completeness}%"
-            )
-
-        qa_audit = pd.DataFrame({
-            "Audit Indicator": [
-                "Priority recorded",
-                "Decision source recorded",
-                "Case reference recorded",
-                "ADR recorded",
-                "Drug recorded",
-                "Reassessment-linked records"
-            ],
-            "Count": [
-                qa_priority_known,
-                qa_source_known,
-                qa_case_ref_known,
-                qa_adr_known,
-                qa_drug_known,
-                qa_reassessment_linked
-            ]
-        })
-
-        st.dataframe(
-            qa_audit,
-            use_container_width=True,
-            hide_index=True
-        )
-
-        st.download_button(
-            label="⬇️ Download Quality & Audit Summary",
-            data=qa_audit.to_csv(index=False),
-            file_name="PHARMAGUARD_Quality_Audit_Summary.csv",
-            mime="text/csv",
-            use_container_width=True
-        )
-
-        st.info(
-            "Audit indicators are intended to support prototype documentation and demonstration. "
-            "They should not be interpreted as evidence of clinical validity or model performance."
-        )
-
     # =====================================================
-    # RECENT CASES
+    # RECENT CASES — COMPACT PREVIEW ONLY
     # =====================================================
-
     if df.empty:
-
         st.markdown(
-            """
-            <div class="pg-empty-state">
-
-                <div class="pg-empty-icon">📭</div>
-
-                <div class="pg-empty-title">
-                    No ADR Reports Yet
-                </div>
-
-                <div class="pg-empty-text">
-                    Start a new ADR analysis to create your
-                    first PHARMAGUARD case.
-                </div>
-
-            </div>
-            """,
-            unsafe_allow_html=True
+            """<div class="pg-empty-state">
+<div class="pg-empty-icon">📭</div>
+<div class="pg-empty-title">No ADR Reports Yet</div>
+<div class="pg-empty-text">Start a new ADR analysis to create your first PHARMAGUARD case.</div>
+</div>""",
+            unsafe_allow_html=True,
         )
-
         return
 
-    st.markdown("### 🕐 Recent ADR Reports")
-
+    st.markdown("### 🕐 Recent Cases")
     recent_cols = [
         c for c in [
-            "Case_Reference",
-            "Drug",
-            "ADR",
-            "Priority",
-            "Decision_Source",
-            "Date_Time"
-        ]
-        if c in df.columns
+            "Case_Reference", "Drug", "ADR", "Priority", "Date_Time"
+        ] if c in df.columns
     ]
-
-    recent_df = (
-        df[recent_cols]
-        .tail(8)
-        .iloc[::-1]
-        .copy()
-    )
-
+    recent_df = df[recent_cols].tail(5).iloc[::-1].copy()
     st.dataframe(
         recent_df,
         use_container_width=True,
-        hide_index=True
+        hide_index=True,
     )
 
-    # =====================================================
-    # DASHBOARD INFORMATION
-    # =====================================================
-
     st.markdown(
-        textwrap.dedent(
-            """
-            <div class="pg-dashboard-info">
-                <div class="pg-info-title">
-                    🛡️ PHARMAGUARD Review Support
-                </div>
-                <div class="pg-info-text">
-                    PHARMAGUARD combines a predefined Safety Gate
-                    with a Random Forest prototype to support
-                    pharmacovigilance review prioritization.
-                </div>
-                <div class="pg-info-note">
-                    Review priority only • Proof of Concept
-                </div>
-            </div>
-            """
-        ).strip(),
-        unsafe_allow_html=True
+        """<div class="pg-dashboard-info">
+<div class="pg-info-title">🛡️ Safety-first review support</div>
+<div class="pg-info-text">PHARMAGUARD combines a predefined Safety Gate with a Random Forest prototype to support pharmacovigilance review prioritization.</div>
+<div class="pg-info-note">Review priority only • Proof of Concept</div>
+</div>""",
+        unsafe_allow_html=True,
     )
 
 def render_history_screen():
