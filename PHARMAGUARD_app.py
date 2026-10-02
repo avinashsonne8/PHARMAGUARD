@@ -1861,6 +1861,54 @@ def render_dashboard_screen():
     )
 
     # =====================================================
+    # V20 — SAFETY INTELLIGENCE SUMMARY
+    # =====================================================
+    # Descriptive project-record summary only; not a clinical risk estimate.
+    source_series = (
+        df["Decision_Source"].astype(str).str.strip()
+        if "Decision_Source" in df.columns
+        else pd.Series(dtype=str)
+    )
+
+    safety_gate_cases = int(
+        source_series.str.startswith("Safety Gate", na=False).sum()
+    )
+    rf_assisted_cases = int(
+        (source_series == "Random Forest prototype").sum()
+    )
+    reassessment_cases = int(
+        df["Reassessment_Of"].astype(str).str.strip().ne("").sum()
+        if "Reassessment_Of" in df.columns
+        else 0
+    )
+    linked_cases = int(
+        df["Original_Case_Reference"].astype(str).str.strip().ne("").sum()
+        if "Original_Case_Reference" in df.columns
+        else 0
+    )
+
+    st.markdown("### 🛡️ PHARMAGUARD Safety Intelligence")
+    st.caption(
+        "Descriptive summary of how the prototype review architecture is represented in stored ADR records."
+    )
+
+    si1, si2, si3, si4 = st.columns(4)
+    with si1:
+        st.metric("🛡️ Safety Gate", safety_gate_cases)
+    with si2:
+        st.metric("🤖 RF-Assisted", rf_assisted_cases)
+    with si3:
+        st.metric("🔄 Reassessments", reassessment_cases)
+    with si4:
+        st.metric("🔗 Linked Cases", linked_cases)
+
+    st.info(
+        "The counts above use the stored Decision Source and reassessment fields. "
+        "Historical Safety Gate-vs-Random Forest conflicts are not counted because the database does not store the separate RF output for every case. "
+        "Use the live comparison panel on the Analysis Result screen to demonstrate Safety Gate precedence."
+    )
+
+    # =====================================================
     # RECENT CASES
     # =====================================================
 
