@@ -175,20 +175,21 @@ html[data-theme="dark"] .pg-sidebar-note {
    dark mode through a DOM attribute. This keeps the native theme intact
    while making our workflow buttons and markdown headings readable in
    both Light and Dark modes. */
+/* Keep native Streamlit buttons readable in both themes. */
 div.stButton > button {
-    background: var(--secondary-background-color) !important;
-    color: var(--text-color) !important;
-    border-color: var(--secondary-background-color) !important;
+    background: transparent !important;
+    color: inherit !important;
+    border-color: currentColor !important;
 }
 div.stButton > button:hover {
-    background: var(--secondary-background-color) !important;
-    color: var(--text-color) !important;
-    border-color: var(--text-color) !important;
+    background: rgba(127,127,127,.10) !important;
+    color: inherit !important;
+    border-color: currentColor !important;
 }
 div.stButton > button:focus,
 div.stButton > button:focus-visible {
-    color: var(--text-color) !important;
-    border-color: var(--text-color) !important;
+    color: inherit !important;
+    border-color: currentColor !important;
 }
 div.stButton > button * {
     color: inherit !important;
@@ -199,7 +200,32 @@ div.stButton > button * {
 .stMarkdown h4,
 .stMarkdown h5,
 .stMarkdown h6 {
-    color: var(--text-color) !important;
+    color: inherit !important;
+}
+
+/* Streamlit's dark theme does not always expose a stable DOM theme attribute.
+   Use the system dark-mode media query only for native workflow buttons and
+   headings; this leaves Streamlit's own surfaces/widgets in control. */
+@media (prefers-color-scheme: dark) {
+    div.stButton > button {
+        background: #151922 !important;
+        color: #f1f5f9 !important;
+        border-color: #4b5563 !important;
+    }
+    div.stButton > button:hover,
+    div.stButton > button:focus,
+    div.stButton > button:focus-visible {
+        background: #202631 !important;
+        color: #ffffff !important;
+        border-color: #94a3b8 !important;
+    }
+    div.stButton > button * {
+        color: #f1f5f9 !important;
+    }
+    .stMarkdown h1, .stMarkdown h2, .stMarkdown h3,
+    .stMarkdown h4, .stMarkdown h5, .stMarkdown h6 {
+        color: #f1f5f9 !important;
+    }
 }
 
 /* Native Streamlit inputs, selects, alerts, dataframes and sidebar remain
