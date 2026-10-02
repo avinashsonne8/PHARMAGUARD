@@ -1952,14 +1952,16 @@ def render_dashboard_screen():
 
     st.markdown("### 🕐 Recent Cases")
     recent_cols = [c for c in ["Case_Reference", "Drug", "ADR", "Priority", "Date_Time"] if c in df.columns]
-    recent_df = df[recent_cols].tail(5).iloc[::-1].copy()
+    recent_df = df[recent_cols].tail(3).iloc[::-1].copy()
 
     priority_class = {"HIGH": "pg-priority-high", "MODERATE": "pg-priority-moderate", "LOW": "pg-priority-low"}
     priority_icon = {"HIGH": "🔴", "MODERATE": "🟡", "LOW": "🟢"}
     recent_cards = []
     for _, row in recent_df.iterrows():
         case_ref = html.escape(str(row.get("Case_Reference", "—")))
-        drug = html.escape(str(row.get("Drug", "—")))
+        drug_raw = row.get("Drug", "")
+        drug_text = str(drug_raw).strip()
+        drug = html.escape(drug_text if drug_text and drug_text.lower() not in {"nan", "none", "null"} else "Not reported")
         adr = html.escape(str(row.get("ADR", "—")))
         priority = str(row.get("Priority", "UNKNOWN")).upper().strip()
         pclass = priority_class.get(priority, "pg-priority-unknown")
@@ -1976,6 +1978,10 @@ def render_dashboard_screen():
 </div>''')
 
     st.markdown('<div class="pg-recent-grid">' + "".join(recent_cards) + '</div>', unsafe_allow_html=True)
+
+    if st.button("📂 View All Cases →", use_container_width=True, key="dashboard_view_all_cases"):
+        st.session_state["active_page"] = "📂 Cases"
+        st.rerun()
 
     st.markdown(
         """<div class="pg-dashboard-info">
