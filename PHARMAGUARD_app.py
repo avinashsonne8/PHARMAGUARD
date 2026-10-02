@@ -3089,6 +3089,37 @@ if st.button(
     ) = evaluate_adr_priority(age, sex, drug, adr)
 
     # =====================================================
+    # V19 — SAFETY GATE vs RANDOM FOREST LIVE COMPARISON
+    # =====================================================
+    rf_priority = model_predict(age, sex, drug, adr)
+    if rf_priority not in {"LOW", "MODERATE", "HIGH"}:
+        rf_priority = "UNKNOWN"
+
+    safety_gate_priority = "NONE"
+    safety_gate_signal = "No predefined Safety Gate signal detected."
+    if serious_hits:
+        safety_gate_priority = "HIGH"
+        safety_gate_signal = "Serious signal: " + ", ".join(serious_hits)
+    elif moderate_hits:
+        safety_gate_priority = "MODERATE"
+        safety_gate_signal = "Moderate-review signal: " + ", ".join(moderate_hits)
+
+    st.markdown("### 🛡️ Safety Gate vs 🤖 Random Forest")
+    st.markdown("This panel shows how the predefined Safety Gate and the Random Forest prototype responded to the same ADR report.")
+    compare_c1, compare_c2 = st.columns(2)
+    with compare_c1:
+        st.markdown(f"**🛡️ Safety Gate**\n\n**Result:** {safety_gate_priority}\n\n**Signal:** {safety_gate_signal}")
+    with compare_c2:
+        st.markdown(f"**🤖 Random Forest Prototype**\n\n**Model output:** {rf_priority}\n\nPrototype ML assistance only; not a calibrated clinical probability.")
+
+    if safety_gate_priority != "NONE" and rf_priority != safety_gate_priority:
+        st.info(f"🛡️ Safety Gate precedence: Final PHARMAGUARD priority is **{priority}**. The prototype Random Forest output was **{rf_priority}**.")
+    elif safety_gate_priority != "NONE":
+        st.success(f"🛡️ Safety Gate detected a {safety_gate_priority} signal and the Random Forest output was also {rf_priority}.")
+    else:
+        st.info(f"No predefined Safety Gate signal was detected; final priority uses the Random Forest prototype: **{priority}**.")
+
+    # =====================================================
     # DISPLAY RESULT — UI-3 PROFESSIONAL RESULT
     # =====================================================
 
