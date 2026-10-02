@@ -1,4 +1,4 @@
-# PHARMAGUARD Professional UI v39 — Dark Mode Contrast Fix
+# PHARMAGUARD Professional UI v40 — Theme-Aware Contrast Fix
 # Dashboard HTML rendering fix — backend/Safety Gate/ML/database logic preserved.
 import streamlit as st
 import pandas as pd
@@ -170,40 +170,40 @@ html[data-theme="dark"] .pg-sidebar-note {
     border-color: #344454 !important;
 }
 
-/* v39 — targeted contrast fix for native Streamlit buttons and headings.
-   Keep Streamlit native widgets/theme behavior, but ensure custom workflow
-   buttons and markdown section headings remain readable on the dark canvas. */
-html[data-theme="dark"] div.stButton > button {
-    background: #18212b !important;
-    color: #f3f7fb !important;
-    border-color: #526171 !important;
+/* v40 — theme-aware contrast patch.
+   Use Streamlit's own theme CSS variables instead of trying to detect
+   dark mode through a DOM attribute. This keeps the native theme intact
+   while making our workflow buttons and markdown headings readable in
+   both Light and Dark modes. */
+div.stButton > button {
+    background: var(--secondary-background-color) !important;
+    color: var(--text-color) !important;
+    border-color: var(--secondary-background-color) !important;
 }
-html[data-theme="dark"] div.stButton > button:hover {
-    background: #22303e !important;
-    color: #ffffff !important;
-    border-color: #718197 !important;
+div.stButton > button:hover {
+    background: var(--secondary-background-color) !important;
+    color: var(--text-color) !important;
+    border-color: var(--text-color) !important;
 }
-html[data-theme="dark"] div.stButton > button:focus {
-    color: #ffffff !important;
-    border-color: #8ea9c2 !important;
+div.stButton > button:focus,
+div.stButton > button:focus-visible {
+    color: var(--text-color) !important;
+    border-color: var(--text-color) !important;
 }
-html[data-theme="dark"] div.stButton > button * {
+div.stButton > button * {
     color: inherit !important;
 }
-html[data-theme="dark"] div.stButton > button[kind="primary"] {
-    color: #ffffff !important;
-}
-html[data-theme="dark"] .stMarkdown h1,
-html[data-theme="dark"] .stMarkdown h2,
-html[data-theme="dark"] .stMarkdown h3,
-html[data-theme="dark"] .stMarkdown h4,
-html[data-theme="dark"] .stMarkdown h5,
-html[data-theme="dark"] .stMarkdown h6 {
-    color: #eaf2f8 !important;
+.stMarkdown h1,
+.stMarkdown h2,
+.stMarkdown h3,
+.stMarkdown h4,
+.stMarkdown h5,
+.stMarkdown h6 {
+    color: var(--text-color) !important;
 }
 
-/* Do NOT style .stButton, .stTextInput, BaseWeb selects, DataFrame,
-   alerts, or the native sidebar here. Streamlit's own dark theme controls them. */
+/* Native Streamlit inputs, selects, alerts, dataframes and sidebar remain
+   owned by Streamlit's theme. */
 </style>
 """, unsafe_allow_html=True)
 
