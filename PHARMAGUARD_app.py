@@ -203,29 +203,52 @@ div.stButton > button * {
     color: inherit !important;
 }
 
-/* Streamlit's dark theme does not always expose a stable DOM theme attribute.
-   Use the system dark-mode media query only for native workflow buttons and
-   headings; this leaves Streamlit's own surfaces/widgets in control. */
-@media (prefers-color-scheme: dark) {
-    div.stButton > button {
-        background: #151922 !important;
-        color: #f1f5f9 !important;
-        border-color: #4b5563 !important;
-    }
-    div.stButton > button:hover,
-    div.stButton > button:focus,
-    div.stButton > button:focus-visible {
-        background: #202631 !important;
-        color: #ffffff !important;
-        border-color: #94a3b8 !important;
-    }
-    div.stButton > button * {
-        color: #f1f5f9 !important;
-    }
-    .stMarkdown h1, .stMarkdown h2, .stMarkdown h3,
-    .stMarkdown h4, .stMarkdown h5, .stMarkdown h6 {
-        color: #f1f5f9 !important;
-    }
+/* v44 — theme synchronization. Do not use the phone/OS color scheme.
+   Streamlit owns the active app theme; these variables follow Streamlit's
+   theme tokens so Light and Dark mode stay independent of device settings. */
+:root {
+    --pg-surface: var(--secondary-background-color, #ffffff);
+    --pg-page: var(--background-color, #ffffff);
+    --pg-text: var(--text-color, #102a43);
+    --pg-muted: var(--text-color, #52606d);
+    --pg-border: var(--border-color, #dbe7ef);
+}
+
+/* Native Streamlit workflow buttons: theme-aware, never OS-theme-aware. */
+div.stButton > button {
+    background: var(--secondary-background-color, #ffffff) !important;
+    color: var(--text-color, #102a43) !important;
+    border: 1px solid var(--border-color, #dbe7ef) !important;
+}
+div.stButton > button:hover,
+div.stButton > button:focus,
+div.stButton > button:focus-visible {
+    background: var(--background-color, #ffffff) !important;
+    color: var(--text-color, #102a43) !important;
+    border-color: var(--primary-color, #2f6fed) !important;
+}
+div.stButton > button * { color: inherit !important; }
+
+.stMarkdown h1, .stMarkdown h2, .stMarkdown h3,
+.stMarkdown h4, .stMarkdown h5, .stMarkdown h6 {
+    color: var(--text-color, #102a43) !important;
+}
+
+/* PHARMAGUARD custom dashboard surfaces follow the actual Streamlit theme. */
+.pg-recent-card, .pg-kpi-grid-card {
+    background: var(--secondary-background-color, #ffffff) !important;
+    border-color: var(--border-color, #dbe7ef) !important;
+}
+.pg-recent-ref, .pg-recent-drug, .pg-recent-adr, .pg-recent-date,
+.pg-kpi-grid-label, .pg-kpi-grid-value, .pg-kpi-grid-note {
+    color: var(--text-color, #102a43) !important;
+}
+.pg-action-card {
+    background: var(--secondary-background-color, #f4f9fd) !important;
+    border-color: var(--border-color, #d6e6f1) !important;
+}
+.pg-action-title, .pg-action-text {
+    color: var(--text-color, #17324d) !important;
 }
 
 /* Native Streamlit inputs, selects, alerts, dataframes and sidebar remain
@@ -1259,16 +1282,7 @@ st.markdown(
         color: var(--pg-text) !important;
     }
 
-    @media (prefers-color-scheme: dark) {
-        .pg-dashboard-hero,
-        .pg-form-card,
-        .pg-id-card,
-        .pg-case-strip,
-        .pg-stat-card,
-        .pg-analyze-box {
-            box-shadow: none !important;
-        }
-    }
+    
     </style>
     """,
     unsafe_allow_html=True,
