@@ -986,415 +986,102 @@ with st.sidebar:
 
 
 # =========================================================
-# V28 — THEME / DARK-MODE READABILITY OVERRIDES
-# =========================================================
-# Uses Streamlit theme variables so the UI remains readable in both
-# light and dark appearance modes. Scientific/backend logic unchanged.
-st.markdown(
-    """
-    <style>
-    :root {
-        --pg-bg: var(--background-color, #ffffff);
-        --pg-surface: var(--secondary-background-color, #f7f9fb);
-        --pg-text: var(--text-color, #1f2937);
-        --pg-border: var(--border-color, #d9e2ea);
-        --pg-primary: var(--primary-color, #2b6f9f);
-    }
+# V36 STABLE — STREAMLIT NATIVE DARK-MODE COMPATIBILITY
+# Do not detect phone/OS theme. Streamlit controls the active theme.
+# Only custom PHARMAGUARD surfaces are patched; backend/scientific logic is unchanged.
+st.markdown("""
+<style>
+:root {
+  --pg-bg: var(--background-color, #ffffff);
+  --pg-surface: var(--secondary-background-color, #f7f9fb);
+  --pg-text: var(--text-color, #1f2937);
+  --pg-border: var(--border-color, #d9e2ea);
+  --pg-primary: var(--primary-color, #2b6f9f);
+}
 
-    .pg-form-card, .pg-form-title, .pg-form-subtitle,
-    .pg-input-tip, .pg-analyze-box, .pg-id-card,
-    .pg-case-strip, .pg-case-item, .pg-result-hero,
-    .pg-stat-card, .pg-sidebar-note, .pg-dashboard-hero {
-        color: var(--pg-text) !important;
-    }
+/* Custom PHARMAGUARD surfaces */
+.pg-header, .pg-dashboard-hero, .pg-hero, .pg-stat-card,
+.pg-kpi-grid-card, .pg-recent-card, .pg-form-card, .pg-id-card,
+.pg-analyze-box, .pg-result-hero, .pg-case-item, .pg-assessment-card,
+.pg-signal-card, .pg-action-card, .pg-ui6-card, .pg-section-card,
+.pg-case-card, .pg-dashboard-info, .pg-sidebar-note {
+  background: var(--pg-surface) !important;
+  border-color: var(--pg-border) !important;
+  color: var(--pg-text) !important;
+  box-shadow: none !important;
+}
 
-    .pg-form-card, .pg-id-card, .pg-case-strip, .pg-case-item,
-    .pg-stat-card, .pg-analyze-box {
-        background: var(--pg-surface) !important;
-        border-color: var(--pg-border) !important;
-    }
+/* Text inside custom cards follows Streamlit's selected theme */
+.pg-header *, .pg-dashboard-hero *, .pg-hero *, .pg-stat-card *,
+.pg-kpi-grid-card *, .pg-recent-card *, .pg-form-card *, .pg-id-card *,
+.pg-analyze-box *, .pg-result-hero *, .pg-case-item *, .pg-assessment-card *,
+.pg-signal-card *, .pg-action-card *, .pg-ui6-card *, .pg-section-card *,
+.pg-case-card *, .pg-dashboard-info *, .pg-sidebar-note * {
+  color: var(--pg-text) !important;
+}
 
-    .pg-form-subtitle, .pg-stat-note, .pg-dashboard-subtitle,
-    .pg-sidebar-subtitle, .pg-input-tip, .pg-sidebar-note-text,
-    .pg-case-label, .pg-result-kicker {
-        color: var(--pg-text) !important;
-        opacity: 0.78;
-    }
+/* Preserve semantic priority colors */
+.pg-priority-high, .pg-priority-high *, .pg-high, .pg-high * { color: #d64545 !important; }
+.pg-priority-moderate, .pg-priority-moderate *, .pg-moderate, .pg-moderate * { color: #d49b00 !important; }
+.pg-priority-low, .pg-priority-low *, .pg-low, .pg-low * { color: #2f855a !important; }
+.pg-priority-unknown, .pg-priority-unknown *, .pg-uncertain, .pg-uncertain * { color: #7b8794 !important; }
 
-    [data-testid="stAppViewContainer"],
-    [data-testid="stAppViewContainer"] .main {
-        color: var(--pg-text);
-    }
+/* Native Streamlit controls remain theme-owned */
+div[data-baseweb="input"] input,
+div[data-baseweb="textarea"] textarea,
+div[data-baseweb="select"] > div {
+  color: var(--pg-text) !important;
+  background: var(--pg-bg) !important;
+  border-color: var(--pg-border) !important;
+}
 
-    [data-testid="stSidebar"] {
-        background: var(--pg-surface) !important;
-        color: var(--pg-text) !important;
-    }
+input::placeholder, textarea::placeholder {
+  color: var(--pg-text) !important; opacity: .55 !important;
+}
 
-    [data-testid="stTextInput"] input,
-    [data-testid="stNumberInput"] input,
-    [data-testid="stTextArea"] textarea,
-    [data-baseweb="select"] > div {
-        background: var(--pg-bg) !important;
-        color: var(--pg-text) !important;
-        border-color: var(--pg-border) !important;
-    }
+/* Sidebar */
+section[data-testid="stSidebar"] {
+  background: var(--pg-surface) !important;
+  color: var(--pg-text) !important;
+  border-color: var(--pg-border) !important;
+}
+section[data-testid="stSidebar"] div.stButton > button[kind="secondary"] {
+  background: transparent !important;
+  color: var(--pg-text) !important;
+  border-color: transparent !important;
+}
+section[data-testid="stSidebar"] div.stButton > button[kind="secondary"]:hover {
+  background: var(--pg-bg) !important;
+  color: var(--pg-text) !important;
+  border-color: var(--pg-border) !important;
+}
 
-    [data-testid="stTextInput"] input::placeholder,
-    [data-testid="stTextArea"] textarea::placeholder {
-        color: var(--pg-text) !important;
-        opacity: 0.55;
-    }
+/* Quick-action / ordinary buttons: readable in both Streamlit themes */
+div.stButton > button[kind="secondary"] {
+  background: var(--pg-surface) !important;
+  color: var(--pg-text) !important;
+  border-color: var(--pg-border) !important;
+}
+div.stButton > button[kind="secondary"]:hover,
+div.stButton > button[kind="secondary"]:focus {
+  background: var(--pg-bg) !important;
+  color: var(--pg-text) !important;
+  border-color: var(--pg-primary) !important;
+}
+div.stButton > button[kind="secondary"] * { color: inherit !important; }
 
-    [data-testid="stDataFrame"],
-    [data-testid="stTable"] {
-        border-color: var(--pg-border) !important;
-    }
+/* Headings rendered by Streamlit */
+[data-testid="stAppViewContainer"] h1,
+[data-testid="stAppViewContainer"] h2,
+[data-testid="stAppViewContainer"] h3,
+[data-testid="stAppViewContainer"] h4 {
+  color: var(--pg-text) !important;
+}
 
-    [data-testid="stExpander"] {
-        border-color: var(--pg-border) !important;
-    }
+/* No prefers-color-scheme: Streamlit theme is the single source of truth. */
+</style>
+""", unsafe_allow_html=True)
 
-    /* Keep native Streamlit alerts readable in dark themes. */
-    [data-testid="stAlert"] {
-        color: var(--pg-text) !important;
-    }
-
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
-# =========================================================
-# V36 FINAL — STREAMLIT DARK THEME COMPATIBILITY PATCH
-# =========================================================
-# This patch intentionally targets ONLY custom PHARMAGUARD UI surfaces.
-# Streamlit remains responsible for the app/page background and native widgets.
-# It uses Streamlit's selected theme (data-theme="dark"), not the Android/OS theme.
-st.markdown(
-    """
-    <style>
-    /* -----------------------------
-       Dark-theme tokens
-       ----------------------------- */
-    html[data-theme="dark"],
-    [data-theme="dark"] {
-        --pg-dark-bg: #0e1117;
-        --pg-dark-surface: #161b22;
-        --pg-dark-surface-2: #21262d;
-        --pg-dark-border: #30363d;
-        --pg-dark-text: #f0f6fc;
-        --pg-dark-muted: #b1bac4;
-        --pg-dark-soft: #8b949e;
-        --pg-dark-link: #79c0ff;
-    }
-
-    /* -----------------------------
-       Native Streamlit headings/text
-       Fixes dark headings such as Quick Actions,
-       Case Overview and Recent Cases.
-       ----------------------------- */
-    html[data-theme="dark"] .stMarkdown,
-    html[data-theme="dark"] .stMarkdown h1,
-    html[data-theme="dark"] .stMarkdown h2,
-    html[data-theme="dark"] .stMarkdown h3,
-    html[data-theme="dark"] .stMarkdown h4,
-    html[data-theme="dark"] .stMarkdown p,
-    html[data-theme="dark"] .stMarkdown li,
-    [data-theme="dark"] .stMarkdown,
-    [data-theme="dark"] .stMarkdown h1,
-    [data-theme="dark"] .stMarkdown h2,
-    [data-theme="dark"] .stMarkdown h3,
-    [data-theme="dark"] .stMarkdown h4,
-    [data-theme="dark"] .stMarkdown p,
-    [data-theme="dark"] .stMarkdown li {
-        color: var(--pg-dark-text) !important;
-    }
-
-    html[data-theme="dark"] .stMarkdown small,
-    [data-theme="dark"] .stMarkdown small {
-        color: var(--pg-dark-muted) !important;
-    }
-
-    /* -----------------------------
-       Custom PHARMAGUARD surfaces
-       ----------------------------- */
-    html[data-theme="dark"] .pg-header,
-    html[data-theme="dark"] .pg-hero,
-    html[data-theme="dark"] .pg-dashboard-header,
-    html[data-theme="dark"] .pg-dashboard-hero,
-    html[data-theme="dark"] .pg-dashboard-info,
-    html[data-theme="dark"] .pg-form-card,
-    html[data-theme="dark"] .pg-id-card,
-    html[data-theme="dark"] .pg-case-strip,
-    html[data-theme="dark"] .pg-case-item,
-    html[data-theme="dark"] .pg-result-card,
-    html[data-theme="dark"] .pg-result-detail,
-    html[data-theme="dark"] .pg-result-hero,
-    html[data-theme="dark"] .pg-stat-card,
-    html[data-theme="dark"] .pg-kpi,
-    html[data-theme="dark"] .pg-kpi-grid-card,
-    html[data-theme="dark"] .pg-recent-card,
-    html[data-theme="dark"] .pg-empty-state,
-    html[data-theme="dark"] .pg-case-card,
-    html[data-theme="dark"] .pg-case-field,
-    html[data-theme="dark"] .pg-assessment-card,
-    html[data-theme="dark"] .pg-assessment-item,
-    html[data-theme="dark"] .pg-signal-card,
-    html[data-theme="dark"] .pg-section-card,
-    html[data-theme="dark"] .pg-setting-row,
-    html[data-theme="dark"] .pg-method-step,
-    html[data-theme="dark"] .pg-disclaimer-box,
-    html[data-theme="dark"] .pg-analyze-box,
-    html[data-theme="dark"] .pg-analysis-hero,
-    html[data-theme="dark"] .pg-ui5-hero,
-    html[data-theme="dark"] .pg-ui6-card,
-    html[data-theme="dark"] .pg-info-note,
-    html[data-theme="dark"] .pg-note,
-    html[data-theme="dark"] .pg-sidebar-note,
-    [data-theme="dark"] .pg-header,
-    [data-theme="dark"] .pg-hero,
-    [data-theme="dark"] .pg-dashboard-header,
-    [data-theme="dark"] .pg-dashboard-hero,
-    [data-theme="dark"] .pg-dashboard-info,
-    [data-theme="dark"] .pg-form-card,
-    [data-theme="dark"] .pg-id-card,
-    [data-theme="dark"] .pg-case-strip,
-    [data-theme="dark"] .pg-case-item,
-    [data-theme="dark"] .pg-result-card,
-    [data-theme="dark"] .pg-result-detail,
-    [data-theme="dark"] .pg-result-hero,
-    [data-theme="dark"] .pg-stat-card,
-    [data-theme="dark"] .pg-kpi,
-    [data-theme="dark"] .pg-kpi-grid-card,
-    [data-theme="dark"] .pg-recent-card,
-    [data-theme="dark"] .pg-empty-state,
-    [data-theme="dark"] .pg-case-card,
-    [data-theme="dark"] .pg-case-field,
-    [data-theme="dark"] .pg-assessment-card,
-    [data-theme="dark"] .pg-assessment-item,
-    [data-theme="dark"] .pg-signal-card,
-    [data-theme="dark"] .pg-section-card,
-    [data-theme="dark"] .pg-setting-row,
-    [data-theme="dark"] .pg-method-step,
-    [data-theme="dark"] .pg-disclaimer-box,
-    [data-theme="dark"] .pg-analyze-box,
-    [data-theme="dark"] .pg-analysis-hero,
-    [data-theme="dark"] .pg-ui5-hero,
-    [data-theme="dark"] .pg-ui6-card,
-    [data-theme="dark"] .pg-info-note,
-    [data-theme="dark"] .pg-note,
-    [data-theme="dark"] .pg-sidebar-note {
-        background: var(--pg-dark-surface) !important;
-        border-color: var(--pg-dark-border) !important;
-        color: var(--pg-dark-text) !important;
-        box-shadow: none !important;
-    }
-
-    /* Nested fields get a slightly lighter surface. */
-    html[data-theme="dark"] .pg-case-field,
-    html[data-theme="dark"] .pg-assessment-item,
-    html[data-theme="dark"] .pg-detail-row,
-    [data-theme="dark"] .pg-case-field,
-    [data-theme="dark"] .pg-assessment-item,
-    [data-theme="dark"] .pg-detail-row {
-        background: var(--pg-dark-surface-2) !important;
-        border-color: var(--pg-dark-border) !important;
-    }
-
-    /* -----------------------------
-       Custom component typography
-       ----------------------------- */
-    html[data-theme="dark"] .pg-title,
-    html[data-theme="dark"] .pg-dashboard-title,
-    html[data-theme="dark"] .pg-hero-title,
-    html[data-theme="dark"] .pg-dashboard-copy,
-    html[data-theme="dark"] .pg-form-title,
-    html[data-theme="dark"] .pg-analysis-title,
-    html[data-theme="dark"] .pg-case-title,
-    html[data-theme="dark"] .pg-case-value,
-    html[data-theme="dark"] .pg-stat-value,
-    html[data-theme="dark"] .pg-kpi-value,
-    html[data-theme="dark"] .pg-kpi-grid-value,
-    html[data-theme="dark"] .pg-recent-ref,
-    html[data-theme="dark"] .pg-recent-drug,
-    html[data-theme="dark"] .pg-empty-title,
-    html[data-theme="dark"] .pg-assessment-title,
-    html[data-theme="dark"] .pg-signal-title,
-    html[data-theme="dark"] .pg-action-title,
-    html[data-theme="dark"] .pg-info-title,
-    html[data-theme="dark"] .pg-ui5-title,
-    html[data-theme="dark"] .pg-ui6-title,
-    [data-theme="dark"] .pg-title,
-    [data-theme="dark"] .pg-dashboard-title,
-    [data-theme="dark"] .pg-hero-title,
-    [data-theme="dark"] .pg-dashboard-copy,
-    [data-theme="dark"] .pg-form-title,
-    [data-theme="dark"] .pg-analysis-title,
-    [data-theme="dark"] .pg-case-title,
-    [data-theme="dark"] .pg-case-value,
-    [data-theme="dark"] .pg-stat-value,
-    [data-theme="dark"] .pg-kpi-value,
-    [data-theme="dark"] .pg-kpi-grid-value,
-    [data-theme="dark"] .pg-recent-ref,
-    [data-theme="dark"] .pg-recent-drug,
-    [data-theme="dark"] .pg-empty-title,
-    [data-theme="dark"] .pg-assessment-title,
-    [data-theme="dark"] .pg-signal-title,
-    [data-theme="dark"] .pg-action-title,
-    [data-theme="dark"] .pg-info-title,
-    [data-theme="dark"] .pg-ui5-title,
-    [data-theme="dark"] .pg-ui6-title {
-        color: var(--pg-dark-text) !important;
-    }
-
-    html[data-theme="dark"] .pg-subtitle,
-    html[data-theme="dark"] .pg-hero-text,
-    html[data-theme="dark"] .pg-dashboard-subtitle,
-    html[data-theme="dark"] .pg-form-subtitle,
-    html[data-theme="dark"] .pg-input-tip,
-    html[data-theme="dark"] .pg-case-label,
-    html[data-theme="dark"] .pg-case-ref,
-    html[data-theme="dark"] .pg-stat-label,
-    html[data-theme="dark"] .pg-stat-note,
-    html[data-theme="dark"] .pg-kpi-label,
-    html[data-theme="dark"] .pg-kpi-grid-label,
-    html[data-theme="dark"] .pg-kpi-grid-note,
-    html[data-theme="dark"] .pg-recent-adr,
-    html[data-theme="dark"] .pg-recent-date,
-    html[data-theme="dark"] .pg-empty-text,
-    html[data-theme="dark"] .pg-assessment-label,
-    html[data-theme="dark"] .pg-signal-text,
-    html[data-theme="dark"] .pg-action-text,
-    html[data-theme="dark"] .pg-info-text,
-    html[data-theme="dark"] .pg-ui5-sub,
-    html[data-theme="dark"] .pg-ui6-text,
-    html[data-theme="dark"] .pg-result-disclaimer,
-    [data-theme="dark"] .pg-subtitle,
-    [data-theme="dark"] .pg-hero-text,
-    [data-theme="dark"] .pg-dashboard-subtitle,
-    [data-theme="dark"] .pg-form-subtitle,
-    [data-theme="dark"] .pg-input-tip,
-    [data-theme="dark"] .pg-case-label,
-    [data-theme="dark"] .pg-case-ref,
-    [data-theme="dark"] .pg-stat-label,
-    [data-theme="dark"] .pg-stat-note,
-    [data-theme="dark"] .pg-kpi-label,
-    [data-theme="dark"] .pg-kpi-grid-label,
-    [data-theme="dark"] .pg-kpi-grid-note,
-    [data-theme="dark"] .pg-recent-adr,
-    [data-theme="dark"] .pg-recent-date,
-    [data-theme="dark"] .pg-empty-text,
-    [data-theme="dark"] .pg-assessment-label,
-    [data-theme="dark"] .pg-signal-text,
-    [data-theme="dark"] .pg-action-text,
-    [data-theme="dark"] .pg-info-text,
-    [data-theme="dark"] .pg-ui5-sub,
-    [data-theme="dark"] .pg-ui6-text,
-    [data-theme="dark"] .pg-result-disclaimer {
-        color: var(--pg-dark-muted) !important;
-    }
-
-    /* -----------------------------
-       Dashboard Quick Actions / native buttons
-       ----------------------------- */
-    html[data-theme="dark"] div.stButton > button,
-    html[data-theme="dark"] div.stDownloadButton > button,
-    [data-theme="dark"] div.stButton > button,
-    [data-theme="dark"] div.stDownloadButton > button {
-        background: var(--pg-dark-surface-2) !important;
-        color: var(--pg-dark-text) !important;
-        border: 1px solid var(--pg-dark-border) !important;
-        box-shadow: none !important;
-    }
-
-    html[data-theme="dark"] div.stButton > button:hover,
-    html[data-theme="dark"] div.stDownloadButton > button:hover,
-    [data-theme="dark"] div.stButton > button:hover,
-    [data-theme="dark"] div.stDownloadButton > button:hover {
-        background: #30363d !important;
-        color: #ffffff !important;
-        border-color: #58a6ff !important;
-    }
-
-    html[data-theme="dark"] div.stButton > button * ,
-    html[data-theme="dark"] div.stDownloadButton > button * ,
-    [data-theme="dark"] div.stButton > button * ,
-    [data-theme="dark"] div.stDownloadButton > button * {
-        color: inherit !important;
-    }
-
-    /* Primary Analyze/action buttons retain a strong accent via Streamlit. */
-    html[data-theme="dark"] div.stButton > button[kind="primary"],
-    [data-theme="dark"] div.stButton > button[kind="primary"] {
-        color: #ffffff !important;
-    }
-
-    /* -----------------------------
-       Inputs/selects: keep native Streamlit behavior but
-       ensure text remains readable inside custom wrappers.
-       ----------------------------- */
-    html[data-theme="dark"] [data-testid="stTextInput"] input,
-    html[data-theme="dark"] [data-testid="stNumberInput"] input,
-    html[data-theme="dark"] [data-testid="stTextArea"] textarea,
-    html[data-theme="dark"] [data-baseweb="select"] > div,
-    [data-theme="dark"] [data-testid="stTextInput"] input,
-    [data-theme="dark"] [data-testid="stNumberInput"] input,
-    [data-theme="dark"] [data-testid="stTextArea"] textarea,
-    [data-theme="dark"] [data-baseweb="select"] > div {
-        background: var(--pg-dark-surface-2) !important;
-        color: var(--pg-dark-text) !important;
-        border-color: var(--pg-dark-border) !important;
-    }
-
-    html[data-theme="dark"] [data-testid="stTextInput"] input::placeholder,
-    html[data-theme="dark"] [data-testid="stTextArea"] textarea::placeholder,
-    [data-theme="dark"] [data-testid="stTextInput"] input::placeholder,
-    [data-theme="dark"] [data-testid="stTextArea"] textarea::placeholder {
-        color: var(--pg-dark-soft) !important;
-        opacity: 1 !important;
-    }
-
-    /* Sidebar custom text only; Streamlit owns its actual background. */
-    html[data-theme="dark"] .pg-sidebar-brand,
-    html[data-theme="dark"] .pg-sidebar-name,
-    html[data-theme="dark"] .pg-sidebar-subtitle,
-    html[data-theme="dark"] .pg-sidebar-section,
-    html[data-theme="dark"] .pg-sidebar-status,
-    html[data-theme="dark"] .pg-sidebar-note-title,
-    html[data-theme="dark"] .pg-sidebar-note-text,
-    [data-theme="dark"] .pg-sidebar-brand,
-    [data-theme="dark"] .pg-sidebar-name,
-    [data-theme="dark"] .pg-sidebar-subtitle,
-    [data-theme="dark"] .pg-sidebar-section,
-    [data-theme="dark"] .pg-sidebar-status,
-    [data-theme="dark"] .pg-sidebar-note-title,
-    [data-theme="dark"] .pg-sidebar-note-text {
-        color: var(--pg-dark-text) !important;
-    }
-
-    html[data-theme="dark"] .pg-sidebar-subtitle,
-    html[data-theme="dark"] .pg-sidebar-section,
-    html[data-theme="dark"] .pg-sidebar-note-text,
-    [data-theme="dark"] .pg-sidebar-subtitle,
-    [data-theme="dark"] .pg-sidebar-section,
-    [data-theme="dark"] .pg-sidebar-note-text {
-        color: var(--pg-dark-muted) !important;
-    }
-
-    /* Dark mode should not leave any accidental light UI5 footer/disclaimer. */
-    html[data-theme="dark"] .pg-ui6-footer,
-    [data-theme="dark"] .pg-ui6-footer {
-        background: var(--pg-dark-surface) !important;
-        border-color: var(--pg-dark-border) !important;
-        color: var(--pg-dark-muted) !important;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
-# =========================================================
 # MODEL + GOOGLE SHEET
 # =========================================================
 
