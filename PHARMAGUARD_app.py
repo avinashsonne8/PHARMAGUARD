@@ -2095,6 +2095,23 @@ def render_history_screen():
             st.dataframe(filtered[display_cols].sort_index(ascending=False),use_container_width=True,hide_index=True)
     st.download_button("⬇️ Export Filtered CSV",data=filtered.to_csv(index=False).encode("utf-8"),file_name="PHARMAGUARD_Filtered_ADR_History.csv",mime="text/csv",use_container_width=True,key="cases_history_export")
 
+def _display_decision_source(row):
+    """Return a readable decision source, including a safe fallback for legacy records."""
+    source = str(row.get("Decision_Source", "") or "").strip()
+    if source:
+        return source
+
+    reason = str(row.get("Reason", "") or "").strip().lower()
+    if "serious adr indicator detected" in reason:
+        return "Safety Gate — serious signal"
+    if "project-defined moderate-review indicator detected" in reason:
+        return "Safety Gate — moderate signal"
+    if "priority assigned by the random forest prototype" in reason:
+        return "Random Forest prototype"
+
+    return "Not recorded"
+
+
 def render_case_reports_screen():
     st.markdown(
         textwrap.dedent("""
@@ -2138,7 +2155,7 @@ def render_case_reports_screen():
 
     priority = str(row.get("Priority", "UNKNOWN")).upper()
     seriousness = str(row.get("Seriousness", "Uncertain"))
-    decision_source = str(row.get("Decision_Source", ""))
+    decision_source = _display_decision_source(row)
     reason = str(row.get("Reason", ""))
     recommendation = {
         "HIGH": "Priority pharmacovigilance review required.",
@@ -2876,29 +2893,42 @@ def render_analytics_screen():
     st.caption("All analytics are descriptive prototype-record summaries. They do not represent clinical risk estimates, calibrated probabilities, model accuracy, or regulatory performance.")
 
 def render_database_screen():
-    st.markdown("## ☁️ PHARMAGUARD Database")
-    st.caption("Project database • Google Sheets integration • Loaded records")
+    """Professional, mobile-friendly database workspace. Presentation-only changes."""
+    st.markdown(
+        textwrap.dedent("""
+        <div class="pg-db-hero">
+            <div class="pg-db-hero-icon">☁️</div>
+            <div>
+                <div class="pg-db-hero-title">PHARMAGUARD Database</div>
+                <div class="pg-db-hero-sub">Search, review and export saved ADR records from the project database.</div>
+            </div>
+        </div>
+        """).strip(),
+        unsafe_allow_html=True
+    )
 
     df = pd.DataFrame(st.session_state.get("adr_history", []))
     counts = _priority_counts(df)
     loaded = bool(st.session_state.get("database_loaded"))
 
-    m1, m2, m3, m4 = st.columns(4)
-    with m1:
-        st.metric("Total Records", len(df))
-    with m2:
-        st.metric("🔴 High", counts["HIGH"])
-    with m3:
-        st.metric("🟡 Moderate", counts["MODERATE"])
-    with m4:
-        st.metric("🟢 Low", counts["LOW"])
+    # Compact database overview
+    st.markdown(
+        f'<div class="pg-db-summary">'
+        f'<span><b>{len(df)}</b> records</span>'
+        f'<span>🔴 {counts["HIGH"]} HIGH</span>'
+        f'<span>🟡 {counts["MODERATE"]} MODERATE</span>'
+        f'<span>🟢 {counts["LOW"]} LOW</span>'
+        f'</div>',
+        unsafe_allow_html=True
+    )
 
-    status_text = "● DATABASE LOADED" if loaded else "○ DATABASE NOT LOADED"
+    status_text = "DATABASE LOADED" if loaded else "DATABASE NOT LOADED"
+    status_class = "pg-db-status-ok" if loaded else "pg-db-status-warn"
     st.markdown(
         textwrap.dedent(f"""
-        <div class="pg-db-status">
-            <span>{html.escape(status_text)}</span>
-            <span>Records currently available in the app: <b>{len(df)}</b></span>
+        <div class="pg-db-status {status_class}">
+            <span>● {html.escape(status_text)}</span>
+            <span>{len(df)} records available in this session</span>
         </div>
         """).strip(),
         unsafe_allow_html=True
@@ -2917,19 +2947,21 @@ def render_database_screen():
         )
         return
 
-    st.markdown("### 🔎 Database Search & Filter")
+    st.markdown("### 🔎 Find a Database Record")
     c1, c2 = st.columns([2, 1])
     with c1:
         q = st.text_input(
             "Database search",
-            placeholder="Search case ID, drug, ADR or patient ID...",
-            label_visibility="collapsed"
+            placeholder="Case ID, patient ID, drug or ADR...",
+            label_visibility="collapsed",
+            key="database_search_professional",
         ).strip().lower()
     with c2:
         priority_filter = st.selectbox(
             "Database priority",
             ["All", "HIGH", "MODERATE", "LOW"],
-            label_visibility="collapsed"
+            label_visibility="collapsed",
+            key="database_priority_professional",
         )
 
     filtered = df.copy()
@@ -2949,111 +2981,170 @@ def render_database_screen():
 
     st.caption(f"Showing {len(filtered)} of {len(df)} database records")
 
-    display_cols = [c for c in [
-        "Case_Reference", "Patient_ID", "Age", "Sex", "Drug", "ADR",
-        "Priority", "Seriousness", "Decision_Source", "Date_Time"
-    ] if c in filtered.columns]
+    # -----------------------------------------------------
+    # Recent database records — mobile-first cards
+    # -----------------------------------------------------
+    recent = filtered.copy()
+    if "Date_Time" in recent.columns:
+        recent["_sort_time"] = pd.to_datetime(recent["Date_Time"], errors="coerce")
+        recent = recent.sort_values("_sort_time", ascending=False, na_position="last")
+    else:
+        recent = recent.sort_index(ascending=False)
 
-    st.dataframe(
-        filtered[display_cols].sort_index(ascending=False),
-        use_container_width=True,
-        hide_index=True
-    )
+    recent = recent.head(5)
+    st.markdown("### 🗃️ Recent Database Records")
+
+    if recent.empty:
+        st.info("No database records match the current search or priority filter.")
+    else:
+        cards = []
+        for _, item in recent.iterrows():
+            ref = html.escape(str(item.get("Case_Reference", "Case")))
+            drug = str(item.get("Drug", "") or "").strip()
+            drug_display = html.escape(drug if drug else "Not reported")
+            adr = html.escape(str(item.get("ADR", "") or "Not reported"))
+            patient = html.escape(str(item.get("Patient_ID", "—")))
+            date_time = html.escape(str(item.get("Date_Time", "—")))
+            priority = str(item.get("Priority", "UNKNOWN") or "UNKNOWN").upper()
+            pclass = {
+                "HIGH": "pg-db-priority-high",
+                "MODERATE": "pg-db-priority-moderate",
+                "LOW": "pg-db-priority-low",
+            }.get(priority, "pg-db-priority-unknown")
+            source = html.escape(_display_decision_source(item))
+            cards.append(
+                f"""<div class="pg-db-card">
+                    <div class="pg-db-card-top">
+                        <div class="pg-db-ref">{ref}</div>
+                        <span class="{pclass}">{html.escape(priority)}</span>
+                    </div>
+                    <div class="pg-db-drug">💊 {drug_display}</div>
+                    <div class="pg-db-adr">{adr}</div>
+                    <div class="pg-db-meta">
+                        <span>👤 {patient}</span>
+                        <span>🕒 {date_time}</span>
+                    </div>
+                    <div class="pg-db-source">Decision source: {source}</div>
+                </div>"""
+            )
+        st.markdown("<div class='pg-db-card-list'>" + "".join(cards) + "</div>", unsafe_allow_html=True)
+
+    if len(filtered) > 5:
+        st.caption(
+            f"Showing the {min(5, len(filtered))} most recent matching records above. "
+            f"{len(filtered) - 5} additional records remain available in the table view."
+        )
 
     # -----------------------------------------------------
-    # V17: REASSESSMENT DETAILS
-    # Keep the main database table compact, while exposing
-    # longitudinal reassessment fields for the selected case.
+    # Full database table — available on demand
+    # -----------------------------------------------------
+    with st.expander("🗂️ Full Table View", expanded=False):
+        display_cols = [c for c in [
+            "Case_Reference", "Patient_ID", "Age", "Sex", "Drug", "ADR",
+            "Priority", "Seriousness", "Decision_Source", "Date_Time"
+        ] if c in filtered.columns]
+        table_df = filtered.copy()
+        if "Date_Time" in table_df.columns:
+            table_df["_sort_time"] = pd.to_datetime(table_df["Date_Time"], errors="coerce")
+            table_df = table_df.sort_values("_sort_time", ascending=False, na_position="last").drop(columns=["_sort_time"])
+        else:
+            table_df = table_df.sort_index(ascending=False)
+        st.dataframe(
+            table_df[display_cols],
+            use_container_width=True,
+            hide_index=True,
+        )
+
+    # -----------------------------------------------------
+    # Linked reassessment details — advanced workflow, collapsed
     # -----------------------------------------------------
     reassessment_candidates = filtered[
         filtered["Case_Reference"].astype(str).str.strip() != ""
     ].copy() if "Case_Reference" in filtered.columns else pd.DataFrame()
 
     if not reassessment_candidates.empty:
-        st.markdown("### 🔄 Reassessment Details")
-        st.caption(
-            "Select a case to view linked reassessment/version information. "
-            "The main database table remains unchanged."
-        )
+        with st.expander("🔄 Reassessment & Linked Timeline", expanded=False):
+            st.caption(
+                "Select a saved case version to review reassessment details and its linked ADR priority timeline."
+            )
+            case_options = reassessment_candidates["Case_Reference"].astype(str).tolist()
+            selected_case_ref = st.selectbox(
+                "Select Case Reference",
+                case_options,
+                key="database_reassessment_case_professional"
+            )
 
-        case_options = reassessment_candidates["Case_Reference"].astype(str).tolist()
-        selected_case_ref = st.selectbox(
-            "Select Case Reference",
-            case_options,
-            key="database_reassessment_case"
-        )
+            selected_rows = df[
+                df["Case_Reference"].astype(str) == str(selected_case_ref)
+            ] if "Case_Reference" in df.columns else pd.DataFrame()
 
-        selected_rows = df[
-            df["Case_Reference"].astype(str) == str(selected_case_ref)
-        ] if "Case_Reference" in df.columns else pd.DataFrame()
+            if not selected_rows.empty:
+                selected_record = selected_rows.iloc[-1].to_dict()
+                reassessment_of = str(selected_record.get("Reassessment_Of", "") or "").strip()
+                original_ref = str(
+                    selected_record.get("Original_Case_Reference", "")
+                    or selected_record.get("Case_Reference", "")
+                ).strip()
+                reassessment_number = str(selected_record.get("Reassessment_Number", "") or "").strip()
+                previous_priority = str(selected_record.get("Previous_Priority", "") or "").strip()
+                follow_up_note = str(selected_record.get("Follow_Up_Note", "") or "").strip()
+                is_reassessment = bool(reassessment_of)
 
-        if not selected_rows.empty:
-            selected_record = selected_rows.iloc[-1].to_dict()
+                if is_reassessment:
+                    st.success(
+                        f"🔄 Reassessment {reassessment_number or '—'}: "
+                        f"{previous_priority or 'UNKNOWN'} → "
+                        f"{selected_record.get('Priority', 'UNKNOWN')}"
+                    )
+                else:
+                    st.info("🟢 This is the initial ADR case version.")
 
-            reassessment_of = str(selected_record.get("Reassessment_Of", "")).strip()
-            original_ref = str(
-                selected_record.get("Original_Case_Reference", "")
-                or selected_record.get("Case_Reference", "")
-            ).strip()
-            reassessment_number = str(selected_record.get("Reassessment_Number", "")).strip()
-            previous_priority = str(selected_record.get("Previous_Priority", "")).strip()
-            follow_up_note = str(selected_record.get("Follow_Up_Note", "")).strip()
+                d1, d2 = st.columns(2)
+                with d1:
+                    st.markdown(f"**Previous Priority:** {previous_priority or '—'}")
+                    st.markdown(f"**Reassessment Of:** {reassessment_of or '—'}")
+                    st.markdown(f"**Reassessment Number:** {reassessment_number or 'Initial'}")
+                with d2:
+                    st.markdown(f"**Original Case Reference:** {original_ref or '—'}")
+                    st.markdown(f"**Current Priority:** {selected_record.get('Priority', 'UNKNOWN')}")
+                    st.markdown(f"**Decision Source:** {_display_decision_source(selected_record)}")
 
-            is_reassessment = bool(reassessment_of)
+                st.markdown("**Follow-up / New Clinical Information:**")
+                if follow_up_note:
+                    st.info(follow_up_note)
+                else:
+                    st.caption("No follow-up note recorded for this case version.")
 
-            if is_reassessment:
-                st.success(
-                    f"🔄 This is Reassessment {reassessment_number or '—'}: "
-                    f"{previous_priority or 'UNKNOWN'} → "
-                    f"{selected_record.get('Priority', 'UNKNOWN')}"
-                )
-            else:
-                st.info("🟢 This is the initial ADR case version.")
+                timeline_root = original_ref or str(selected_case_ref)
+                linked = df.copy()
+                if "Case_Reference" in linked.columns:
+                    linked_root = linked.get(
+                        "Original_Case_Reference",
+                        pd.Series("", index=linked.index)
+                    ).fillna("").astype(str).str.strip()
+                    linked_case = linked["Case_Reference"].astype(str).str.strip()
+                    timeline_mask = (linked_root == timeline_root) | (linked_case == timeline_root)
+                    timeline = linked[timeline_mask].copy()
+                else:
+                    timeline = pd.DataFrame()
 
-            d1, d2 = st.columns(2)
-            with d1:
-                st.markdown(f"**Previous Priority:** {previous_priority or '—'}")
-                st.markdown(f"**Reassessment Of:** {reassessment_of or '—'}")
-                st.markdown(f"**Reassessment Number:** {reassessment_number or 'Initial'}")
-            with d2:
-                st.markdown(f"**Original Case Reference:** {original_ref or '—'}")
-                st.markdown(f"**Current Priority:** {selected_record.get('Priority', 'UNKNOWN')}")
-                st.markdown(f"**Decision Source:** {selected_record.get('Decision_Source', '—')}")
-
-            st.markdown("**Follow-up / New Clinical Information:**")
-            if follow_up_note:
-                st.info(follow_up_note)
-            else:
-                st.caption("No follow-up note recorded for this case version.")
-
-            # Show the complete linked timeline from the loaded database.
-            timeline_root = original_ref or str(selected_case_ref)
-            linked = df.copy()
-            if "Case_Reference" in linked.columns:
-                linked_root = linked.get("Original_Case_Reference", pd.Series("", index=linked.index)).fillna("").astype(str).str.strip()
-                linked_case = linked["Case_Reference"].astype(str).str.strip()
-                timeline_mask = (linked_root == timeline_root) | (linked_case == timeline_root)
-                timeline = linked[timeline_mask].copy()
-            else:
-                timeline = pd.DataFrame()
-
-            if not timeline.empty:
-                st.markdown("#### 📈 Linked ADR Priority Timeline")
-                timeline_rows = []
-                for _, item in timeline.sort_values("Date_Time" if "Date_Time" in timeline.columns else timeline.index).iterrows():
-                    reassess_no = str(item.get("Reassessment_Number", "")).strip()
-                    timeline_rows.append({
-                        "Version": f"Reassessment {reassess_no}" if reassess_no else "Initial",
-                        "Date & Time": item.get("Date_Time", ""),
-                        "Priority": item.get("Priority", "UNKNOWN"),
-                        "ADR / New Information": item.get("ADR", ""),
-                        "Case Reference": item.get("Case_Reference", ""),
-                    })
-                st.dataframe(
-                    pd.DataFrame(timeline_rows),
-                    use_container_width=True,
-                    hide_index=True
-                )
+                if not timeline.empty:
+                    st.markdown("#### 📈 Linked ADR Priority Timeline")
+                    timeline_rows = []
+                    for _, item in timeline.iterrows():
+                        reassess_no = str(item.get("Reassessment_Number", "") or "").strip()
+                        timeline_rows.append({
+                            "Version": f"Reassessment {reassess_no}" if reassess_no else "Initial",
+                            "Date & Time": item.get("Date_Time", ""),
+                            "Priority": item.get("Priority", "UNKNOWN"),
+                            "ADR / New Information": item.get("ADR", ""),
+                            "Case Reference": item.get("Case_Reference", ""),
+                        })
+                    st.dataframe(
+                        pd.DataFrame(timeline_rows),
+                        use_container_width=True,
+                        hide_index=True,
+                    )
 
     st.markdown("### 📤 Export Database")
     st.download_button(
@@ -3224,6 +3315,22 @@ def render_settings_screen():
 
 # =========================================================
 
+
+st.markdown("""
+<style>
+/* =========================================================
+   UI-10 — PROFESSIONAL DATABASE WORKSPACE
+   Presentation-only: backend/database logic preserved.
+   ========================================================= */
+.pg-db-hero{display:flex;align-items:center;gap:13px;padding:17px 18px;margin:4px 0 10px;border-radius:18px;background:linear-gradient(135deg,#f3f9fd 0%,#fff 82%);border:1px solid #d7e7f0;box-shadow:0 4px 16px rgba(30,60,90,.04)}
+.pg-db-hero-icon{width:43px;height:43px;display:flex;align-items:center;justify-content:center;border-radius:13px;background:#eaf4fb;font-size:22px;border:1px solid #d3e6f1}.pg-db-hero-title{font-size:24px;font-weight:850;color:#102a43;letter-spacing:-.15px}.pg-db-hero-sub{font-size:11px;color:#687887;line-height:1.5;margin-top:2px}
+.pg-db-summary{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px;padding:8px 10px;border-radius:11px;background:#f8fbfd;border:1px solid #e0ebf2;color:#61717e;font-size:10px}.pg-db-summary span{padding:3px 7px;border-radius:999px;background:#fff;border:1px solid #e3ebf0}
+.pg-db-status{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:9px 11px;margin:0 0 15px;border-radius:10px;font-size:10px}.pg-db-status-ok{background:#f1faf4;border:1px solid #cfe8d6;color:#2b6d3c}.pg-db-status-warn{background:#fff8e8;border:1px solid #eedca7;color:#7c5a00}
+.pg-db-card-list{display:flex;flex-direction:column;gap:8px;margin:4px 0 7px}.pg-db-card{padding:12px 13px;border-radius:13px;background:#fff;border:1px solid #dfe8ee;box-shadow:0 2px 9px rgba(30,60,90,.03)}.pg-db-card-top{display:flex;align-items:center;justify-content:space-between;gap:8px}.pg-db-ref{font-size:10px;font-weight:850;color:#526474;word-break:break-all}.pg-db-drug{font-size:14px;font-weight:800;color:#243b53;margin-top:6px}.pg-db-adr{font-size:11px;line-height:1.45;color:#667785;margin-top:3px}.pg-db-meta{display:flex;flex-wrap:wrap;gap:9px;margin-top:8px;padding-top:7px;border-top:1px solid #edf1f4;font-size:9px;color:#82909b}.pg-db-source{margin-top:7px;font-size:9px;color:#647887}
+.pg-db-priority-high,.pg-db-priority-moderate,.pg-db-priority-low,.pg-db-priority-unknown{display:inline-block;padding:4px 8px;border-radius:999px;font-size:9px;font-weight:850;white-space:nowrap}.pg-db-priority-high{background:#fff0f0;color:#a61b1b;border:1px solid #f2c7c7}.pg-db-priority-moderate{background:#fff7df;color:#8a5a00;border:1px solid #eed99b}.pg-db-priority-low{background:#edf8f0;color:#246b37;border:1px solid #cce7d3}.pg-db-priority-unknown{background:#f2f4f6;color:#59646e;border:1px solid #dce1e5}
+@media(max-width:700px){.pg-db-hero{padding:14px}.pg-db-hero-title{font-size:21px}.pg-db-hero-icon{width:39px;height:39px;font-size:20px}.pg-db-summary{gap:4px}.pg-db-status{display:block}.pg-db-status span{display:block}.pg-db-status span+span{margin-top:3px}.pg-db-card{padding:11px 12px}}
+</style>
+""", unsafe_allow_html=True)
 
 st.markdown("""
 <style>
