@@ -621,6 +621,45 @@ st.markdown(textwrap.dedent("""
 @media (max-width:700px) { .pg-ui5-title{font-size:21px;} .pg-case-grid{grid-template-columns:1fr;} .pg-case-card{padding:14px;} }
 
 /* =========================================================
+   CASE REPORT — PROFESSIONAL REVIEW LAYOUT
+   Presentation only; backend/scientific logic unchanged.
+   ========================================================= */
+.pg-report-hero {
+    padding:18px;
+    border-radius:18px;
+    background:linear-gradient(135deg,#f5fbff,#ffffff);
+    border:1px solid #d7e8f2;
+    margin-bottom:14px;
+}
+.pg-report-kicker {
+    font-size:10px; font-weight:850; letter-spacing:1.05px;
+    text-transform:uppercase; color:#6b7d8b; margin-bottom:5px;
+}
+.pg-report-title { font-size:25px; font-weight:850; color:#102a43; line-height:1.15; }
+.pg-report-sub { margin-top:5px; color:#687783; font-size:13px; line-height:1.5; }
+.pg-report-overview {
+    display:grid; grid-template-columns:1.5fr .7fr .7fr; gap:10px; margin:10px 0 16px;
+}
+.pg-report-stat { padding:12px 13px; border:1px solid #dbe5ec; border-radius:13px; background:#fff; }
+.pg-report-stat-label { font-size:10px; font-weight:800; color:#71808b; text-transform:uppercase; letter-spacing:.5px; }
+.pg-report-stat-value { margin-top:4px; font-size:14px; font-weight:800; word-break:break-word; }
+.pg-report-section-title { margin:18px 0 7px; font-size:17px; font-weight:850; color:#243746; }
+.pg-report-section-sub { color:#71808b; font-size:12px; margin:-2px 0 8px; line-height:1.4; }
+.pg-report-decision { padding:15px; border-radius:15px; border:1px solid #dbe5ec; background:#fff; }
+.pg-report-decision-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:9px; margin-top:10px; }
+.pg-report-decision-item { padding:10px 11px; border-radius:10px; background:#f7fafc; border:1px solid #e5edf2; }
+.pg-report-decision-label { font-size:10px; color:#71808b; font-weight:800; text-transform:uppercase; }
+.pg-report-decision-value { margin-top:3px; font-size:13px; font-weight:750; word-break:break-word; }
+.pg-report-why { padding:14px; border-radius:13px; background:#f8fbfd; border:1px solid #dbe8ef; line-height:1.55; }
+.pg-report-action { padding:14px 15px; border-radius:13px; background:#eef8ff; border:1px solid #cfe6f5; line-height:1.5; }
+@media (max-width:700px) {
+    .pg-report-title{font-size:21px;}
+    .pg-report-overview{grid-template-columns:1fr 1fr;}
+    .pg-report-overview .pg-report-stat:first-child{grid-column:1/-1;}
+    .pg-report-decision-grid{grid-template-columns:1fr;}
+}
+
+/* =========================================================
    UI-7 — PROFESSIONAL SIDEBAR NAVIGATION
    ========================================================= */
 section[data-testid="stSidebar"] {
@@ -2059,9 +2098,10 @@ def render_history_screen():
 def render_case_reports_screen():
     st.markdown(
         textwrap.dedent("""
-        <div class="pg-ui5-hero">
-            <div class="pg-ui5-title">📄 ADR Case Reports</div>
-            <div class="pg-ui5-sub">Review a saved ADR case and generate a professional report without changing the original database record.</div>
+        <div class="pg-report-hero">
+            <div class="pg-report-kicker">PHARMAGUARD • CASE REVIEW</div>
+            <div class="pg-report-title">📄 Case Report</div>
+            <div class="pg-report-sub">Review one saved ADR case in a structured format. The original database record remains unchanged while reassessments are stored as linked versions.</div>
         </div>
         """).strip(),
         unsafe_allow_html=True
@@ -2089,7 +2129,7 @@ def render_case_reports_screen():
         labels.append((idx, f"{ref} | {drug_name} | {adr_text[:55]}"))
 
     selected_label = st.selectbox(
-        "Select saved case",
+        "Select case to review",
         [x[1] for x in labels],
         help="Select the ADR case for report preview and export."
     )
@@ -2115,16 +2155,16 @@ def render_case_reports_screen():
     st.markdown(
         textwrap.dedent(f"""
         <div class="pg-case-card">
-            <div class="pg-case-ref">{html.escape(str(row.get("Case_Reference", "")))}</div>
-            <div class="pg-case-title">{html.escape(str(row.get("Drug", "Unknown")))} — ADR Review</div>
+            <div class="pg-case-ref">CASE REFERENCE • {html.escape(str(row.get("Case_Reference", "")))}</div>
+            <div class="pg-case-title">{html.escape(str(row.get("Drug", "Not reported")))} — ADR Review</div>
             <div style="margin-top:10px;">
                 <span class="pg-priority {badge_class}">{html.escape(priority)} PRIORITY</span>
             </div>
             <div class="pg-case-grid">
-                <div class="pg-case-field"><div class="pg-case-label">Patient / Project ID</div><div class="pg-case-value">{html.escape(str(row.get("Patient_ID", "")))}</div></div>
-                <div class="pg-case-field"><div class="pg-case-label">Date & Time</div><div class="pg-case-value">{html.escape(str(row.get("Date_Time", "")))}</div></div>
-                <div class="pg-case-field"><div class="pg-case-label">Age / Sex</div><div class="pg-case-value">{html.escape(str(row.get("Age", "")))} / {html.escape(str(row.get("Sex", "")))}</div></div>
-                <div class="pg-case-field"><div class="pg-case-label">Seriousness</div><div class="pg-case-value">{html.escape(seriousness)}</div></div>
+                <div class="pg-case-field"><div class="pg-case-label">Patient / Project ID</div><div class="pg-case-value">{html.escape(str(row.get("Patient_ID", "—")))}</div></div>
+                <div class="pg-case-field"><div class="pg-case-label">Reported ADR</div><div class="pg-case-value">{html.escape(str(row.get("ADR", "—")))}</div></div>
+                <div class="pg-case-field"><div class="pg-case-label">Date & Time</div><div class="pg-case-value">{html.escape(str(row.get("Date_Time", "—")))}</div></div>
+                <div class="pg-case-field"><div class="pg-case-label">Age / Sex</div><div class="pg-case-value">{html.escape(str(row.get("Age", "—")))} / {html.escape(str(row.get("Sex", "—")))}</div></div>
             </div>
         </div>
         """).strip(),
@@ -2132,6 +2172,7 @@ def render_case_reports_screen():
     )
 
     st.markdown("### 💊 ADR Information")
+    st.markdown('<div class="pg-report-section-sub">The reported medicinal product and reaction recorded for this case.</div>', unsafe_allow_html=True)
     st.markdown(
         textwrap.dedent(f"""
         <div class="pg-section-card">
@@ -2143,15 +2184,19 @@ def render_case_reports_screen():
         unsafe_allow_html=True
     )
 
+    st.markdown("### 🧠 Priority Decision")
+    st.markdown('<div class="pg-report-section-sub">A transparent summary of how PHARMAGUARD assigned the review priority.</div>', unsafe_allow_html=True)
     c1, c2 = st.columns(2)
     with c1:
         st.markdown(
             textwrap.dedent(f"""
-            <div class="pg-section-card">
+            <div class="pg-report-decision">
                 <h4>🔎 PHARMAGUARD Assessment</h4>
-                <div><b>Priority:</b> {html.escape(priority)}</div>
-                <div style="margin-top:7px;"><b>Seriousness:</b> {html.escape(seriousness)}</div>
-                <div style="margin-top:7px;"><b>Decision Source:</b> {html.escape(decision_source)}</div>
+                <div class="pg-report-decision-grid">
+                    <div class="pg-report-decision-item"><div class="pg-report-decision-label">Priority</div><div class="pg-report-decision-value">{html.escape(priority)}</div></div>
+                    <div class="pg-report-decision-item"><div class="pg-report-decision-label">Seriousness</div><div class="pg-report-decision-value">{html.escape(seriousness)}</div></div>
+                    <div class="pg-report-decision-item"><div class="pg-report-decision-label">Decision Source</div><div class="pg-report-decision-value">{html.escape(decision_source)}</div></div>
+                </div>
             </div>
             """).strip(),
             unsafe_allow_html=True
@@ -2159,7 +2204,7 @@ def render_case_reports_screen():
     with c2:
         st.markdown(
             textwrap.dedent(f"""
-            <div class="pg-section-card">
+            <div class="pg-report-why">
                 <h4>🧠 Why this priority?</h4>
                 <div>{html.escape(reason) if reason else "No reason recorded."}</div>
             </div>
@@ -2169,7 +2214,7 @@ def render_case_reports_screen():
 
     st.markdown(
         textwrap.dedent(f"""
-        <div class="pg-section-card">
+        <div class="pg-report-action">
             <h4>📌 Recommended Action</h4>
             <div>{html.escape(recommendation)}</div>
         </div>
