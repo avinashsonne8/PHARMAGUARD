@@ -2040,7 +2040,7 @@ def render_history_screen():
         priority_class={"HIGH":"pg-case-priority-high","MODERATE":"pg-case-priority-moderate","LOW":"pg-case-priority-low"}
         priority_icon={"HIGH":"🔴","MODERATE":"🟡","LOW":"🟢"}
         cards=[]
-        for idx,row in filtered.sort_index(ascending=False).head(12).iterrows():
+        for idx,row in filtered.sort_index(ascending=False).head(5).iterrows():
             ref=html.escape(str(row.get("Case_Reference",f"Case {idx+1}")))
             patient=html.escape(str(row.get("Patient_ID","—")))
             drug_raw=str(row.get("Drug","")).strip(); drug=html.escape(drug_raw if drug_raw and drug_raw.lower() not in {"nan","none","null"} else "Not reported")
@@ -2049,8 +2049,8 @@ def render_history_screen():
             dt=html.escape(str(row.get("Date_Time","—")))
             cards.append(f'<div class="pg-case-history-card"><div class="pg-case-history-top"><div class="pg-case-history-ref">{ref}</div><span class="{badge}">{icon} {html.escape(priority)}</span></div><div class="pg-case-history-drug">💊 {drug}</div><div class="pg-case-history-adr">{adr}</div><div class="pg-case-history-meta"><span>👤 {patient}</span><span>🕒 {dt}</span></div></div>')
         st.markdown('<div class="pg-case-history-list">'+''.join(cards)+'</div>',unsafe_allow_html=True)
-        if len(filtered)>12:
-            st.caption(f"Showing the 12 most recent matching cases above. {len(filtered)-12} additional cases remain available in the table view.")
+        if len(filtered)>5:
+            st.caption(f"Showing the 5 most recent matching cases above. {len(filtered)-5} additional cases remain available in the table view.")
         with st.expander("📑 Full Table View",expanded=False):
             display_cols=[c for c in ["Case_Reference","Patient_ID","Drug","ADR","Priority","Seriousness","Decision_Source","Date_Time"] if c in filtered.columns]
             st.dataframe(filtered[display_cols].sort_index(ascending=False),use_container_width=True,hide_index=True)
