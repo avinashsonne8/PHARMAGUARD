@@ -1,4 +1,4 @@
-# PHARMAGUARD Professional UI v40 — Theme-Aware Contrast Fix
+# PHARMAGUARD Professional UI v32 — Dashboard Mobile Polish
 # Dashboard HTML rendering fix — backend/Safety Gate/ML/database logic preserved.
 import streamlit as st
 import pandas as pd
@@ -22,260 +22,6 @@ st.set_page_config(
     page_icon="💊",
     layout="wide"
 )
-
-
-# =========================================================
-# DARK MODE READABILITY PATCH — UI ONLY
-# =========================================================
-
-st.markdown(r"""
-<style>
-/* v38 — Streamlit-native dark-mode compatibility.
-   Keep Streamlit's native dark theme for native widgets. Only adapt
-   PHARMAGUARD custom HTML surfaces that otherwise use light-mode colors. */
-
-html[data-theme="dark"] .pg-header,
-html[data-theme="dark"] .pg-dashboard-hero,
-html[data-theme="dark"] .pg-hero,
-html[data-theme="dark"] .pg-appbar,
-html[data-theme="dark"] .pg-section,
-html[data-theme="dark"] .pg-note,
-html[data-theme="dark"] .pg-kpi,
-html[data-theme="dark"] .pg-stat-card,
-html[data-theme="dark"] .pg-dashboard-info,
-html[data-theme="dark"] .pg-empty-state,
-html[data-theme="dark"] .pg-result-detail,
-html[data-theme="dark"] .pg-case-card,
-html[data-theme="dark"] .pg-case-field,
-html[data-theme="dark"] .pg-section-card,
-html[data-theme="dark"] .pg-method-step,
-html[data-theme="dark"] .pg-disclaimer,
-html[data-theme="dark"] .pg-disclaimer-box,
-html[data-theme="dark"] .pg-input-tip,
-html[data-theme="dark"] .pg-db-status,
-html[data-theme="dark"] .pg-form-card,
-html[data-theme="dark"] .pg-analysis-hero,
-html[data-theme="dark"] .pg-assessment-card,
-html[data-theme="dark"] .pg-signal-card,
-html[data-theme="dark"] .pg-info-note,
-html[data-theme="dark"] .pg-id-card,
-html[data-theme="dark"] .pg-kpi-grid-card,
-html[data-theme="dark"] .pg-recent-card,
-html[data-theme="dark"] .pg-action-card,
-html[data-theme="dark"] .pg-setting-row,
-html[data-theme="dark"] .pg-ui6-footer {
-    background: #18212b !important;
-    border-color: #344454 !important;
-}
-
-/* Custom text: light enough for Streamlit's dark canvas. */
-html[data-theme="dark"] .pg-header *,
-html[data-theme="dark"] .pg-dashboard-hero *,
-html[data-theme="dark"] .pg-hero *,
-html[data-theme="dark"] .pg-appbar *,
-html[data-theme="dark"] .pg-section *,
-html[data-theme="dark"] .pg-kpi *,
-html[data-theme="dark"] .pg-stat-card *,
-html[data-theme="dark"] .pg-dashboard-info *,
-html[data-theme="dark"] .pg-empty-state *,
-html[data-theme="dark"] .pg-result-detail *,
-html[data-theme="dark"] .pg-case-card *,
-html[data-theme="dark"] .pg-case-field *,
-html[data-theme="dark"] .pg-section-card *,
-html[data-theme="dark"] .pg-method-step *,
-html[data-theme="dark"] .pg-disclaimer *,
-html[data-theme="dark"] .pg-disclaimer-box *,
-html[data-theme="dark"] .pg-form-card *,
-html[data-theme="dark"] .pg-analysis-hero *,
-html[data-theme="dark"] .pg-assessment-card *,
-html[data-theme="dark"] .pg-signal-card *,
-html[data-theme="dark"] .pg-id-card *,
-html[data-theme="dark"] .pg-kpi-grid-card *,
-html[data-theme="dark"] .pg-recent-card *,
-html[data-theme="dark"] .pg-action-card *,
-html[data-theme="dark"] .pg-setting-row * {
-    color: #e5edf5 !important;
-}
-
-html[data-theme="dark"] .pg-header .pg-tag,
-html[data-theme="dark"] .pg-tag {
-    background: #26384b !important;
-    color: #e2e8f0 !important;
-}
-
-html[data-theme="dark"] .pg-note,
-html[data-theme="dark"] .pg-hero-text,
-html[data-theme="dark"] .pg-dashboard-subtitle,
-html[data-theme="dark"] .pg-dashboard-copy,
-html[data-theme="dark"] .pg-dashboard-copy *,
-html[data-theme="dark"] .pg-kpi-foot,
-html[data-theme="dark"] .pg-stat-note,
-html[data-theme="dark"] .pg-empty-text,
-html[data-theme="dark"] .pg-result-message,
-html[data-theme="dark"] .pg-recent-adr,
-html[data-theme="dark"] .pg-recent-date,
-html[data-theme="dark"] .pg-info-text,
-html[data-theme="dark"] .pg-info-note,
-html[data-theme="dark"] .pg-kpi-grid-note,
-html[data-theme="dark"] .pg-sidebar-note-text,
-html[data-theme="dark"] .pg-setting-value,
-html[data-theme="dark"] .pg-ui6-footer {
-    color: #b7c4d1 !important;
-}
-
-/* Priority/result surfaces remain visually distinct in dark mode. */
-html[data-theme="dark"] .pg-result-high,
-html[data-theme="dark"] .pg-result-high-main,
-html[data-theme="dark"] .pg-high-card,
-html[data-theme="dark"] .pg-kpi-high {
-    background: #3a2023 !important;
-    border-color: #7f3438 !important;
-}
-html[data-theme="dark"] .pg-result-moderate,
-html[data-theme="dark"] .pg-result-moderate-main,
-html[data-theme="dark"] .pg-moderate-card,
-html[data-theme="dark"] .pg-kpi-moderate {
-    background: #3a301b !important;
-    border-color: #806a22 !important;
-}
-html[data-theme="dark"] .pg-result-low,
-html[data-theme="dark"] .pg-result-low-main,
-html[data-theme="dark"] .pg-low-card,
-html[data-theme="dark"] .pg-kpi-low {
-    background: #1c3527 !important;
-    border-color: #3f7650 !important;
-}
-html[data-theme="dark"] .pg-result-unknown {
-    background: #242b33 !important;
-    border-color: #465363 !important;
-}
-
-/* Custom priority badges. Native Streamlit controls are intentionally not overridden. */
-html[data-theme="dark"] .pg-priority-high { background: rgba(214,69,69,.22) !important; color: #ffb4b4 !important; }
-html[data-theme="dark"] .pg-priority-moderate { background: rgba(212,155,0,.22) !important; color: #ffe08a !important; }
-html[data-theme="dark"] .pg-priority-low { background: rgba(47,133,90,.22) !important; color: #a9e5bd !important; }
-html[data-theme="dark"] .pg-priority-unknown { background: rgba(123,135,148,.22) !important; color: #c7d0d9 !important; }
-
-/* Custom sidebar branding only; Streamlit owns the actual sidebar surface. */
-html[data-theme="dark"] .pg-sidebar-brand,
-html[data-theme="dark"] .pg-sidebar-section,
-html[data-theme="dark"] .pg-sidebar-divider,
-html[data-theme="dark"] .pg-sidebar-status,
-html[data-theme="dark"] .pg-sidebar-note {
-    color: #e5edf5 !important;
-}
-
-html[data-theme="dark"] .pg-sidebar-note {
-    background: #18212b !important;
-    border-color: #344454 !important;
-}
-
-/* v40 — theme-aware contrast patch.
-   Use Streamlit's own theme CSS variables instead of trying to detect
-   dark mode through a DOM attribute. This keeps the native theme intact
-   while making our workflow buttons and markdown headings readable in
-   both Light and Dark modes. */
-/* Keep native Streamlit buttons readable in both themes. */
-div.stButton > button {
-    background: transparent !important;
-    color: inherit !important;
-    border-color: currentColor !important;
-}
-div.stButton > button:hover {
-    background: rgba(127,127,127,.10) !important;
-    color: inherit !important;
-    border-color: currentColor !important;
-}
-div.stButton > button:focus,
-div.stButton > button:focus-visible {
-    color: inherit !important;
-    border-color: currentColor !important;
-}
-div.stButton > button * {
-    color: inherit !important;
-}
-.stMarkdown h1,
-.stMarkdown h2,
-.stMarkdown h3,
-.stMarkdown h4,
-.stMarkdown h5,
-.stMarkdown h6 {
-    color: inherit !important;
-}
-
-/* v44 — theme synchronization. Do not use the phone/OS color scheme.
-   Streamlit owns the active app theme; these variables follow Streamlit's
-   theme tokens so Light and Dark mode stay independent of device settings. */
-:root {
-    --pg-surface: var(--secondary-background-color, #ffffff);
-    --pg-page: var(--background-color, #ffffff);
-    --pg-text: var(--text-color, #102a43);
-    --pg-muted: var(--text-color, #52606d);
-    --pg-border: var(--border-color, #dbe7ef);
-}
-
-/* Native Streamlit workflow buttons: theme-aware, never OS-theme-aware. */
-div.stButton > button {
-    background: var(--secondary-background-color, #ffffff) !important;
-    color: var(--text-color, #102a43) !important;
-    border: 1px solid var(--border-color, #dbe7ef) !important;
-}
-div.stButton > button:hover,
-div.stButton > button:focus,
-div.stButton > button:focus-visible {
-    background: var(--background-color, #ffffff) !important;
-    color: var(--text-color, #102a43) !important;
-    border-color: var(--primary-color, #2f6fed) !important;
-}
-div.stButton > button * { color: inherit !important; }
-
-.stMarkdown h1, .stMarkdown h2, .stMarkdown h3,
-.stMarkdown h4, .stMarkdown h5, .stMarkdown h6 {
-    color: var(--text-color, #102a43) !important;
-}
-
-/* PHARMAGUARD custom dashboard surfaces follow the actual Streamlit theme. */
-.pg-recent-card, .pg-kpi-grid-card {
-    background: var(--secondary-background-color, #ffffff) !important;
-    border-color: var(--border-color, #dbe7ef) !important;
-}
-.pg-recent-ref, .pg-recent-drug, .pg-recent-adr, .pg-recent-date,
-.pg-kpi-grid-label, .pg-kpi-grid-value, .pg-kpi-grid-note {
-    color: var(--text-color, #102a43) !important;
-}
-.pg-action-card {
-    background: var(--secondary-background-color, #f4f9fd) !important;
-    border-color: var(--border-color, #d6e6f1) !important;
-}
-.pg-action-title, .pg-action-text {
-    color: var(--text-color, #17324d) !important;
-}
-
-/* Native Streamlit inputs, selects, alerts, dataframes and sidebar remain
-   owned by Streamlit's theme. */
-
-/* v42 — safe navigation: style only our custom navigation content.
-   Do not paint the sidebar or page background; Streamlit owns those surfaces. */
-section[data-testid="stSidebar"] .pg-sidebar-name,
-section[data-testid="stSidebar"] .pg-sidebar-section,
-section[data-testid="stSidebar"] .pg-sidebar-note-title {
-    color: var(--text-color) !important;
-}
-section[data-testid="stSidebar"] .pg-sidebar-subtitle,
-section[data-testid="stSidebar"] .pg-sidebar-note-text {
-    color: var(--secondary-text-color) !important;
-}
-section[data-testid="stSidebar"] .pg-sidebar-divider {
-    background: var(--border-color) !important;
-}
-section[data-testid="stSidebar"] div.stButton > button {
-    color: var(--text-color) !important;
-}
-section[data-testid="stSidebar"] .pg-sidebar-status {
-    color: var(--text-color) !important;
-}
-</style>
-""", unsafe_allow_html=True)
 
 
 # =========================================================
@@ -1144,15 +890,17 @@ hr {
 # =========================================================
 
 # =========================================================
-# PROFESSIONAL SIDEBAR NAVIGATION — v41 RESTORED
+# CLEAN PROFESSIONAL SIDEBAR NAVIGATION
 # =========================================================
 
 def _navigate_to(page):
     st.session_state["active_page"] = page
 
+
 with st.sidebar:
     if "active_page" not in st.session_state:
         st.session_state["active_page"] = "🏠 Dashboard"
+
     current_page = st.session_state["active_page"]
 
     st.markdown(
@@ -1167,45 +915,75 @@ with st.sidebar:
             </div>
             <div class="pg-sidebar-status">● Prototype • Active</div>
         </div>
-        """, unsafe_allow_html=True
+        """,
+        unsafe_allow_html=True
     )
 
-    st.markdown('<div class="pg-sidebar-section">WORKSPACE</div>', unsafe_allow_html=True)
-    for page in ["🏠 Dashboard", "🔍 New ADR Analysis"]:
-        st.button(page, key=f"nav_{page}", use_container_width=True,
-                  type="primary" if current_page == page else "secondary",
-                  on_click=_navigate_to, args=(page,))
+    st.markdown('<div class="pg-sidebar-section">MAIN</div>', unsafe_allow_html=True)
+    main_items = [
+        ("🏠 Dashboard", "Dashboard"),
+        ("🔍 New ADR Analysis", "New Analysis"),
+    ]
+    for page, _label in main_items:
+        st.button(
+            page,
+            key=f"nav_{page}",
+            use_container_width=True,
+            type="primary" if current_page == page else "secondary",
+            on_click=_navigate_to,
+            args=(page,)
+        )
 
-    st.markdown('<div class="pg-sidebar-section">RECORDS & REPORTS</div>', unsafe_allow_html=True)
-    for page in ["📚 ADR History", "📄 Case Reports", "☁️ Database"]:
-        st.button(page, key=f"nav_{page}", use_container_width=True,
-                  type="primary" if current_page == page else "secondary",
-                  on_click=_navigate_to, args=(page,))
+    st.markdown('<div class="pg-sidebar-section">CASES</div>', unsafe_allow_html=True)
+    case_items = [
+        ("📂 Cases", "Cases"),
+        ("☁️ Database", "Database"),
+    ]
+    for page, _label in case_items:
+        st.button(
+            page,
+            key=f"nav_{page}",
+            use_container_width=True,
+            type="primary" if current_page == page else "secondary",
+            on_click=_navigate_to,
+            args=(page,)
+        )
 
     st.markdown('<div class="pg-sidebar-section">INSIGHTS</div>', unsafe_allow_html=True)
-    page = "📊 Analytics"
-    st.button(page, key="nav_analytics", use_container_width=True,
-              type="primary" if current_page == page else "secondary",
-              on_click=_navigate_to, args=(page,))
+    analytics_page = "📊 Analytics"
+    st.button(
+        analytics_page,
+        key="nav_analytics",
+        use_container_width=True,
+        type="primary" if current_page == analytics_page else "secondary",
+        on_click=_navigate_to,
+        args=(analytics_page,)
+    )
 
-    st.markdown('<div class="pg-sidebar-section">PROJECT & SYSTEM</div>', unsafe_allow_html=True)
-    for page in ["ℹ️ About / Methodology", "⚙️ Settings / Disclaimer"]:
-        st.button(page, key=f"nav_{page}", use_container_width=True,
-                  type="primary" if current_page == page else "secondary",
-                  on_click=_navigate_to, args=(page,))
+    st.markdown('<div class="pg-sidebar-section">PROJECT</div>', unsafe_allow_html=True)
+    project_page = "ℹ️ Project Info"
+    st.button(
+        project_page,
+        key="nav_project_info",
+        use_container_width=True,
+        type="primary" if current_page == project_page else "secondary",
+        on_click=_navigate_to,
+        args=(project_page,)
+    )
 
     st.markdown('<div class="pg-sidebar-divider"></div>', unsafe_allow_html=True)
     st.markdown(
-        """<div class="pg-sidebar-note">
+        """
+        <div class="pg-sidebar-note">
             <div class="pg-sidebar-note-title">Safety-first workflow</div>
             <div class="pg-sidebar-note-text">
-                Review-priority support only. PHARMAGUARD does not replace
-                clinical, causality, or regulatory assessment.
+                Review-priority support only. Not a diagnostic, causality or regulatory assessment tool.
             </div>
-        </div>""", unsafe_allow_html=True
+        </div>
+        """,
+        unsafe_allow_html=True
     )
 
-# v42: navigation uses Streamlit native sidebar surface; no sidebar surface override.
 
 # =========================================================
 # V28 — THEME / DARK-MODE READABILITY OVERRIDES
@@ -1282,7 +1060,16 @@ st.markdown(
         color: var(--pg-text) !important;
     }
 
-    
+    @media (prefers-color-scheme: dark) {
+        .pg-dashboard-hero,
+        .pg-form-card,
+        .pg-id-card,
+        .pg-case-strip,
+        .pg-stat-card,
+        .pg-analyze-box {
+            box-shadow: none !important;
+        }
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -2118,7 +1905,7 @@ def render_dashboard_screen():
 
     with q2:
         if st.button("📂  View Cases", use_container_width=True):
-            st.session_state["active_page"] = "📚 ADR History"
+            st.session_state["active_page"] = "📂 Cases"
             st.rerun()
 
     with q3:
@@ -2193,7 +1980,7 @@ def render_dashboard_screen():
     st.markdown('<div class="pg-recent-grid">' + "".join(recent_cards) + '</div>', unsafe_allow_html=True)
 
     if st.button("📂 View All Cases →", use_container_width=True, key="dashboard_view_all_cases"):
-        st.session_state["active_page"] = "📚 ADR History"
+        st.session_state["active_page"] = "📂 Cases"
         st.rerun()
 
     st.markdown(
@@ -3426,12 +3213,8 @@ if active_page == "🏠 Dashboard":
     render_dashboard_screen()
     st.stop()
 
-if active_page == "📚 ADR History":
-    render_history_screen()
-    st.stop()
-
-if active_page == "📄 Case Reports":
-    render_case_reports_screen()
+if active_page == "📂 Cases":
+    render_cases_hub_screen()
     st.stop()
 
 if active_page == "📊 Analytics":
@@ -3442,12 +3225,8 @@ if active_page == "☁️ Database":
     render_database_screen()
     st.stop()
 
-if active_page == "ℹ️ About / Methodology":
-    render_about_screen()
-    st.stop()
-
-if active_page == "⚙️ Settings / Disclaimer":
-    render_settings_screen()
+if active_page == "ℹ️ Project Info":
+    render_project_info_screen()
     st.stop()
 
 
