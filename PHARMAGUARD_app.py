@@ -574,59 +574,6 @@ div.stButton > button[kind="primary"] {
     .pg-form-card { padding: 13px; }
 }
 
-
-/* =========================================================
-   EXPANDER INSIDE — PROFESSIONAL CONTENT POLISH ONLY
-   Scope: ONLY content rendered inside Streamlit expanders.
-   No dashboard/navigation/backend/scientific logic changes.
-   ========================================================= */
-div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] {
-    padding: 6px 4px 12px 4px;
-}
-div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] [data-testid="stCaptionContainer"] {
-    padding: 8px 11px;
-    margin: 4px 0 14px 0;
-    border-left: 3px solid #2b6f9f;
-    border-radius: 8px;
-    background: #f5f9fc;
-    color: #596875;
-}
-div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] label {
-    font-weight: 700;
-}
-div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] [data-testid="stMetric"] {
-    padding: 11px 12px;
-    border: 1px solid #dbe6ee;
-    border-radius: 12px;
-    background: #f9fbfd;
-    margin-bottom: 8px;
-}
-div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] [data-testid="stMetricLabel"] {
-    font-size: 12px;
-    font-weight: 700;
-}
-div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] [data-testid="stMetricValue"] {
-    font-weight: 800;
-}
-div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] [data-testid="stDataFrame"] {
-    border: 1px solid #dbe6ee;
-    border-radius: 12px;
-    overflow: hidden;
-    margin: 8px 0 14px 0;
-}
-div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] .stButton > button {
-    border-radius: 10px;
-    font-weight: 700;
-}
-div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] .stSelectbox > div > div {
-    border-radius: 10px;
-}
-@media (max-width: 700px) {
-    div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] {
-        padding-left: 1px;
-        padding-right: 1px;
-    }
-}
 </style>
 <div class="pg-appbar">
 <div class="pg-brand-mini">🛡️ PHARMAGUARD</div>
@@ -2356,9 +2303,19 @@ def render_case_reports_screen():
     )
 
     with st.expander("🔄 Reassess this ADR case", expanded=False):
-        st.caption(
-            "Example: an initial rash may later be followed by facial swelling or "
-            "difficulty breathing. Enter the updated ADR information here."
+        st.markdown(
+            f"""
+            <div class="pg-expand-intro pg-reassessment-intro">
+                <div class="pg-expand-kicker">CASE UPDATE WORKSPACE</div>
+                <div class="pg-expand-title">Add new clinical information without overwriting the original case</div>
+                <div class="pg-expand-text">The updated information is reassessed through the same PHARMAGUARD review engine and saved as a linked case version.</div>
+                <div class="pg-mini-summary">
+                    <span><b>Current priority</b>{html.escape(priority)}</span>
+                    <span><b>Case reference</b>{html.escape(str(row.get("Case_Reference", "—")))}</span>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
         reassessment_adr = st.text_area(
             "Updated ADR / new clinical information",
@@ -2457,16 +2414,23 @@ def render_case_reports_screen():
                     # Show the reassessment result independently of database saving.
                     # This prevents a database/API failure from hiding the Safety Gate result.
                     st.markdown(
-                        f"**Previous:** {priority}  →  **Updated:** {new_priority}"
-                    )
-                    st.markdown(
-                        f"**Decision Source:** {new_decision_source}"
-                    )
-                    st.markdown(
-                        f"**Detected signal:** {new_reason}"
-                    )
-                    st.markdown(
-                        f"**Recommended action:** {new_recommendation}"
+                        f"""
+                        <div class="pg-reassessment-result">
+                            <div class="pg-result-kicker">REASSESSMENT RESULT</div>
+                            <div class="pg-result-flow">
+                                <span class="pg-result-priority">{html.escape(priority)}</span>
+                                <span class="pg-result-arrow">→</span>
+                                <span class="pg-result-priority pg-result-current">{html.escape(new_priority)}</span>
+                            </div>
+                            <div class="pg-result-grid">
+                                <div><small>Decision Source</small><b>{html.escape(new_decision_source)}</b></div>
+                                <div><small>Detected Signal</small><b>{html.escape(new_reason)}</b></div>
+                                <div><small>Recommended Action</small><b>{html.escape(new_recommendation)}</b></div>
+                                <div><small>New Case Reference</small><b>{html.escape(new_case_reference)}</b></div>
+                            </div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
                     )
 
                     saved, save_status, save_response = save_to_google_sheet(
@@ -2754,6 +2718,10 @@ def render_analytics_screen():
     counts = _priority_counts(df)
 
     with st.expander("📌 Overview", expanded=True):
+        st.markdown(
+            "<div class=\"pg-expand-intro\"><div class=\"pg-expand-kicker\">ANALYTICS OVERVIEW</div><div class=\"pg-expand-title\">Priority snapshot</div><div class=\"pg-expand-text\">A concise view of the recorded PHARMAGUARD case distribution.</div></div>",
+            unsafe_allow_html=True,
+        )
         overview_cards = [
             ("📋", "Total Cases", len(df), "Recorded reports", "total"),
             ("🔴", "HIGH", counts["HIGH"], "Priority review", "high"),
@@ -2778,6 +2746,10 @@ def render_analytics_screen():
         st.caption("Recorded project priorities only; these are descriptive summaries, not clinical risk estimates.")
 
     with st.expander("🎯 Priority Analytics", expanded=False):
+        st.markdown(
+            "<div class=\"pg-expand-intro\"><div class=\"pg-expand-kicker\">PRIORITY ANALYTICS</div><div class=\"pg-expand-title\">Compare recorded review priorities</div><div class=\"pg-expand-text\">Select one view to examine priority distribution across the available project records.</div></div>",
+            unsafe_allow_html=True,
+        )
         st.caption("Choose one view at a time for better mobile readability.")
         priority_view = st.selectbox(
             "Priority view",
@@ -2807,6 +2779,10 @@ def render_analytics_screen():
             st.bar_chart(age_table, use_container_width=True, height=300)
 
     with st.expander("💊 ADR & Drug Analytics", expanded=False):
+        st.markdown(
+            "<div class=\"pg-expand-intro\"><div class=\"pg-expand-kicker\">ADR & DRUG INTELLIGENCE</div><div class=\"pg-expand-title\">Explore reported medicines and reactions</div><div class=\"pg-expand-text\">Use the selector to focus on one descriptive insight at a time.</div></div>",
+            unsafe_allow_html=True,
+        )
         st.caption("Select one insight at a time. Top-10 views are descriptive record summaries.")
         adr_drug_view = st.selectbox(
             "ADR & drug view",
@@ -2847,6 +2823,10 @@ def render_analytics_screen():
             st.bar_chart(adr_table, use_container_width=True, height=340)
 
     with st.expander("🛡️ Safety Intelligence", expanded=False):
+        st.markdown(
+            "<div class=\"pg-expand-intro\"><div class=\"pg-expand-kicker\">SAFETY WORKFLOW</div><div class=\"pg-expand-title\">Review recorded decision-path indicators</div><div class=\"pg-expand-text\">These are descriptive workflow counts from the project database, not calibrated clinical risk estimates.</div></div>",
+            unsafe_allow_html=True,
+        )
         st.caption("Recorded workflow indicators only; not calibrated clinical risk or regulatory performance.")
         source = df.get("Decision_Source", pd.Series(dtype=str)).astype(str).str.strip()
         s1, s2 = st.columns(2)
@@ -2865,6 +2845,10 @@ def render_analytics_screen():
         st.bar_chart(seriousness.rename("Cases").to_frame(), use_container_width=True, height=280)
 
     with st.expander("🔎 Quality & Audit", expanded=False):
+        st.markdown(
+            "<div class=\"pg-expand-intro\"><div class=\"pg-expand-kicker\">DATA QUALITY</div><div class=\"pg-expand-title\">Check record completeness and linkage</div><div class=\"pg-expand-text\">Review the availability of key project fields and reassessment links before export.</div></div>",
+            unsafe_allow_html=True,
+        )
         priority_recorded = int(df.get("Priority", pd.Series(dtype=str)).astype(str).str.strip().ne("").sum())
         decision_recorded = int(df.get("Decision_Source", pd.Series(dtype=str)).astype(str).str.strip().ne("").sum())
         case_reference_recorded = int(df.get("Case_Reference", pd.Series(dtype=str)).astype(str).str.strip().ne("").sum())
@@ -4681,6 +4665,118 @@ Pharmacovigilance Proof of Concept
         st.rerun()
 
 
+
+st.markdown("""
+<style>
+/* =========================================================
+   EXPANDABLE CONTENT — PROFESSIONAL INNER WORKSPACES
+   Presentation-only. No engine, database or analytics logic changes.
+   ========================================================= */
+[data-testid="stExpander"] {
+    border: 1px solid rgba(100, 116, 139, 0.20);
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--secondary-background-color);
+    margin: 10px 0;
+}
+[data-testid="stExpander"] details summary {
+    padding: 14px 16px;
+    font-weight: 700;
+}
+[data-testid="stExpander"] details[open] summary {
+    border-bottom: 1px solid rgba(100, 116, 139, 0.14);
+}
+[data-testid="stExpander"] [data-testid="stExpanderDetails"] {
+    padding: 14px 16px 18px;
+}
+.pg-expand-intro {
+    padding: 14px 15px;
+    margin: 0 0 14px;
+    border: 1px solid rgba(100, 116, 139, 0.16);
+    border-radius: 14px;
+    background: var(--background-color);
+}
+.pg-expand-kicker, .pg-result-kicker {
+    font-size: 0.70rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.65;
+    margin-bottom: 4px;
+}
+.pg-expand-title {
+    font-size: 1rem;
+    font-weight: 750;
+    color: var(--text-color);
+}
+.pg-expand-text {
+    margin-top: 4px;
+    font-size: 0.86rem;
+    line-height: 1.45;
+    opacity: 0.78;
+}
+.pg-mini-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 12px;
+}
+.pg-mini-summary span {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 9px 10px;
+    border-radius: 10px;
+    background: var(--secondary-background-color);
+    font-size: 0.78rem;
+}
+.pg-mini-summary b { font-size: 0.68rem; opacity: 0.62; text-transform: uppercase; letter-spacing: 0.04em; }
+.pg-reassessment-result {
+    padding: 15px;
+    margin: 14px 0;
+    border: 1px solid rgba(100, 116, 139, 0.18);
+    border-radius: 15px;
+    background: var(--background-color);
+}
+.pg-result-flow {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 7px 0 13px;
+}
+.pg-result-priority {
+    padding: 6px 11px;
+    border-radius: 9px;
+    font-weight: 800;
+    background: var(--secondary-background-color);
+}
+.pg-result-current { font-size: 1.03rem; }
+.pg-result-arrow { font-weight: 800; opacity: 0.55; }
+.pg-result-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+}
+.pg-result-grid > div {
+    padding: 10px;
+    border-radius: 10px;
+    background: var(--secondary-background-color);
+}
+.pg-result-grid small { display:block; font-size:0.68rem; opacity:0.62; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; margin-bottom:3px; }
+.pg-result-grid b { font-size:0.82rem; line-height:1.35; }
+[data-testid="stExpander"] [data-testid="stMetric"] {
+    padding: 10px 11px;
+    border: 1px solid rgba(100, 116, 139, 0.14);
+    border-radius: 12px;
+    background: var(--background-color);
+}
+@media (max-width: 640px) {
+    [data-testid="stExpander"] [data-testid="stExpanderDetails"] { padding: 11px 12px 15px; }
+    .pg-mini-summary, .pg-result-grid { grid-template-columns: 1fr; }
+    .pg-expand-intro { padding: 12px; }
+}
+</style>
+""", unsafe_allow_html=True)
 
 st.markdown("""
 <div class="pg-ui6-footer">
