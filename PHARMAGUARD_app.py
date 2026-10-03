@@ -2225,90 +2225,90 @@ def render_case_reports_screen():
     # =====================================================
     # INNOVATION 2 — PHARMACIST REVIEW CHECKLIST
     # =====================================================
-    st.markdown("### 🧑‍⚕️ Pharmacist Review Checklist")
-    st.markdown(
-        """
-        <div class="pg-section-card">
-            <h4>Structured review before pharmacovigilance follow-up</h4>
-            <div>
-                Use this checklist to document the key review steps for the selected ADR case.
-                Checklist completion does not replace professional or regulatory assessment.
+    with st.expander("🧑‍⚕️ Pharmacist Review Checklist", expanded=False):
+        st.markdown(
+            """
+            <div class="pg-section-card">
+                <h4>Structured review before pharmacovigilance follow-up</h4>
+                <div>
+                    Use this checklist to document the key review steps for the selected ADR case.
+                    Checklist completion does not replace professional or regulatory assessment.
+                </div>
             </div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    checklist_items = [
-        ("patient_info", "Patient information reviewed"),
-        ("drug_verified", "Suspected / reported drug verified"),
-        ("adr_description", "ADR description reviewed"),
-        ("seriousness_checked", "Seriousness criteria checked"),
-        ("outcome_assessed", "Patient outcome assessed"),
-        ("medical_info", "Relevant medical / clinical information reviewed"),
-        ("follow_up", "Follow-up information required / considered"),
-    ]
-
-    checklist_state_key = f"review_checklist_{selected_idx}"
-    if checklist_state_key not in st.session_state:
-        st.session_state[checklist_state_key] = {key: False for key, _ in checklist_items}
-
-    checklist_state = st.session_state[checklist_state_key]
-
-    review_status_key = f"review_status_{selected_idx}"
-    if review_status_key not in st.session_state:
-        st.session_state[review_status_key] = "Not Started"
-
-    review_status = st.selectbox(
-        "📝 Pharmacist Review Status",
-        ["Not Started", "In Progress", "Completed"],
-        key=review_status_key,
-        help="Session-only workflow status for this prototype case."
-    )
-
-    if priority == "HIGH":
-        st.warning(
-            "🔴 HIGH-priority case: review the Safety Gate signal and complete the pharmacist checklist before follow-up."
-        )
-    elif priority == "MODERATE":
-        st.info(
-            "🟠 MODERATE-priority case: review the clinical context and complete the pharmacist checklist."
+            """,
+            unsafe_allow_html=True
         )
 
-    checklist_cols = st.columns(2)
-    for i, (item_key, item_label) in enumerate(checklist_items):
-        with checklist_cols[i % 2]:
-            checklist_state[item_key] = st.checkbox(
-                item_label,
-                value=checklist_state.get(item_key, False),
-                key=f"{checklist_state_key}_{item_key}"
+        checklist_items = [
+            ("patient_info", "Patient information reviewed"),
+            ("drug_verified", "Suspected / reported drug verified"),
+            ("adr_description", "ADR description reviewed"),
+            ("seriousness_checked", "Seriousness criteria checked"),
+            ("outcome_assessed", "Patient outcome assessed"),
+            ("medical_info", "Relevant medical / clinical information reviewed"),
+            ("follow_up", "Follow-up information required / considered"),
+        ]
+
+        checklist_state_key = f"review_checklist_{selected_idx}"
+        if checklist_state_key not in st.session_state:
+            st.session_state[checklist_state_key] = {key: False for key, _ in checklist_items}
+
+        checklist_state = st.session_state[checklist_state_key]
+
+        review_status_key = f"review_status_{selected_idx}"
+        if review_status_key not in st.session_state:
+            st.session_state[review_status_key] = "Not Started"
+
+        review_status = st.selectbox(
+            "📝 Pharmacist Review Status",
+            ["Not Started", "In Progress", "Completed"],
+            key=review_status_key,
+            help="Session-only workflow status for this prototype case."
+        )
+
+        if priority == "HIGH":
+            st.warning(
+                "🔴 HIGH-priority case: review the Safety Gate signal and complete the pharmacist checklist before follow-up."
+            )
+        elif priority == "MODERATE":
+            st.info(
+                "🟠 MODERATE-priority case: review the clinical context and complete the pharmacist checklist."
             )
 
-    completed_count = sum(bool(checklist_state.get(key, False)) for key, _ in checklist_items)
-    total_count = len(checklist_items)
+        checklist_cols = st.columns(2)
+        for i, (item_key, item_label) in enumerate(checklist_items):
+            with checklist_cols[i % 2]:
+                checklist_state[item_key] = st.checkbox(
+                    item_label,
+                    value=checklist_state.get(item_key, False),
+                    key=f"{checklist_state_key}_{item_key}"
+                )
 
-    if completed_count == total_count and review_status != "Completed":
-        st.caption("💡 All checklist items are complete. You can mark the review status as Completed.")
-    reviewer_note = st.text_area(
-        "Reviewer comments (optional)",
-        key=f"reviewer_note_{selected_idx}",
-        placeholder="Example: Seriousness reviewed; additional clinical follow-up may be required."
-    )
+        completed_count = sum(bool(checklist_state.get(key, False)) for key, _ in checklist_items)
+        total_count = len(checklist_items)
 
-    if completed_count == total_count:
-        st.success(f"✅ Review checklist complete — {completed_count}/{total_count} items")
-    else:
-        st.info(f"📋 Review checklist progress — {completed_count}/{total_count} items completed")
+        if completed_count == total_count and review_status != "Completed":
+            st.caption("💡 All checklist items are complete. You can mark the review status as Completed.")
+        reviewer_note = st.text_area(
+            "Reviewer comments (optional)",
+            key=f"reviewer_note_{selected_idx}",
+            placeholder="Example: Seriousness reviewed; additional clinical follow-up may be required."
+        )
 
-    st.caption(
-        "Prototype note: review status, checklist status and reviewer comments are maintained for the current app session and are not added to the Google Sheet database."
-    )
+        if completed_count == total_count:
+            st.success(f"✅ Review checklist complete — {completed_count}/{total_count} items")
+        else:
+            st.info(f"📋 Review checklist progress — {completed_count}/{total_count} items completed")
 
-    # =====================================================
+        st.caption(
+            "Prototype note: review status, checklist status and reviewer comments are maintained for the current app session and are not added to the Google Sheet database."
+        )
+
+        # =====================================================
     # INNOVATION 1 — DYNAMIC ADR RISK REASSESSMENT
     # =====================================================
-    st.markdown("### 🔄 Dynamic ADR Risk Reassessment")
-    st.markdown(
+    with st.expander("🔄 Dynamic ADR Risk Reassessment", expanded=False):
+        st.markdown(
         """
         <div class="pg-section-card">
             <h4>Update the case when new clinical information becomes available</h4>
@@ -2319,9 +2319,8 @@ def render_case_reports_screen():
         </div>
         """,
         unsafe_allow_html=True
-    )
+        )
 
-    with st.expander("🔄 Reassess this ADR case", expanded=False):
         st.caption(
             "Example: an initial rash may later be followed by facial swelling or "
             "difficulty breathing. Enter the updated ADR information here."
@@ -2476,95 +2475,97 @@ def render_case_reports_screen():
                             "Only the database save failed. Use the HTTP response above to identify the server-side issue."
                         )
 
-    # Linked reassessment timeline for the selected case.
-    root_reference = str(
-        row.get("Original_Case_Reference", "")
-        or row.get("Case_Reference", "")
-    )
-    timeline_records = []
-    for item in st.session_state.get("adr_history", []):
-        item_root = str(
-            item.get("Original_Case_Reference", "")
-            or item.get("Case_Reference", "")
+    with st.expander("📈 ADR Priority Timeline", expanded=False):
+        # Linked reassessment timeline for the selected case.
+        root_reference = str(
+            row.get("Original_Case_Reference", "")
+            or row.get("Case_Reference", "")
         )
-        if item_root == root_reference:
-            timeline_records.append(item)
-
-    if timeline_records:
-        timeline_records = sorted(
-            timeline_records,
-            key=lambda x: str(x.get("Date_Time", ""))
-        )
-        st.markdown("### 📈 ADR Priority Timeline")
-        timeline_rows = []
-        for item in timeline_records:
-            timeline_rows.append({
-                "Version": "Initial" if not item.get("Reassessment_Of") else f"Reassessment {item.get('Reassessment_Number', '')}",
-                "Date & Time": item.get("Date_Time", ""),
-                "Priority": item.get("Priority", "UNKNOWN"),
-                "ADR / New Information": item.get("ADR", ""),
-                "Case Reference": item.get("Case_Reference", ""),
-            })
-        st.dataframe(
-            pd.DataFrame(timeline_rows),
-            use_container_width=True,
-            hide_index=True
-        )
-
-    # =========================================================
-    # INNOVATION 3 — LONGITUDINAL ADR CASE TIMELINE
-    # =========================================================
-    # This summarizes the complete linked case journey without changing
-    # any priority or clinical decision logic.
-    if timeline_records:
-        st.markdown("### 🔗 Longitudinal ADR Case Timeline")
-        st.caption(
-            "A version-by-version view of the same ADR case from the original report "
-            "through reassessment. This is a record-tracking view, not a clinical outcome prediction."
-        )
-
-        first_record = timeline_records[0]
-        latest_record = timeline_records[-1]
-        first_priority = str(first_record.get("Priority", "UNKNOWN"))
-        latest_priority = str(latest_record.get("Priority", "UNKNOWN"))
-
-        tl1, tl2, tl3 = st.columns(3)
-        with tl1:
-            st.metric("📌 Versions", len(timeline_records))
-        with tl2:
-            st.metric("Initial Priority", first_priority)
-        with tl3:
-            st.metric("Current Priority", latest_priority)
-
-        timeline_display = []
-        for position, item in enumerate(timeline_records, start=1):
-            reassessment_no = str(item.get("Reassessment_Number", "")).strip()
-            version_label = "Initial Report" if not reassessment_no else f"Reassessment {reassessment_no}"
-            timeline_display.append({
-                "Step": position,
-                "Version": version_label,
-                "Priority": item.get("Priority", "UNKNOWN"),
-                "ADR / New Information": item.get("ADR", ""),
-                "Decision Source": item.get("Decision_Source", ""),
-                "Date & Time": item.get("Date_Time", ""),
-            })
-
-        st.dataframe(
-            pd.DataFrame(timeline_display),
-            use_container_width=True,
-            hide_index=True
-        )
-
-        if first_priority != latest_priority:
-            st.info(
-                f"🔄 Priority changed across recorded versions: "
-                f"**{first_priority} → {latest_priority}**. "
-                "The change reflects the reassessment record and does not modify the original case version."
+        timeline_records = []
+        for item in st.session_state.get("adr_history", []):
+            item_root = str(
+                item.get("Original_Case_Reference", "")
+                or item.get("Case_Reference", "")
             )
-        else:
-            st.info(
-                f"ℹ️ Priority remained **{latest_priority}** across the recorded versions."
+            if item_root == root_reference:
+                timeline_records.append(item)
+
+        if timeline_records:
+            timeline_records = sorted(
+                timeline_records,
+                key=lambda x: str(x.get("Date_Time", ""))
             )
+            st.markdown("### 📈 ADR Priority Timeline")
+            timeline_rows = []
+            for item in timeline_records:
+                timeline_rows.append({
+                    "Version": "Initial" if not item.get("Reassessment_Of") else f"Reassessment {item.get('Reassessment_Number', '')}",
+                    "Date & Time": item.get("Date_Time", ""),
+                    "Priority": item.get("Priority", "UNKNOWN"),
+                    "ADR / New Information": item.get("ADR", ""),
+                    "Case Reference": item.get("Case_Reference", ""),
+                })
+            st.dataframe(
+                pd.DataFrame(timeline_rows),
+                use_container_width=True,
+                hide_index=True
+            )
+
+    with st.expander("🔗 Longitudinal ADR Case Timeline", expanded=False):
+        # =========================================================
+        # INNOVATION 3 — LONGITUDINAL ADR CASE TIMELINE
+        # =========================================================
+        # This summarizes the complete linked case journey without changing
+        # any priority or clinical decision logic.
+        if timeline_records:
+            st.markdown("### 🔗 Longitudinal ADR Case Timeline")
+            st.caption(
+                "A version-by-version view of the same ADR case from the original report "
+                "through reassessment. This is a record-tracking view, not a clinical outcome prediction."
+            )
+
+            first_record = timeline_records[0]
+            latest_record = timeline_records[-1]
+            first_priority = str(first_record.get("Priority", "UNKNOWN"))
+            latest_priority = str(latest_record.get("Priority", "UNKNOWN"))
+
+            tl1, tl2, tl3 = st.columns(3)
+            with tl1:
+                st.metric("📌 Versions", len(timeline_records))
+            with tl2:
+                st.metric("Initial Priority", first_priority)
+            with tl3:
+                st.metric("Current Priority", latest_priority)
+
+            timeline_display = []
+            for position, item in enumerate(timeline_records, start=1):
+                reassessment_no = str(item.get("Reassessment_Number", "")).strip()
+                version_label = "Initial Report" if not reassessment_no else f"Reassessment {reassessment_no}"
+                timeline_display.append({
+                    "Step": position,
+                    "Version": version_label,
+                    "Priority": item.get("Priority", "UNKNOWN"),
+                    "ADR / New Information": item.get("ADR", ""),
+                    "Decision Source": item.get("Decision_Source", ""),
+                    "Date & Time": item.get("Date_Time", ""),
+                })
+
+            st.dataframe(
+                pd.DataFrame(timeline_display),
+                use_container_width=True,
+                hide_index=True
+            )
+
+            if first_priority != latest_priority:
+                st.info(
+                    f"🔄 Priority changed across recorded versions: "
+                    f"**{first_priority} → {latest_priority}**. "
+                    "The change reflects the reassessment record and does not modify the original case version."
+                )
+            else:
+                st.info(
+                    f"ℹ️ Priority remained **{latest_priority}** across the recorded versions."
+                )
 
     st.markdown("### 📥 Export Report")
 
@@ -3271,6 +3272,20 @@ div.stButton>button[kind="primary"]{min-height:50px;border-radius:12px;font-size
 """, unsafe_allow_html=True)
 
 # =========================================================
+# =========================================================
+# CASE REPORT COLLAPSED WORKFLOW POLISH
+# Presentation-only: keep advanced review tools compact on mobile.
+# =========================================================
+st.markdown(
+    """
+    <style>
+    div[data-testid="stExpander"] { margin-bottom: 0.55rem; }
+    div[data-testid="stExpander"] summary { font-weight: 700; }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 # SCREEN ROUTING
 # =========================================================
 
