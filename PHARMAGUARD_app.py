@@ -1999,88 +1999,62 @@ def render_dashboard_screen():
     )
 
 def render_history_screen():
-    st.markdown("## 📚 ADR History")
-    st.caption("Search, filter and review previously recorded ADR cases")
-
+    """Professional, mobile-first case history view. Backend and saved records are unchanged."""
     df = pd.DataFrame(st.session_state.get("adr_history", []))
-
+    st.markdown(textwrap.dedent("""
+    <div class="pg-cases-section-head">
+        <div><div class="pg-cases-section-title">📋 Case History</div><div class="pg-cases-section-sub">Search, filter and open saved ADR cases for detailed review.</div></div>
+        <div class="pg-cases-section-chip">Saved records</div>
+    </div>
+    """).strip(), unsafe_allow_html=True)
     if df.empty:
-        st.markdown(
-            textwrap.dedent("""
-            <div class="pg-empty-state">
-                <div class="pg-empty-icon">📚</div>
-                <div class="pg-empty-title">No ADR cases available</div>
-                <div class="pg-empty-text">Completed ADR analyses will appear here.</div>
-            </div>
-            """).strip(),
-            unsafe_allow_html=True
-        )
+        st.markdown(textwrap.dedent("""
+        <div class="pg-empty-state"><div class="pg-empty-icon">📭</div><div class="pg-empty-title">No ADR cases available</div><div class="pg-empty-text">Completed ADR analyses will appear here after they are saved.</div></div>
+        """).strip(), unsafe_allow_html=True)
         return
-
-    counts = _priority_counts(df)
-    m1, m2, m3, m4 = st.columns(4)
-    with m1:
-        st.metric("Total Cases", len(df))
-    with m2:
-        st.metric("🔴 High", counts["HIGH"])
-    with m3:
-        st.metric("🟡 Moderate", counts["MODERATE"])
-    with m4:
-        st.metric("🟢 Low", counts["LOW"])
-
+    counts=_priority_counts(df)
+    overview=[("📋","Total",len(df),"All saved cases","total"),("🔴","HIGH",counts["HIGH"],"Priority review","high"),("🟡","MODERATE",counts["MODERATE"],"Clinical review","moderate"),("🟢","LOW",counts["LOW"],"Routine review","low")]
+    cards=[]
+    for icon,label,value,note,kind in overview:
+        cards.append(f'<div class="pg-case-kpi pg-case-kpi-{kind}"><div class="pg-case-kpi-icon">{icon}</div><div class="pg-case-kpi-label">{html.escape(str(label))}</div><div class="pg-case-kpi-value">{html.escape(str(value))}</div><div class="pg-case-kpi-note">{html.escape(str(note))}</div></div>')
+    st.markdown('<div class="pg-case-kpi-grid">'+''.join(cards)+'</div>',unsafe_allow_html=True)
     st.markdown("### 🔎 Find a Case")
-    c1, c2 = st.columns([2, 1])
+    c1,c2=st.columns([2,1])
     with c1:
-        q = st.text_input(
-            "Search cases",
-            placeholder="Case ID, patient ID, drug, ADR or priority...",
-            label_visibility="collapsed"
-        ).strip().lower()
+        q=st.text_input("Search cases",placeholder="Case ID, patient ID, drug, ADR or priority...",label_visibility="collapsed",key="cases_history_search").strip().lower()
     with c2:
-        priority_filter = st.selectbox(
-            "Priority filter",
-            ["All", "HIGH", "MODERATE", "LOW"],
-            label_visibility="collapsed"
-        )
-
-    filtered = df.copy()
+        priority_filter=st.selectbox("Priority filter",["All","HIGH","MODERATE","LOW"],label_visibility="collapsed",key="cases_history_priority")
+    filtered=df.copy()
     if q:
-        mask = pd.Series(False, index=filtered.index)
-        for col in ["Case_Reference", "Patient_ID", "Drug", "ADR", "Priority"]:
+        mask=pd.Series(False,index=filtered.index)
+        for col in ["Case_Reference","Patient_ID","Drug","ADR","Priority"]:
             if col in filtered.columns:
-                mask = mask | filtered[col].astype(str).str.lower().str.contains(
-                    re.escape(q), na=False
-                )
-        filtered = filtered[mask]
-
-    if priority_filter != "All" and "Priority" in filtered.columns:
-        filtered = filtered[
-            filtered["Priority"].astype(str).str.upper() == priority_filter
-        ]
-
+                mask=mask | filtered[col].astype(str).str.lower().str.contains(re.escape(q),na=False)
+        filtered=filtered[mask]
+    if priority_filter!="All" and "Priority" in filtered.columns:
+        filtered=filtered[filtered["Priority"].astype(str).str.upper()==priority_filter]
     st.caption(f"Showing {len(filtered)} of {len(df)} cases")
-
-    display_cols = [c for c in [
-        "Case_Reference", "Patient_ID", "Drug", "ADR",
-        "Priority", "Seriousness", "Decision_Source", "Date_Time"
-    ] if c in filtered.columns]
-
     if filtered.empty:
-        st.info("No cases match the current search/filter.")
+        st.info("No cases match the current search or priority filter.")
     else:
-        st.dataframe(
-            filtered[display_cols].sort_index(ascending=False),
-            use_container_width=True,
-            hide_index=True
-        )
-
-    st.download_button(
-        "⬇️ Export Filtered CSV",
-        data=filtered.to_csv(index=False).encode("utf-8"),
-        file_name="PHARMAGUARD_Filtered_ADR_History.csv",
-        mime="text/csv",
-        use_container_width=True
-    )
+        priority_class={"HIGH":"pg-case-priority-high","MODERATE":"pg-case-priority-moderate","LOW":"pg-case-priority-low"}
+        priority_icon={"HIGH":"🔴","MODERATE":"🟡","LOW":"🟢"}
+        cards=[]
+        for idx,row in filtered.sort_index(ascending=False).head(12).iterrows():
+            ref=html.escape(str(row.get("Case_Reference",f"Case {idx+1}")))
+            patient=html.escape(str(row.get("Patient_ID","—")))
+            drug_raw=str(row.get("Drug","")).strip(); drug=html.escape(drug_raw if drug_raw and drug_raw.lower() not in {"nan","none","null"} else "Not reported")
+            adr=html.escape(str(row.get("ADR","—")))
+            priority=str(row.get("Priority","UNKNOWN")).upper().strip(); badge=priority_class.get(priority,"pg-case-priority-unknown"); icon=priority_icon.get(priority,"⚪")
+            dt=html.escape(str(row.get("Date_Time","—")))
+            cards.append(f'<div class="pg-case-history-card"><div class="pg-case-history-top"><div class="pg-case-history-ref">{ref}</div><span class="{badge}">{icon} {html.escape(priority)}</span></div><div class="pg-case-history-drug">💊 {drug}</div><div class="pg-case-history-adr">{adr}</div><div class="pg-case-history-meta"><span>👤 {patient}</span><span>🕒 {dt}</span></div></div>')
+        st.markdown('<div class="pg-case-history-list">'+''.join(cards)+'</div>',unsafe_allow_html=True)
+        if len(filtered)>12:
+            st.caption(f"Showing the 12 most recent matching cases above. {len(filtered)-12} additional cases remain available in the table view.")
+        with st.expander("📑 Full Table View",expanded=False):
+            display_cols=[c for c in ["Case_Reference","Patient_ID","Drug","ADR","Priority","Seriousness","Decision_Source","Date_Time"] if c in filtered.columns]
+            st.dataframe(filtered[display_cols].sort_index(ascending=False),use_container_width=True,hide_index=True)
+    st.download_button("⬇️ Export Filtered CSV",data=filtered.to_csv(index=False).encode("utf-8"),file_name="PHARMAGUARD_Filtered_ADR_History.csv",mime="text/csv",use_container_width=True,key="cases_history_export")
 
 def render_case_reports_screen():
     st.markdown(
@@ -3045,22 +3019,15 @@ def render_database_screen():
     )
 
 def render_cases_hub_screen():
-    st.markdown(
-        textwrap.dedent("""
-        <div class="pg-ui5-hero">
-            <div class="pg-ui5-title">📂 Cases</div>
-            <div class="pg-ui5-sub">Find saved ADR cases, review case reports, reassess cases and track their timeline.</div>
-        </div>
-        """).strip(),
-        unsafe_allow_html=True
-    )
-
-    tab_history, tab_report = st.tabs(["📋 Case History", "📄 Case Report"])
-    with tab_history:
-        render_history_screen()
-    with tab_report:
-        render_case_reports_screen()
-
+    """Central Cases workspace: history and professional case report review."""
+    df=pd.DataFrame(st.session_state.get("adr_history",[])); counts=_priority_counts(df)
+    st.markdown(textwrap.dedent("""
+    <div class="pg-cases-hero"><div class="pg-cases-hero-icon">📂</div><div><div class="pg-cases-hero-title">Cases</div><div class="pg-cases-hero-sub">One workspace for saved ADR cases, detailed reports, reassessment and review workflow.</div></div></div>
+    """).strip(),unsafe_allow_html=True)
+    st.markdown(f'<div class="pg-cases-summary"><span><b>{len(df)}</b> saved cases</span><span>🔴 {counts["HIGH"]} HIGH</span><span>🟡 {counts["MODERATE"]} MODERATE</span><span>🟢 {counts["LOW"]} LOW</span></div>',unsafe_allow_html=True)
+    tab_history,tab_report=st.tabs(["📋  Case History","📄  Case Report"])
+    with tab_history: render_history_screen()
+    with tab_report: render_case_reports_screen()
 
 def render_project_info_screen():
     st.markdown(
@@ -3210,6 +3177,26 @@ def render_settings_screen():
 
 
 # =========================================================
+
+
+st.markdown("""
+<style>
+/* =========================================================
+   UI-9 — PROFESSIONAL CASES WORKSPACE
+   Presentation-only: no scoring, database or review logic changed.
+   ========================================================= */
+.pg-cases-hero{display:flex;align-items:center;gap:13px;padding:18px 19px;margin:4px 0 10px;border-radius:18px;background:linear-gradient(135deg,#f3f9fd 0%,#fff 82%);border:1px solid #d7e7f0;box-shadow:0 4px 16px rgba(30,60,90,.04)}
+.pg-cases-hero-icon{width:45px;height:45px;display:flex;align-items:center;justify-content:center;border-radius:13px;background:#eaf4fb;font-size:23px;border:1px solid #d3e6f1}
+.pg-cases-hero-title{font-size:26px;font-weight:850;color:#102a43;letter-spacing:-.2px}.pg-cases-hero-sub{font-size:12px;color:#687887;line-height:1.5;margin-top:2px}
+.pg-cases-summary{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 15px;padding:9px 11px;border-radius:11px;background:#f8fbfd;border:1px solid #e0ebf2;color:#61717e;font-size:10px}.pg-cases-summary span{padding:3px 7px;border-radius:999px;background:#fff;border:1px solid #e3ebf0}
+.pg-cases-section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:2px 0 12px}.pg-cases-section-title{font-size:18px;font-weight:850;color:#243b53}.pg-cases-section-sub{font-size:11px;color:#7a8793;margin-top:2px}.pg-cases-section-chip{padding:5px 9px;border-radius:999px;background:#edf6fb;border:1px solid #d4e7f1;color:#38627e;font-size:9px;font-weight:800;white-space:nowrap}
+.pg-case-kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:0 0 15px}.pg-case-kpi{padding:11px 10px;border-radius:12px;background:#fff;border:1px solid #dfe8ee;box-shadow:0 2px 8px rgba(30,60,90,.025)}.pg-case-kpi-icon{font-size:14px}.pg-case-kpi-label{font-size:9px;font-weight:800;color:#748290;text-transform:uppercase;letter-spacing:.45px;margin-top:2px}.pg-case-kpi-value{font-size:22px;font-weight:850;color:#17324d;line-height:1.05;margin-top:4px}.pg-case-kpi-note{font-size:9px;color:#8a96a0;margin-top:3px}.pg-case-kpi-high{border-left:3px solid #d94b4b}.pg-case-kpi-moderate{border-left:3px solid #d5a31a}.pg-case-kpi-low{border-left:3px solid #4c9a64}.pg-case-kpi-total{border-left:3px solid #5f89a6}
+.pg-case-history-list{display:flex;flex-direction:column;gap:8px;margin:4px 0 10px}.pg-case-history-card{padding:12px 13px;border-radius:13px;background:#fff;border:1px solid #dfe8ee;box-shadow:0 2px 9px rgba(30,60,90,.03)}.pg-case-history-top{display:flex;align-items:center;justify-content:space-between;gap:8px}.pg-case-history-ref{font-size:11px;font-weight:850;color:#526474;word-break:break-all}.pg-case-history-drug{font-size:14px;font-weight:800;color:#243b53;margin-top:6px}.pg-case-history-adr{font-size:11px;line-height:1.45;color:#667785;margin-top:3px}.pg-case-history-meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;padding-top:7px;border-top:1px solid #edf1f4;font-size:9px;color:#82909b}
+.pg-case-priority-high,.pg-case-priority-moderate,.pg-case-priority-low,.pg-case-priority-unknown{display:inline-block;padding:4px 8px;border-radius:999px;font-size:9px;font-weight:850;white-space:nowrap}.pg-case-priority-high{background:#fff0f0;color:#a61b1b;border:1px solid #f2c7c7}.pg-case-priority-moderate{background:#fff7df;color:#8a5a00;border:1px solid #eed99b}.pg-case-priority-low{background:#edf8f0;color:#246b37;border:1px solid #cce7d3}.pg-case-priority-unknown{background:#f2f4f6;color:#59646e;border:1px solid #dce1e5}
+@media(max-width:700px){.pg-cases-hero{padding:15px 14px}.pg-cases-hero-title{font-size:22px}.pg-cases-hero-icon{width:40px;height:40px;font-size:20px}.pg-cases-summary{gap:5px}.pg-case-kpi-grid{grid-template-columns:1fr 1fr;gap:7px}.pg-case-kpi{padding:10px 9px}.pg-case-kpi-value{font-size:20px}.pg-cases-section-head{align-items:flex-start}.pg-cases-section-chip{margin-top:2px}}
+</style>
+""", unsafe_allow_html=True)
+
 # UI-8 — PROFESSIONAL NEW ADR ANALYSIS POLISH
 # Stable v36 backend/logic preserved.
 # =========================================================
