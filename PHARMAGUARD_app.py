@@ -3210,6 +3210,35 @@ def render_settings_screen():
 
 
 # =========================================================
+# UI-8 — PROFESSIONAL NEW ADR ANALYSIS POLISH
+# Stable v36 backend/logic preserved.
+# =========================================================
+st.markdown("""
+<style>
+.pg-analysis-hero{position:relative;overflow:hidden;padding:22px 22px 20px;margin:4px 0 14px;border-radius:20px;background:linear-gradient(135deg,#eef7ff 0%,#fff 78%);border:1px solid #d5e6f2;box-shadow:0 5px 20px rgba(30,60,90,.06)}
+.pg-analysis-hero:before{content:"🛡️";position:absolute;right:18px;top:13px;font-size:42px;opacity:.10}
+.pg-analysis-title{font-size:27px;font-weight:850;color:#102a43;letter-spacing:-.2px;margin-bottom:5px}
+.pg-analysis-subtitle{max-width:760px;color:#5d6d7c;font-size:13px;line-height:1.55}
+.pg-stepbar{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin:0 0 18px}
+.pg-step{min-width:0;padding:9px 7px;border-radius:10px;background:#f7fafc;border:1px solid #dce7ee;color:#71808b;font-size:10px;font-weight:750;text-align:center}
+.pg-step-active{background:#eaf4fb;border-color:#9fc5de;color:#174a6b;box-shadow:inset 0 -2px 0 #2b6f9f}
+.pg-form-card{position:relative;padding:15px 16px 11px;margin:0 0 8px;border-radius:14px 14px 8px 8px;background:#fff;border:1px solid #dbe7ef;border-bottom:3px solid #e7f0f5;box-shadow:0 2px 10px rgba(30,60,90,.035)}
+.pg-form-title{font-size:15px;font-weight:850;color:#243b53;letter-spacing:.05px}
+.pg-form-subtitle{font-size:11px;color:#7a8793;margin-top:3px;margin-bottom:2px}
+.pg-id-card{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 13px;margin:0 0 13px;border-radius:10px;background:#f5f9fc;border:1px solid #d9e8f2}
+.pg-id-label{font-size:10px;font-weight:800;color:#70808d;text-transform:uppercase;letter-spacing:.6px}
+.pg-id-value{margin-top:0;font-size:13px;font-weight:850;color:#17324d;word-break:break-word}
+.pg-input-tip{padding:10px 12px;margin:8px 0 2px;border-radius:10px;background:#f7fbfd;border:1px solid #dceaf2;color:#607080;font-size:11px;line-height:1.5}
+.pg-analyze-box{padding:15px 16px;margin:16px 0 8px;border-radius:15px;background:linear-gradient(135deg,#f2f8fc 0%,#fff 100%);border:1px solid #d6e6f0}
+.pg-analyze-title{font-size:15px;font-weight:850;color:#17324d}.pg-analyze-subtitle{font-size:11px;color:#718096;margin-top:3px}
+div[data-testid="stTextInput"],div[data-testid="stNumberInput"],div[data-testid="stSelectbox"],div[data-testid="stTextArea"]{margin-bottom:7px}
+div[data-testid="stTextArea"] textarea{min-height:135px!important}
+div.stButton>button[kind="primary"]{min-height:50px;border-radius:12px;font-size:14px;font-weight:850;letter-spacing:.25px}
+@media(max-width:700px){.pg-analysis-hero{padding:17px 15px}.pg-analysis-title{font-size:22px}.pg-analysis-hero:before{font-size:32px;right:12px}.pg-stepbar{grid-template-columns:1fr 1fr;gap:6px}.pg-step:first-child{grid-column:1/-1}.pg-id-card{display:block}.pg-id-value{margin-top:4px}.pg-form-card{padding:13px 13px 9px}}
+</style>
+""", unsafe_allow_html=True)
+
+# =========================================================
 # SCREEN ROUTING
 # =========================================================
 
@@ -3244,7 +3273,7 @@ st.markdown(
     textwrap.dedent("""
     <div class="pg-analysis-hero">
         <div class="pg-analysis-title">🔍 New ADR Analysis</div>
-        <div class="pg-analysis-subtitle">Enter the ADR report details below. PHARMAGUARD will apply its predefined Safety Gate first and use the Random Forest prototype when appropriate.</div>
+        <div class="pg-analysis-subtitle">Create a structured ADR report. PHARMAGUARD checks the predefined Safety Gate first, then uses the Random Forest prototype when appropriate.</div>
     </div>
     """).strip(),
     unsafe_allow_html=True
@@ -3271,7 +3300,7 @@ st.markdown(
     textwrap.dedent("""
     <div class="pg-form-card">
         <div class="pg-form-title">👤 Patient / Case Information</div>
-        <div class="pg-form-subtitle">Basic report information used by the prioritization workflow.</div>
+        <div class="pg-form-subtitle">Start with the minimum patient and case information needed for review prioritization.</div>
     </div>
     """).strip(),
     unsafe_allow_html=True
@@ -3322,7 +3351,7 @@ st.markdown(
     textwrap.dedent("""
     <div class="pg-form-card">
         <div class="pg-form-title">💊 Drug Information</div>
-        <div class="pg-form-subtitle">Enter the suspected or reported medicinal product.</div>
+        <div class="pg-form-subtitle">Record the suspected or reported medicinal product associated with the ADR.</div>
     </div>
     """).strip(),
     unsafe_allow_html=True
@@ -3341,7 +3370,7 @@ st.markdown(
     textwrap.dedent("""
     <div class="pg-form-card">
         <div class="pg-form-title">⚠️ Adverse Drug Reaction Report</div>
-        <div class="pg-form-subtitle">Describe the reported reaction as clearly and specifically as possible.</div>
+        <div class="pg-form-subtitle">Describe the reported reaction using the clearest clinical information available.</div>
     </div>
     """).strip(),
     unsafe_allow_html=True
@@ -3369,7 +3398,7 @@ st.markdown(
     textwrap.dedent("""
     <div class="pg-analyze-box">
         <div class="pg-analyze-title">🛡️ PHARMAGUARD Review Engine</div>
-        <div class="pg-analyze-subtitle">Safety Gate → Random Forest assistance → Final review priority → Database</div>
+        <div class="pg-analyze-subtitle">Safety Gate  →  ML assistance  →  Final priority  →  Database</div>
     </div>
     """).strip(),
     unsafe_allow_html=True
