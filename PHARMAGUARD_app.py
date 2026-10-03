@@ -3182,9 +3182,9 @@ def render_project_info_screen():
     )
 
     tab_about, tab_status, tab_disclaimer = st.tabs([
-        "ℹ️ About & Methodology",
-        "⚙️ System Status",
-        "⚠️ Scientific Disclaimer",
+        "ℹ️ About",
+        "⚙️ Status",
+        "⚠️ Disclaimer",
     ])
 
     with tab_about:
