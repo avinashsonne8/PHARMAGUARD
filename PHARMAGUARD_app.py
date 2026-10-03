@@ -1082,6 +1082,107 @@ div.stButton > button[kind="secondary"] * { color: inherit !important; }
 </style>
 """, unsafe_allow_html=True)
 
+
+# =========================================================
+# V36 STABLE — DARK MODE TARGETED CONTRAST PATCH v2
+# Streamlit theme controls this block; Android/OS theme is ignored.
+# Only custom PHARMAGUARD components are changed.
+st.markdown("""
+<style>
+/* Streamlit dark-theme selector: do not affect Light Mode */
+html[data-theme="dark"] .pg-header,
+html[data-theme="dark"] .pg-dashboard-hero,
+html[data-theme="dark"] .pg-hero,
+html[data-theme="dark"] .pg-stat-card,
+html[data-theme="dark"] .pg-kpi-grid-card,
+html[data-theme="dark"] .pg-recent-card,
+html[data-theme="dark"] .pg-form-card,
+html[data-theme="dark"] .pg-id-card,
+html[data-theme="dark"] .pg-analyze-box,
+html[data-theme="dark"] .pg-result-hero,
+html[data-theme="dark"] .pg-case-item,
+html[data-theme="dark"] .pg-assessment-card,
+html[data-theme="dark"] .pg-signal-card,
+html[data-theme="dark"] .pg-action-card,
+html[data-theme="dark"] .pg-ui6-card,
+html[data-theme="dark"] .pg-section-card,
+html[data-theme="dark"] .pg-case-card,
+html[data-theme="dark"] .pg-dashboard-info,
+html[data-theme="dark"] .pg-sidebar-note,
+html[data-theme="dark"] .pg-empty-state {
+    background: var(--secondary-background-color, #262730) !important;
+    border-color: var(--border-color, rgba(250,250,250,.15)) !important;
+    color: var(--text-color, #fafafa) !important;
+    box-shadow: none !important;
+}
+
+/* All text inside PHARMAGUARD custom cards */
+html[data-theme="dark"] .pg-header *,
+html[data-theme="dark"] .pg-dashboard-hero *,
+html[data-theme="dark"] .pg-hero *,
+html[data-theme="dark"] .pg-stat-card *,
+html[data-theme="dark"] .pg-kpi-grid-card *,
+html[data-theme="dark"] .pg-recent-card *,
+html[data-theme="dark"] .pg-form-card *,
+html[data-theme="dark"] .pg-id-card *,
+html[data-theme="dark"] .pg-analyze-box *,
+html[data-theme="dark"] .pg-result-hero *,
+html[data-theme="dark"] .pg-case-item *,
+html[data-theme="dark"] .pg-assessment-card *,
+html[data-theme="dark"] .pg-signal-card *,
+html[data-theme="dark"] .pg-action-card *,
+html[data-theme="dark"] .pg-ui6-card *,
+html[data-theme="dark"] .pg-section-card *,
+html[data-theme="dark"] .pg-case-card *,
+html[data-theme="dark"] .pg-dashboard-info *,
+html[data-theme="dark"] .pg-sidebar-note *,
+html[data-theme="dark"] .pg-empty-state * {
+    color: var(--text-color, #fafafa) !important;
+}
+
+/* Dashboard section headings */
+html[data-theme="dark"] [data-testid="stAppViewContainer"] h1,
+html[data-theme="dark"] [data-testid="stAppViewContainer"] h2,
+html[data-theme="dark"] [data-testid="stAppViewContainer"] h3,
+html[data-theme="dark"] [data-testid="stAppViewContainer"] h4 {
+    color: var(--text-color, #fafafa) !important;
+}
+
+/* Quick-action and dashboard buttons */
+html[data-theme="dark"] div.stButton > button {
+    background: var(--secondary-background-color, #262730) !important;
+    color: var(--text-color, #fafafa) !important;
+    border-color: var(--border-color, rgba(250,250,250,.18)) !important;
+}
+html[data-theme="dark"] div.stButton > button:hover,
+html[data-theme="dark"] div.stButton > button:focus,
+html[data-theme="dark"] div.stButton > button:focus-visible {
+    background: var(--background-color, #0e1117) !important;
+    color: var(--text-color, #fafafa) !important;
+    border-color: var(--primary-color, #ff4b4b) !important;
+}
+html[data-theme="dark"] div.stButton > button * {
+    color: inherit !important;
+}
+
+/* Dark-mode sidebar custom content only; Streamlit owns the sidebar itself */
+html[data-theme="dark"] section[data-testid="stSidebar"] .pg-sidebar-note,
+html[data-theme="dark"] section[data-testid="stSidebar"] .pg-sidebar-note * {
+    color: var(--text-color, #fafafa) !important;
+}
+
+/* Keep semantic priority colors readable on dark surfaces */
+html[data-theme="dark"] .pg-priority-high,
+html[data-theme="dark"] .pg-priority-high * { color: #ff8f8f !important; }
+html[data-theme="dark"] .pg-priority-moderate,
+html[data-theme="dark"] .pg-priority-moderate * { color: #ffd166 !important; }
+html[data-theme="dark"] .pg-priority-low,
+html[data-theme="dark"] .pg-priority-low * { color: #8ee6ad !important; }
+html[data-theme="dark"] .pg-priority-unknown,
+html[data-theme="dark"] .pg-priority-unknown * { color: #c5cbd3 !important; }
+</style>
+""", unsafe_allow_html=True)
+
 # MODEL + GOOGLE SHEET
 # =========================================================
 
