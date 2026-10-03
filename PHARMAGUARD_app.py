@@ -574,6 +574,59 @@ div.stButton > button[kind="primary"] {
     .pg-form-card { padding: 13px; }
 }
 
+
+/* =========================================================
+   EXPANDER INSIDE — PROFESSIONAL CONTENT POLISH ONLY
+   Scope: ONLY content rendered inside Streamlit expanders.
+   No dashboard/navigation/backend/scientific logic changes.
+   ========================================================= */
+div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] {
+    padding: 6px 4px 12px 4px;
+}
+div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] [data-testid="stCaptionContainer"] {
+    padding: 8px 11px;
+    margin: 4px 0 14px 0;
+    border-left: 3px solid #2b6f9f;
+    border-radius: 8px;
+    background: #f5f9fc;
+    color: #596875;
+}
+div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] label {
+    font-weight: 700;
+}
+div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] [data-testid="stMetric"] {
+    padding: 11px 12px;
+    border: 1px solid #dbe6ee;
+    border-radius: 12px;
+    background: #f9fbfd;
+    margin-bottom: 8px;
+}
+div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] [data-testid="stMetricLabel"] {
+    font-size: 12px;
+    font-weight: 700;
+}
+div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] [data-testid="stMetricValue"] {
+    font-weight: 800;
+}
+div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] [data-testid="stDataFrame"] {
+    border: 1px solid #dbe6ee;
+    border-radius: 12px;
+    overflow: hidden;
+    margin: 8px 0 14px 0;
+}
+div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] .stButton > button {
+    border-radius: 10px;
+    font-weight: 700;
+}
+div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] .stSelectbox > div > div {
+    border-radius: 10px;
+}
+@media (max-width: 700px) {
+    div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] {
+        padding-left: 1px;
+        padding-right: 1px;
+    }
+}
 </style>
 <div class="pg-appbar">
 <div class="pg-brand-mini">🛡️ PHARMAGUARD</div>
@@ -1025,123 +1078,6 @@ st.markdown("""
 .pg-priority-moderate, .pg-priority-moderate *, .pg-moderate, .pg-moderate * { color: #d49b00 !important; }
 .pg-priority-low, .pg-priority-low *, .pg-low, .pg-low * { color: #2f855a !important; }
 .pg-priority-unknown, .pg-priority-unknown *, .pg-uncertain, .pg-uncertain * { color: #7b8794 !important; }
-
-/* =========================================================
-   GLOBAL EXPANDABLE WORKSPACE — PROFESSIONAL UI
-   Presentation only. Do not alter scientific/backend logic.
-   ========================================================= */
-/* Expander shell */
-div[data-testid="stExpander"] {
-  border: 1px solid var(--pg-border) !important;
-  border-radius: 16px !important;
-  background: var(--pg-surface) !important;
-  overflow: hidden !important;
-  margin: 0.65rem 0 !important;
-}
-
-div[data-testid="stExpander"] details {
-  background: var(--pg-surface) !important;
-}
-
-div[data-testid="stExpander"] summary {
-  padding: 0.95rem 1rem !important;
-  font-weight: 700 !important;
-  color: var(--pg-text) !important;
-}
-
-div[data-testid="stExpander"] summary:hover {
-  background: color-mix(in srgb, var(--pg-primary) 7%, var(--pg-surface)) !important;
-}
-
-div[data-testid="stExpander"] summary p {
-  color: var(--pg-text) !important;
-  font-weight: 700 !important;
-}
-
-div[data-testid="stExpander"] > div[role="group"] {
-  padding: 0.2rem 1rem 1rem !important;
-  border-top: 1px solid var(--pg-border) !important;
-}
-
-/* Content inside expandable workspaces */
-div[data-testid="stExpander"] .stCaption,
-div[data-testid="stExpander"] [data-testid="stMarkdownContainer"] p {
-  color: var(--pg-text) !important;
-}
-
-div[data-testid="stExpander"] [data-testid="stMarkdownContainer"] h1,
-div[data-testid="stExpander"] [data-testid="stMarkdownContainer"] h2,
-div[data-testid="stExpander"] [data-testid="stMarkdownContainer"] h3,
-div[data-testid="stExpander"] [data-testid="stMarkdownContainer"] h4 {
-  color: var(--pg-text) !important;
-  margin-top: 0.55rem !important;
-  margin-bottom: 0.45rem !important;
-}
-
-/* Native metric blocks become compact professional information tiles */
-div[data-testid="stExpander"] [data-testid="stMetric"] {
-  background: var(--pg-bg) !important;
-  border: 1px solid var(--pg-border) !important;
-  border-radius: 12px !important;
-  padding: 0.75rem !important;
-}
-
-div[data-testid="stExpander"] [data-testid="stMetricLabel"] p {
-  color: var(--pg-text) !important;
-  opacity: 0.78;
-  font-size: 0.78rem !important;
-}
-
-div[data-testid="stExpander"] [data-testid="stMetricValue"] {
-  color: var(--pg-text) !important;
-  font-weight: 750 !important;
-}
-
-/* Selectors and inputs inside expandable workspaces */
-div[data-testid="stExpander"] div[data-baseweb="select"],
-div[data-testid="stExpander"] div[data-baseweb="input"],
-div[data-testid="stExpander"] textarea {
-  border-radius: 10px !important;
-}
-
-div[data-testid="stExpander"] label {
-  color: var(--pg-text) !important;
-  font-weight: 600 !important;
-}
-
-/* Professional spacing around charts/tables */
-div[data-testid="stExpander"] [data-testid="stDataFrame"],
-div[data-testid="stExpander"] .stPlotlyChart,
-div[data-testid="stExpander"] [data-testid="stVegaLiteChart"] {
-  border: 1px solid var(--pg-border) !important;
-  border-radius: 12px !important;
-  overflow: hidden !important;
-  background: var(--pg-bg) !important;
-}
-
-/* Keep semantic priority colors readable */
-div[data-testid="stExpander"] .pg-priority-high,
-div[data-testid="stExpander"] .pg-high { color: #d64545 !important; }
-div[data-testid="stExpander"] .pg-priority-moderate,
-div[data-testid="stExpander"] .pg-moderate { color: #d49b00 !important; }
-div[data-testid="stExpander"] .pg-priority-low,
-div[data-testid="stExpander"] .pg-low { color: #2f855a !important; }
-
-@media (max-width: 640px) {
-  div[data-testid="stExpander"] {
-    border-radius: 14px !important;
-    margin: 0.5rem 0 !important;
-  }
-  div[data-testid="stExpander"] summary {
-    padding: 0.85rem 0.9rem !important;
-  }
-  div[data-testid="stExpander"] > div[role="group"] {
-    padding: 0.15rem 0.8rem 0.85rem !important;
-  }
-  div[data-testid="stExpander"] [data-testid="stMetric"] {
-    padding: 0.65rem !important;
-  }
-}
 
 /* Native Streamlit controls remain theme-owned */
 div[data-baseweb="input"] input,
@@ -2842,7 +2778,7 @@ def render_analytics_screen():
         st.caption("Recorded project priorities only; these are descriptive summaries, not clinical risk estimates.")
 
     with st.expander("🎯 Priority Analytics", expanded=False):
-        st.caption("Select one insight at a time. Each view is designed for focused review and mobile readability.")
+        st.caption("Choose one view at a time for better mobile readability.")
         priority_view = st.selectbox(
             "Priority view",
             ["Priority Distribution", "Priority by Sex", "Priority by Age Group"],
@@ -2871,7 +2807,7 @@ def render_analytics_screen():
             st.bar_chart(age_table, use_container_width=True, height=300)
 
     with st.expander("💊 ADR & Drug Analytics", expanded=False):
-        st.caption("Select one insight at a time. Top-10 views summarize the recorded project data.")
+        st.caption("Select one insight at a time. Top-10 views are descriptive record summaries.")
         adr_drug_view = st.selectbox(
             "ADR & drug view",
             [
@@ -2911,7 +2847,7 @@ def render_analytics_screen():
             st.bar_chart(adr_table, use_container_width=True, height=340)
 
     with st.expander("🛡️ Safety Intelligence", expanded=False):
-        st.caption("Workflow indicators from recorded project data; not calibrated clinical risk or regulatory performance.")
+        st.caption("Recorded workflow indicators only; not calibrated clinical risk or regulatory performance.")
         source = df.get("Decision_Source", pd.Series(dtype=str)).astype(str).str.strip()
         s1, s2 = st.columns(2)
         with s1:
