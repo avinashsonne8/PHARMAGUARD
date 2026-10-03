@@ -986,96 +986,102 @@ with st.sidebar:
 
 
 # =========================================================
-# V28 — THEME / DARK-MODE READABILITY OVERRIDES
-# =========================================================
-# Uses Streamlit theme variables so the UI remains readable in both
-# light and dark appearance modes. Scientific/backend logic unchanged.
-st.markdown(
-    """
-    <style>
-    :root {
-        --pg-bg: var(--background-color, #ffffff);
-        --pg-surface: var(--secondary-background-color, #f7f9fb);
-        --pg-text: var(--text-color, #1f2937);
-        --pg-border: var(--border-color, #d9e2ea);
-        --pg-primary: var(--primary-color, #2b6f9f);
-    }
+# V36 STABLE — STREAMLIT NATIVE DARK-MODE COMPATIBILITY
+# Do not detect phone/OS theme. Streamlit controls the active theme.
+# Only custom PHARMAGUARD surfaces are patched; backend/scientific logic is unchanged.
+st.markdown("""
+<style>
+:root {
+  --pg-bg: var(--background-color, #ffffff);
+  --pg-surface: var(--secondary-background-color, #f7f9fb);
+  --pg-text: var(--text-color, #1f2937);
+  --pg-border: var(--border-color, #d9e2ea);
+  --pg-primary: var(--primary-color, #2b6f9f);
+}
 
-    .pg-form-card, .pg-form-title, .pg-form-subtitle,
-    .pg-input-tip, .pg-analyze-box, .pg-id-card,
-    .pg-case-strip, .pg-case-item, .pg-result-hero,
-    .pg-stat-card, .pg-sidebar-note, .pg-dashboard-hero {
-        color: var(--pg-text) !important;
-    }
+/* Custom PHARMAGUARD surfaces */
+.pg-header, .pg-dashboard-hero, .pg-hero, .pg-stat-card,
+.pg-kpi-grid-card, .pg-recent-card, .pg-form-card, .pg-id-card,
+.pg-analyze-box, .pg-result-hero, .pg-case-item, .pg-assessment-card,
+.pg-signal-card, .pg-action-card, .pg-ui6-card, .pg-section-card,
+.pg-case-card, .pg-dashboard-info, .pg-sidebar-note {
+  background: var(--pg-surface) !important;
+  border-color: var(--pg-border) !important;
+  color: var(--pg-text) !important;
+  box-shadow: none !important;
+}
 
-    .pg-form-card, .pg-id-card, .pg-case-strip, .pg-case-item,
-    .pg-stat-card, .pg-analyze-box {
-        background: var(--pg-surface) !important;
-        border-color: var(--pg-border) !important;
-    }
+/* Text inside custom cards follows Streamlit's selected theme */
+.pg-header *, .pg-dashboard-hero *, .pg-hero *, .pg-stat-card *,
+.pg-kpi-grid-card *, .pg-recent-card *, .pg-form-card *, .pg-id-card *,
+.pg-analyze-box *, .pg-result-hero *, .pg-case-item *, .pg-assessment-card *,
+.pg-signal-card *, .pg-action-card *, .pg-ui6-card *, .pg-section-card *,
+.pg-case-card *, .pg-dashboard-info *, .pg-sidebar-note * {
+  color: var(--pg-text) !important;
+}
 
-    .pg-form-subtitle, .pg-stat-note, .pg-dashboard-subtitle,
-    .pg-sidebar-subtitle, .pg-input-tip, .pg-sidebar-note-text,
-    .pg-case-label, .pg-result-kicker {
-        color: var(--pg-text) !important;
-        opacity: 0.78;
-    }
+/* Preserve semantic priority colors */
+.pg-priority-high, .pg-priority-high *, .pg-high, .pg-high * { color: #d64545 !important; }
+.pg-priority-moderate, .pg-priority-moderate *, .pg-moderate, .pg-moderate * { color: #d49b00 !important; }
+.pg-priority-low, .pg-priority-low *, .pg-low, .pg-low * { color: #2f855a !important; }
+.pg-priority-unknown, .pg-priority-unknown *, .pg-uncertain, .pg-uncertain * { color: #7b8794 !important; }
 
-    [data-testid="stAppViewContainer"],
-    [data-testid="stAppViewContainer"] .main {
-        color: var(--pg-text);
-    }
+/* Native Streamlit controls remain theme-owned */
+div[data-baseweb="input"] input,
+div[data-baseweb="textarea"] textarea,
+div[data-baseweb="select"] > div {
+  color: var(--pg-text) !important;
+  background: var(--pg-bg) !important;
+  border-color: var(--pg-border) !important;
+}
 
-    [data-testid="stSidebar"] {
-        background: var(--pg-surface) !important;
-        color: var(--pg-text) !important;
-    }
+input::placeholder, textarea::placeholder {
+  color: var(--pg-text) !important; opacity: .55 !important;
+}
 
-    [data-testid="stTextInput"] input,
-    [data-testid="stNumberInput"] input,
-    [data-testid="stTextArea"] textarea,
-    [data-baseweb="select"] > div {
-        background: var(--pg-bg) !important;
-        color: var(--pg-text) !important;
-        border-color: var(--pg-border) !important;
-    }
+/* Sidebar */
+section[data-testid="stSidebar"] {
+  background: var(--pg-surface) !important;
+  color: var(--pg-text) !important;
+  border-color: var(--pg-border) !important;
+}
+section[data-testid="stSidebar"] div.stButton > button[kind="secondary"] {
+  background: transparent !important;
+  color: var(--pg-text) !important;
+  border-color: transparent !important;
+}
+section[data-testid="stSidebar"] div.stButton > button[kind="secondary"]:hover {
+  background: var(--pg-bg) !important;
+  color: var(--pg-text) !important;
+  border-color: var(--pg-border) !important;
+}
 
-    [data-testid="stTextInput"] input::placeholder,
-    [data-testid="stTextArea"] textarea::placeholder {
-        color: var(--pg-text) !important;
-        opacity: 0.55;
-    }
+/* Quick-action / ordinary buttons: readable in both Streamlit themes */
+div.stButton > button[kind="secondary"] {
+  background: var(--pg-surface) !important;
+  color: var(--pg-text) !important;
+  border-color: var(--pg-border) !important;
+}
+div.stButton > button[kind="secondary"]:hover,
+div.stButton > button[kind="secondary"]:focus {
+  background: var(--pg-bg) !important;
+  color: var(--pg-text) !important;
+  border-color: var(--pg-primary) !important;
+}
+div.stButton > button[kind="secondary"] * { color: inherit !important; }
 
-    [data-testid="stDataFrame"],
-    [data-testid="stTable"] {
-        border-color: var(--pg-border) !important;
-    }
+/* Headings rendered by Streamlit */
+[data-testid="stAppViewContainer"] h1,
+[data-testid="stAppViewContainer"] h2,
+[data-testid="stAppViewContainer"] h3,
+[data-testid="stAppViewContainer"] h4 {
+  color: var(--pg-text) !important;
+}
 
-    [data-testid="stExpander"] {
-        border-color: var(--pg-border) !important;
-    }
+/* No prefers-color-scheme: Streamlit theme is the single source of truth. */
+</style>
+""", unsafe_allow_html=True)
 
-    /* Keep native Streamlit alerts readable in dark themes. */
-    [data-testid="stAlert"] {
-        color: var(--pg-text) !important;
-    }
-
-    @media (prefers-color-scheme: dark) {
-        .pg-dashboard-hero,
-        .pg-form-card,
-        .pg-id-card,
-        .pg-case-strip,
-        .pg-stat-card,
-        .pg-analyze-box {
-            box-shadow: none !important;
-        }
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
-# =========================================================
 # MODEL + GOOGLE SHEET
 # =========================================================
 
