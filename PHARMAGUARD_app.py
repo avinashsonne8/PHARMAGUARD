@@ -3167,39 +3167,45 @@ def render_cases_hub_screen():
     with tab_report: render_case_reports_screen()
 
 def render_project_info_screen():
+    """Professional project/system workspace. Presentation-only changes."""
     st.markdown(
         textwrap.dedent("""
-        <div class="pg-ui5-hero">
-            <div class="pg-ui5-title">ℹ️ Project Info</div>
-            <div class="pg-ui5-sub">Methodology, system status and scientific disclaimer.</div>
+        <div class="pg-project-hero">
+            <div class="pg-project-hero-icon">🛡️</div>
+            <div>
+                <div class="pg-project-hero-title">Project & System</div>
+                <div class="pg-project-hero-sub">Understand PHARMAGUARD, review its methodology, and check important scientific usage information.</div>
+            </div>
         </div>
         """).strip(),
         unsafe_allow_html=True
     )
 
-    tab_method, tab_status = st.tabs(["🔬 Methodology", "⚙️ Status & Disclaimer"])
-    with tab_method:
+    tab_about, tab_status, tab_disclaimer = st.tabs([
+        "ℹ️ About & Methodology",
+        "⚙️ System Status",
+        "⚠️ Scientific Disclaimer",
+    ])
+
+    with tab_about:
         render_about_screen()
+
     with tab_status:
-        render_settings_screen()
+        render_system_status_screen()
+
+    with tab_disclaimer:
+        render_scientific_disclaimer_screen()
 
 
 def render_about_screen():
-    st.markdown(
-        textwrap.dedent("""
-        <div class="pg-ui5-hero">
-            <div class="pg-ui5-title">ℹ️ About PHARMAGUARD</div>
-            <div class="pg-ui5-sub">Project methodology, workflow and scientific scope.</div>
-        </div>
-        """).strip(),
-        unsafe_allow_html=True
-    )
+    st.markdown("### ℹ️ About PHARMAGUARD")
+    st.caption("Project methodology, workflow and scientific scope.")
 
     st.markdown(
         textwrap.dedent("""
-        <div class="pg-section-card">
-            <h4>🛡️ AI-Assisted ADR Risk Prioritization System</h4>
-            <div>PHARMAGUARD is a pharmacovigilance proof-of-concept designed to prioritize ADR reports for review using a predefined Safety Gate with Random Forest prototype assistance.</div>
+        <div class="pg-project-intro">
+            <div class="pg-project-intro-title">🛡️ AI-Assisted ADR Risk Prioritization System</div>
+            <div class="pg-project-intro-text">PHARMAGUARD is a pharmacovigilance proof-of-concept designed to prioritize ADR reports for review using a predefined Safety Gate with Random Forest prototype assistance.</div>
         </div>
         """).strip(),
         unsafe_allow_html=True
@@ -3212,98 +3218,91 @@ def render_about_screen():
         ("3", "Safety Gate", "Project-defined serious and moderate-review signals are screened before ML assistance."),
         ("4", "Random Forest", "When no predefined signal is detected, the embedded Random Forest provides prototype priority assistance."),
         ("5", "Final Review Priority", "PHARMAGUARD records HIGH, MODERATE, LOW or UNKNOWN according to the project workflow."),
-        ("6", "Database & Reports", "The case can be stored, searched and exported for project review.")
+        ("6", "Database & Reports", "The case can be stored, searched and exported for project review."),
     ]
     for n, title, desc in steps:
         st.markdown(
-            f'<div class="pg-method-step"><b>{n}. {html.escape(title)}</b><br><span>{html.escape(desc)}</span></div>',
-            unsafe_allow_html=True
+            f'<div class="pg-method-step"><b>{html.escape(n)}. {html.escape(title)}</b><br><span>{html.escape(desc)}</span></div>',
+            unsafe_allow_html=True,
         )
 
+    st.markdown("### 🧩 Core Components")
     c1, c2 = st.columns(2)
     with c1:
         st.markdown(
             textwrap.dedent("""
-            <div class="pg-section-card">
-                <h4>💊 What is an ADR?</h4>
+            <div class="pg-project-component">
+                <div class="pg-project-component-title">💊 ADR</div>
                 <div>An adverse drug reaction is a harmful or unintended response associated with the use of a medicinal product.</div>
             </div>
             """).strip(),
-            unsafe_allow_html=True
+            unsafe_allow_html=True,
         )
     with c2:
         st.markdown(
             textwrap.dedent("""
-            <div class="pg-section-card">
-                <h4>🧠 Random Forest</h4>
+            <div class="pg-project-component">
+                <div class="pg-project-component-title">🧠 Random Forest</div>
                 <div>The embedded model provides prototype ML assistance. Its output is not a clinical probability or a validated regulatory classification.</div>
             </div>
             """).strip(),
-            unsafe_allow_html=True
+            unsafe_allow_html=True,
         )
 
     st.markdown(
         textwrap.dedent("""
-        <div class="pg-section-card">
-            <h4>🛡️ Safety Gate</h4>
+        <div class="pg-project-component pg-project-safety">
+            <div class="pg-project-component-title">🛡️ Safety Gate</div>
             <div>The Safety Gate screens for project-defined serious and moderate-review signals and protects selected serious signals from being downgraded by the ML model.</div>
         </div>
         """).strip(),
-        unsafe_allow_html=True
-    )
-
-    st.markdown("### ⚠️ Project Scope & Limitations")
-    st.markdown(
-        textwrap.dedent("""
-        <div class="pg-disclaimer-box">
-        PHARMAGUARD is a proof-of-concept project. Its HIGH/MODERATE/LOW outputs are project-defined review priorities. The prototype does not establish ADR causality, diagnosis, treatment, clinical validity, or regulatory seriousness, and it does not replace professional clinical judgment.
-        </div>
-        """).strip(),
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
 
-def render_settings_screen():
-    st.markdown(
-        textwrap.dedent("""
-        <div class="pg-ui5-hero">
-            <div class="pg-ui5-title">⚙️ Settings & Scientific Disclaimer</div>
-            <div class="pg-ui5-sub">Project status and important usage information.</div>
-        </div>
-        """).strip(),
-        unsafe_allow_html=True
-    )
-
+def render_system_status_screen():
     df = pd.DataFrame(st.session_state.get("adr_history", []))
     counts = _priority_counts(df)
     loaded = bool(st.session_state.get("database_loaded"))
 
-    st.markdown("### 📊 Project Status")
+    st.markdown("### ⚙️ System Status")
+    st.caption("Current project-state information available in this session.")
+
     status_rows = [
-        ("Application", "PHARMAGUARD"),
-        ("Database", "Loaded" if loaded else "Not loaded"),
-        ("Records available", str(len(df))),
-        ("High priority", str(counts["HIGH"])),
-        ("Moderate priority", str(counts["MODERATE"])),
-        ("Low priority", str(counts["LOW"])),
-        ("Review engine", "Safety Gate + Random Forest prototype")
+        ("Application", "PHARMAGUARD", "🛡️"),
+        ("Database", "Loaded" if loaded else "Not loaded", "🟢" if loaded else "🟠"),
+        ("Records available", str(len(df)), "📁"),
+        ("High priority", str(counts["HIGH"]), "🔴"),
+        ("Moderate priority", str(counts["MODERATE"]), "🟡"),
+        ("Low priority", str(counts["LOW"]), "🟢"),
+        ("Review engine", "Safety Gate + Random Forest prototype", "⚙️"),
     ]
-    for label, value in status_rows:
+    for label, value, icon in status_rows:
         st.markdown(
-            f'<div class="pg-setting-row"><div class="pg-setting-label">{html.escape(label)}</div><div class="pg-setting-value">{html.escape(value)}</div></div>',
-            unsafe_allow_html=True
+            f'<div class="pg-status-row"><div class="pg-status-icon">{icon}</div><div class="pg-status-main"><div class="pg-status-label">{html.escape(label)}</div><div class="pg-status-value">{html.escape(value)}</div></div></div>',
+            unsafe_allow_html=True,
         )
 
+    st.markdown("### 📊 Priority Snapshot")
+    st.markdown(
+        f'<div class="pg-status-summary"><span><b>{counts["HIGH"]}</b><small>HIGH</small></span><span><b>{counts["MODERATE"]}</b><small>MODERATE</small></span><span><b>{counts["LOW"]}</b><small>LOW</small></span><span><b>{len(df)}</b><small>TOTAL</small></span></div>',
+        unsafe_allow_html=True,
+    )
+
+
+def render_scientific_disclaimer_screen():
     st.markdown("### ⚠️ Scientific Disclaimer")
+    st.caption("Important scope and appropriate-use information for the PHARMAGUARD prototype.")
+
     st.markdown(
         textwrap.dedent("""
-        <div class="pg-disclaimer-box">
-        <b>PHARMAGUARD is a pharmacovigilance proof-of-concept.</b><br><br>
-        The system provides project-defined review-priority outputs intended to support pharmacovigilance workflow. These outputs do not establish ADR causality, diagnosis, treatment, regulatory seriousness, or clinical decision-making.<br><br>
-        The Random Forest component is a prototype ML assistant and should not be interpreted as a calibrated clinical probability. Professional clinical and pharmacovigilance assessment remains necessary.
+        <div class="pg-scientific-card">
+            <div class="pg-scientific-title">PHARMAGUARD is a pharmacovigilance proof-of-concept.</div>
+            <div class="pg-scientific-text">The system provides project-defined review-priority outputs intended to support pharmacovigilance workflow. These outputs do not establish ADR causality, diagnosis, treatment, regulatory seriousness, or clinical decision-making.</div>
+            <div class="pg-scientific-text">The Random Forest component is a prototype ML assistant and should not be interpreted as a calibrated clinical probability. Professional clinical and pharmacovigilance assessment remains necessary.</div>
         </div>
         """).strip(),
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
     st.markdown("### 🔐 Data Note")
@@ -3311,6 +3310,22 @@ def render_settings_screen():
         "Use project identifiers rather than unnecessary personally identifiable information. "
         "The configured Google Sheets integration is used as the project database."
     )
+
+    st.markdown(
+        textwrap.dedent("""
+        <div class="pg-scope-note">
+            <b>Project scope:</b> PHARMAGUARD supports review prioritization. It is not a clinical diagnostic tool, causality assessment system, or replacement for professional judgment.
+        </div>
+        """).strip(),
+        unsafe_allow_html=True,
+    )
+
+
+def render_settings_screen():
+    """Backward-compatible wrapper for existing internal references."""
+    render_system_status_screen()
+    st.markdown("### ⚠️ Scientific Disclaimer")
+    render_scientific_disclaimer_screen()
 
 
 # =========================================================
@@ -3392,6 +3407,25 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
+
+
+st.markdown("""
+<style>
+/* =========================================================
+   UI-11 — PROFESSIONAL PROJECT & SYSTEM WORKSPACE
+   Presentation-only: methodology/status/disclaimer logic preserved.
+   ========================================================= */
+.pg-project-hero{display:flex;align-items:center;gap:13px;padding:18px 18px;margin:4px 0 14px;border-radius:18px;background:linear-gradient(135deg,#f3f9fd 0%,#fff 82%);border:1px solid #d7e7f0;box-shadow:0 4px 16px rgba(30,60,90,.04)}
+.pg-project-hero-icon{width:45px;height:45px;display:flex;align-items:center;justify-content:center;border-radius:13px;background:#eaf4fb;border:1px solid #d3e6f1;font-size:23px}.pg-project-hero-title{font-size:25px;font-weight:850;color:#102a43;letter-spacing:-.2px}.pg-project-hero-sub{font-size:11px;color:#687887;line-height:1.5;margin-top:2px}
+.pg-project-intro{padding:15px 16px;margin:0 0 15px;border-radius:14px;background:#f7fbfd;border:1px solid #dceaf2;border-left:4px solid #5d9ac0}.pg-project-intro-title{font-size:15px;font-weight:850;color:#243b53}.pg-project-intro-text{font-size:11px;line-height:1.55;color:#667785;margin-top:5px}
+.pg-project-component{padding:13px 14px;margin:0 0 9px;border-radius:13px;background:#fff;border:1px solid #dfe8ee;box-shadow:0 2px 9px rgba(30,60,90,.025);font-size:11px;line-height:1.5;color:#667785}.pg-project-component-title{font-size:14px;font-weight:850;color:#243b53;margin-bottom:3px}.pg-project-safety{margin-top:2px;border-left:4px solid #5d9ac0}
+.pg-status-row{display:flex;align-items:center;gap:11px;padding:11px 12px;margin:0 0 7px;border-radius:12px;background:#fff;border:1px solid #dfe8ee}.pg-status-icon{width:28px;text-align:center;font-size:15px}.pg-status-main{min-width:0}.pg-status-label{font-size:9px;font-weight:800;color:#7a8793;text-transform:uppercase;letter-spacing:.45px}.pg-status-value{font-size:12px;font-weight:750;color:#243b53;margin-top:2px;word-break:break-word}
+.pg-status-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-top:3px}.pg-status-summary span{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 7px;border-radius:11px;background:#f8fbfd;border:1px solid #dfe8ee}.pg-status-summary b{font-size:19px;color:#17324d}.pg-status-summary small{font-size:8px;font-weight:800;color:#7a8793;letter-spacing:.4px;margin-top:2px}
+.pg-scientific-card{padding:16px;margin:0 0 13px;border-radius:14px;background:#fffaf0;border:1px solid #eedda9;border-left:4px solid #d3a52c}.pg-scientific-title{font-size:14px;font-weight:850;color:#604c00}.pg-scientific-text{font-size:11px;line-height:1.55;color:#6e6240;margin-top:7px}.pg-scope-note{padding:11px 12px;border-radius:11px;background:#f7fbfd;border:1px solid #dceaf2;color:#607080;font-size:10px;line-height:1.5}
+@media(max-width:700px){.pg-project-hero{padding:15px 14px}.pg-project-hero-title{font-size:22px}.pg-project-hero-icon{width:40px;height:40px;font-size:20px}.pg-status-summary{grid-template-columns:1fr 1fr}.pg-status-row{padding:10px 11px}}
+</style>
+""", unsafe_allow_html=True)
 
 # SCREEN ROUTING
 # =========================================================
