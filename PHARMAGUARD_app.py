@@ -2539,7 +2539,8 @@ def render_case_reports_screen():
                         )
 
     with st.expander("📈 ADR Priority Timeline", expanded=False):
-        st.markdown("""<div class="pg-expand-workspace-intro"><div class="pg-expand-workspace-title">Priority Decision Timeline</div><div class="pg-expand-workspace-sub">Review how the case priority has changed across recorded versions and reassessments.</div><span class="pg-expand-status">PHARMAGUARD WORKSPACE</span></div>""", unsafe_allow_html=True)
+        st.markdown("""<div class="pg-expand-workspace-intro"><div class="pg-expand-workspace-title">Priority Decision Timeline</div><div class="pg-expand-workspace-sub">Track the recorded case versions in chronological order and see whether the PHARMAGUARD review priority changed after new information.</div><span class="pg-expand-status">CASE REVIEW • VERSION HISTORY</span></div>""", unsafe_allow_html=True)
+
         # Linked reassessment timeline for the selected case.
         root_reference = str(
             row.get("Original_Case_Reference", "")
@@ -2559,20 +2560,62 @@ def render_case_reports_screen():
                 timeline_records,
                 key=lambda x: str(x.get("Date_Time", ""))
             )
-            st.markdown("### 📈 ADR Priority Timeline")
+
+            first_priority = str(timeline_records[0].get("Priority", "UNKNOWN")).upper()
+            latest_priority = str(timeline_records[-1].get("Priority", "UNKNOWN")).upper()
+            priority_changed = first_priority != latest_priority
+
+            st.markdown(
+                f"""<div class="pg-expand-mini-summary">
+                    <div><strong>{len(timeline_records)}</strong><span>Recorded versions</span></div>
+                    <div><strong>{html.escape(first_priority)}</strong><span>Initial priority</span></div>
+                    <div><strong>{html.escape(latest_priority)}</strong><span>Current priority</span></div>
+                </div>""",
+                unsafe_allow_html=True
+            )
+
+            if priority_changed:
+                st.warning(
+                    f"🔄 Review priority changed across the recorded case versions: **{first_priority} → {latest_priority}**. "
+                    "This timeline records the reassessment history; it does not replace professional pharmacovigilance assessment."
+                )
+            else:
+                st.info(
+                    f"ℹ️ Review priority remained **{latest_priority}** across the recorded versions."
+                )
+
             timeline_rows = []
-            for item in timeline_records:
+            for position, item in enumerate(timeline_records, start=1):
+                reassessment_no = str(item.get("Reassessment_Number", "")).strip()
+                version_label = (
+                    "Initial report"
+                    if not item.get("Reassessment_Of")
+                    else f"Reassessment {reassessment_no}"
+                )
+                priority_value = str(item.get("Priority", "UNKNOWN")).upper()
                 timeline_rows.append({
-                    "Version": "Initial" if not item.get("Reassessment_Of") else f"Reassessment {item.get('Reassessment_Number', '')}",
+                    "Step": position,
+                    "Version": version_label,
                     "Date & Time": item.get("Date_Time", ""),
-                    "Priority": item.get("Priority", "UNKNOWN"),
+                    "Priority": priority_value,
                     "ADR / New Information": item.get("ADR", ""),
                     "Case Reference": item.get("Case_Reference", ""),
                 })
+
+            st.markdown("#### 📋 Version-by-Version Record")
+            st.caption(
+                "Each row represents a saved version of the same linked case. The table is read-only."
+            )
             st.dataframe(
                 pd.DataFrame(timeline_rows),
                 use_container_width=True,
                 hide_index=True
+            )
+        else:
+            st.markdown(
+                """<div class="pg-empty-state"><strong>📭 No timeline versions available</strong><br>
+                This case does not yet have a linked reassessment history. The initial case record will appear here once timeline data is available.</div>""",
+                unsafe_allow_html=True
             )
 
     with st.expander("🔗 Longitudinal ADR Case Timeline", expanded=False):
