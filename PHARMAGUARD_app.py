@@ -574,7 +574,26 @@ div.stButton > button[kind="primary"] {
     .pg-form-card { padding: 13px; }
 }
 
+
+/* Dynamic reassessment workspace polish */
+.pg-expand-mini-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0 14px}
+.pg-expand-mini-summary>div{padding:11px 12px;border:1px solid rgba(128,128,128,.22);border-radius:10px;text-align:center}
+.pg-expand-mini-summary strong{display:block;font-size:.92rem}
+.pg-expand-mini-summary span{display:block;font-size:.72rem;opacity:.72;margin-top:3px;line-height:1.35}
+.pg-reassess-result{padding:14px 16px;border:1px solid rgba(128,128,128,.22);border-radius:12px;margin:12px 0;line-height:1.65}
+.pg-reassess-result-title{font-weight:800;margin-bottom:7px}
+@media (max-width:640px){.pg-expand-mini-summary{grid-template-columns:1fr}.pg-expand-mini-summary>div{text-align:left}}
 </style>
+<style>
+/* Case History expandable workspace */
+.pg-expand-mini-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0 14px}
+.pg-expand-mini-summary>div{padding:11px 12px;border:1px solid rgba(128,128,128,.22);border-radius:10px;text-align:center}
+.pg-expand-mini-summary strong{display:block;font-size:1rem}
+.pg-expand-mini-summary span{display:block;font-size:.72rem;opacity:.72;margin-top:2px}
+.pg-empty-state{padding:16px;border:1px dashed rgba(128,128,128,.35);border-radius:10px;text-align:center;margin:8px 0 4px;line-height:1.6}
+@media (max-width:640px){.pg-expand-mini-summary{grid-template-columns:1fr 1fr}.pg-expand-mini-summary>div:last-child{grid-column:1/-1}}
+</style>
+
 <div class="pg-appbar">
 <div class="pg-brand-mini">🛡️ PHARMAGUARD</div>
 <div class="pg-status">● Prototype Online</div>
@@ -2091,8 +2110,29 @@ def render_history_screen():
         if len(filtered)>5:
             st.caption(f"Showing the 5 most recent matching cases above. {len(filtered)-5} additional cases remain available in the table view.")
         with st.expander("📑 Full Table View",expanded=False):
-            display_cols=[c for c in ["Case_Reference","Patient_ID","Drug","ADR","Priority","Seriousness","Decision_Source","Date_Time"] if c in filtered.columns]
-            st.dataframe(filtered[display_cols].sort_index(ascending=False),use_container_width=True,hide_index=True)
+            st.markdown("""<div class="pg-expand-workspace-intro"><div class="pg-expand-workspace-title">Complete Case History</div><div class="pg-expand-workspace-sub">Browse the complete filtered record set in a structured review table. Use this workspace when you need case-level detail beyond the five recent cards.</div><span class="pg-expand-status">CASE HISTORY • FULL RECORDS</span></div>""", unsafe_allow_html=True)
+
+            table_df = filtered.copy()
+            display_cols=[c for c in ["Case_Reference","Patient_ID","Drug","ADR","Priority","Seriousness","Decision_Source","Date_Time"] if c in table_df.columns]
+
+            st.markdown(
+                f"""<div class="pg-expand-mini-summary">
+                    <div><strong>{len(table_df):,}</strong><span>Filtered records</span></div>
+                    <div><strong>{len(display_cols)}</strong><span>Visible fields</span></div>
+                    <div><strong>Read-only</strong><span>Review workspace</span></div>
+                </div>""",
+                unsafe_allow_html=True
+            )
+
+            if table_df.empty:
+                st.markdown("""<div class="pg-empty-state"><strong>📭 No matching records</strong><br>Adjust the search or priority filter to view available ADR cases.</div>""", unsafe_allow_html=True)
+            else:
+                st.caption("Tip: use Search and Priority Filter above to narrow the table before detailed review.")
+                st.dataframe(
+                    table_df[display_cols].sort_index(ascending=False),
+                    use_container_width=True,
+                    hide_index=True
+                )
     st.download_button("⬇️ Export Filtered CSV",data=filtered.to_csv(index=False).encode("utf-8"),file_name="PHARMAGUARD_Filtered_ADR_History.csv",mime="text/csv",use_container_width=True,key="cases_history_export")
 
 def _display_decision_source(row):
@@ -2243,18 +2283,7 @@ def render_case_reports_screen():
     # INNOVATION 2 — PHARMACIST REVIEW CHECKLIST
     # =====================================================
     with st.expander("🧑‍⚕️ Pharmacist Review Checklist", expanded=False):
-        st.markdown(
-            """
-            <div class="pg-section-card">
-                <h4>Structured review before pharmacovigilance follow-up</h4>
-                <div>
-                    Use this checklist to document the key review steps for the selected ADR case.
-                    Checklist completion does not replace professional or regulatory assessment.
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+        st.markdown("""<div class="pg-expand-workspace-intro"><div class="pg-expand-workspace-title">Structured Pharmacist Review</div><div class="pg-expand-workspace-sub">Complete the key review checks before pharmacovigilance follow-up. This workspace records review progress only; it does not replace professional or regulatory assessment.</div><span class="pg-expand-status">CASE REVIEW • SESSION WORKSPACE</span></div>""", unsafe_allow_html=True)
 
         checklist_items = [
             ("patient_info", "Patient information reviewed"),
@@ -2275,6 +2304,12 @@ def render_case_reports_screen():
         review_status_key = f"review_status_{selected_idx}"
         if review_status_key not in st.session_state:
             st.session_state[review_status_key] = "Not Started"
+
+        completed_count = sum(bool(checklist_state.get(key, False)) for key, _ in checklist_items)
+        total_count = len(checklist_items)
+        progress_pct = round((completed_count / total_count) * 100) if total_count else 0
+        current_review_status = st.session_state.get(review_status_key, "Not Started")
+        st.markdown(f"""<div class="pg-expand-mini-summary"><div><strong>{completed_count}/{total_count}</strong><span>Checks completed</span></div><div><strong>{progress_pct}%</strong><span>Review progress</span></div><div><strong>{html.escape(current_review_status)}</strong><span>Workflow status</span></div></div>""", unsafe_allow_html=True)
 
         review_status = st.selectbox(
             "📝 Pharmacist Review Status",
@@ -2326,21 +2361,34 @@ def render_case_reports_screen():
     # =====================================================
     with st.expander("🔄 Dynamic ADR Risk Reassessment", expanded=False):
         st.markdown(
+            """<div class="pg-expand-workspace-intro">
+                <div class="pg-expand-workspace-title">Dynamic ADR Risk Reassessment</div>
+                <div class="pg-expand-workspace-sub">Record new clinical information as a linked case version while preserving the original assessment and review history.</div>
+                <span class="pg-expand-status">CASE REPORT • FOLLOW-UP WORKSPACE</span>
+            </div>""",
+            unsafe_allow_html=True,
+        )
+
+        st.markdown(
+            """<div class="pg-expand-mini-summary">
+                <div><strong>Linked version</strong><span>Original case remains unchanged</span></div>
+                <div><strong>Safety-first review</strong><span>Same PHARMAGUARD engine</span></div>
+                <div><strong>Audit trail</strong><span>Previous and updated priorities retained</span></div>
+            </div>""",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
         """
         <div class="pg-section-card">
-            <h4>Update the case when new clinical information becomes available</h4>
-            <div>
-                Reassessment creates a new linked case version rather than silently
-                changing the original record. This preserves the review history.
-            </div>
+            <h4>When should you reassess?</h4>
+            <div>Use this workspace when follow-up information changes the clinical description of the ADR. PHARMAGUARD creates a new linked version instead of overwriting the original case.</div>
         </div>
         """,
         unsafe_allow_html=True
         )
 
         st.caption(
-            "Example: an initial rash may later be followed by facial swelling or "
-            "difficulty breathing. Enter the updated ADR information here."
+            "Example: an initial rash may later be followed by facial swelling or difficulty breathing. Enter the updated ADR information below."
         )
         reassessment_adr = st.text_area(
             "Updated ADR / new clinical information",
@@ -2439,16 +2487,14 @@ def render_case_reports_screen():
                     # Show the reassessment result independently of database saving.
                     # This prevents a database/API failure from hiding the Safety Gate result.
                     st.markdown(
-                        f"**Previous:** {priority}  →  **Updated:** {new_priority}"
-                    )
-                    st.markdown(
-                        f"**Decision Source:** {new_decision_source}"
-                    )
-                    st.markdown(
-                        f"**Detected signal:** {new_reason}"
-                    )
-                    st.markdown(
-                        f"**Recommended action:** {new_recommendation}"
+                        f"""<div class="pg-reassess-result">
+                            <div class="pg-reassess-result-title">📋 Reassessment Result</div>
+                            <div><b>Previous priority:</b> {html.escape(str(priority))} &nbsp;→&nbsp; <b>Updated priority:</b> {html.escape(str(new_priority))}</div>
+                            <div><b>Decision source:</b> {html.escape(str(new_decision_source))}</div>
+                            <div><b>Detected signal:</b> {html.escape(str(new_reason))}</div>
+                            <div><b>Recommended action:</b> {html.escape(str(new_recommendation))}</div>
+                        </div>""",
+                        unsafe_allow_html=True,
                     )
 
                     saved, save_status, save_response = save_to_google_sheet(
@@ -2493,6 +2539,7 @@ def render_case_reports_screen():
                         )
 
     with st.expander("📈 ADR Priority Timeline", expanded=False):
+        st.markdown("""<div class="pg-expand-workspace-intro"><div class="pg-expand-workspace-title">Priority Decision Timeline</div><div class="pg-expand-workspace-sub">Review how the case priority has changed across recorded versions and reassessments.</div><span class="pg-expand-status">PHARMAGUARD WORKSPACE</span></div>""", unsafe_allow_html=True)
         # Linked reassessment timeline for the selected case.
         root_reference = str(
             row.get("Original_Case_Reference", "")
@@ -2529,6 +2576,7 @@ def render_case_reports_screen():
             )
 
     with st.expander("🔗 Longitudinal ADR Case Timeline", expanded=False):
+        st.markdown("""<div class="pg-expand-workspace-intro"><div class="pg-expand-workspace-title">Longitudinal Case Timeline</div><div class="pg-expand-workspace-sub">Follow the complete case history across the initial report and linked reassessment versions.</div><span class="pg-expand-status">PHARMAGUARD WORKSPACE</span></div>""", unsafe_allow_html=True)
         # =========================================================
         # INNOVATION 3 — LONGITUDINAL ADR CASE TIMELINE
         # =========================================================
@@ -2762,6 +2810,7 @@ def render_analytics_screen():
         st.caption("Recorded project priorities only; these are descriptive summaries, not clinical risk estimates.")
 
     with st.expander("🎯 Priority Analytics", expanded=False):
+        st.markdown("""<div class="pg-expand-workspace-intro"><div class="pg-expand-workspace-title">Priority Analytics</div><div class="pg-expand-workspace-sub">Explore priority distribution and descriptive patterns by selected demographic view.</div><span class="pg-expand-status">PHARMAGUARD WORKSPACE</span></div>""", unsafe_allow_html=True)
         st.caption("Choose one view at a time for better mobile readability.")
         priority_view = st.selectbox(
             "Priority view",
@@ -2791,6 +2840,7 @@ def render_analytics_screen():
             st.bar_chart(age_table, use_container_width=True, height=300)
 
     with st.expander("💊 ADR & Drug Analytics", expanded=False):
+        st.markdown("""<div class="pg-expand-workspace-intro"><div class="pg-expand-workspace-title">ADR & Drug Analytics</div><div class="pg-expand-workspace-sub">Explore reported drugs, ADR frequency and priority patterns using descriptive record summaries.</div><span class="pg-expand-status">PHARMAGUARD WORKSPACE</span></div>""", unsafe_allow_html=True)
         st.caption("Select one insight at a time. Top-10 views are descriptive record summaries.")
         adr_drug_view = st.selectbox(
             "ADR & drug view",
@@ -2831,6 +2881,7 @@ def render_analytics_screen():
             st.bar_chart(adr_table, use_container_width=True, height=340)
 
     with st.expander("🛡️ Safety Intelligence", expanded=False):
+        st.markdown("""<div class="pg-expand-workspace-intro"><div class="pg-expand-workspace-title">Safety Intelligence</div><div class="pg-expand-workspace-sub">Review serious-signal, seriousness and review-priority patterns available in the project database.</div><span class="pg-expand-status">PHARMAGUARD WORKSPACE</span></div>""", unsafe_allow_html=True)
         st.caption("Recorded workflow indicators only; not calibrated clinical risk or regulatory performance.")
         source = df.get("Decision_Source", pd.Series(dtype=str)).astype(str).str.strip()
         s1, s2 = st.columns(2)
@@ -2849,6 +2900,7 @@ def render_analytics_screen():
         st.bar_chart(seriousness.rename("Cases").to_frame(), use_container_width=True, height=280)
 
     with st.expander("🔎 Quality & Audit", expanded=False):
+        st.markdown("""<div class="pg-expand-workspace-intro"><div class="pg-expand-workspace-title">Quality & Audit</div><div class="pg-expand-workspace-sub">Review record completeness and data-quality indicators for the current dataset.</div><span class="pg-expand-status">PHARMAGUARD WORKSPACE</span></div>""", unsafe_allow_html=True)
         priority_recorded = int(df.get("Priority", pd.Series(dtype=str)).astype(str).str.strip().ne("").sum())
         decision_recorded = int(df.get("Decision_Source", pd.Series(dtype=str)).astype(str).str.strip().ne("").sum())
         case_reference_recorded = int(df.get("Case_Reference", pd.Series(dtype=str)).astype(str).str.strip().ne("").sum())
@@ -3426,6 +3478,86 @@ st.markdown("""
 @media(max-width:700px){.pg-project-hero{padding:15px 14px}.pg-project-hero-title{font-size:22px}.pg-project-hero-icon{width:40px;height:40px;font-size:20px}.pg-status-summary{grid-template-columns:1fr 1fr}.pg-status-row{padding:10px 11px}}
 </style>
 """, unsafe_allow_html=True)
+
+
+st.markdown("""<style>
+/* =========================================================
+   UI-11 — PROFESSIONAL EXPANDABLE WORKSPACES
+   Presentation-only. Backend, calculations and navigation unchanged.
+   ========================================================= */
+.pg-expand-workspace-intro{
+    padding:11px 13px;
+    margin:2px 0 13px 0;
+    border-radius:12px;
+    background:linear-gradient(135deg,#f7fbfe 0%,#ffffff 100%);
+    border:1px solid #dce8ef;
+}
+.pg-expand-workspace-title{
+    font-size:14px;
+    font-weight:850;
+    color:#243b53;
+    line-height:1.35;
+}
+.pg-expand-workspace-sub{
+    margin-top:3px;
+    font-size:11px;
+    color:#71808b;
+    line-height:1.45;
+}
+/* Native accordion shell */
+div[data-testid="stExpander"]{
+    border:1px solid #d9e5ec !important;
+    border-radius:14px !important;
+    background:#ffffff !important;
+    box-shadow:0 2px 10px rgba(30,60,90,.035) !important;
+    margin:9px 0 12px 0 !important;
+    overflow:hidden !important;
+}
+div[data-testid="stExpander"] summary{
+    padding:13px 15px !important;
+    background:#f8fbfd !important;
+    border-bottom:1px solid #e4edf2 !important;
+    font-weight:800 !important;
+    color:#243b53 !important;
+}
+div[data-testid="stExpander"] summary:hover{background:#f2f8fb !important;}
+div[data-testid="stExpander"] > details > div{
+    padding:14px 15px 16px 15px !important;
+    background:#ffffff !important;
+}
+div[data-testid="stExpander"] [data-testid="stMarkdownContainer"] p{
+    line-height:1.5;
+}
+div[data-testid="stExpander"] div[data-testid="stDataFrame"]{
+    border:1px solid #e0e8ee;
+    border-radius:10px;
+    margin-top:8px;
+}
+div[data-testid="stExpander"] div[data-testid="stAlert"]{margin:9px 0 !important;}
+div[data-testid="stExpander"] hr{margin:12px 0 !important;}
+div[data-testid="stExpander"] label{font-weight:650 !important;}
+div[data-testid="stExpander"] textarea{border-radius:10px !important;}
+.pg-expand-status{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    padding:4px 8px;
+    border-radius:999px;
+    background:#eef6fa;
+    border:1px solid #d8e8f0;
+    color:#486581;
+    font-size:10px;
+    font-weight:800;
+    margin-top:7px;
+}
+@media(max-width:700px){
+    div[data-testid="stExpander"] summary{padding:12px 12px !important;}
+    div[data-testid="stExpander"] > details > div{padding:12px 12px 14px !important;}
+    .pg-expand-workspace-intro{padding:10px 11px;}
+    .pg-expand-workspace-title{font-size:13px;}
+}
+</style>
+</style>""", unsafe_allow_html=True)
 
 # SCREEN ROUTING
 # =========================================================
