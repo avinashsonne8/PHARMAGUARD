@@ -2539,7 +2539,7 @@ def render_case_reports_screen():
                         )
 
     with st.expander("📈 ADR Priority Timeline", expanded=False):
-        st.markdown("""<div class="pg-expand-workspace-intro"><div class="pg-expand-workspace-title">Priority Decision Timeline</div><div class="pg-expand-workspace-sub">Track the recorded case versions in chronological order and see whether the PHARMAGUARD review priority changed after new information.</div><span class="pg-expand-status">CASE REVIEW • VERSION HISTORY</span></div>""", unsafe_allow_html=True)
+        st.markdown("""<div class="pg-expand-workspace-intro"><div class="pg-expand-workspace-title">Priority Decision Timeline</div><div class="pg-expand-workspace-sub">Track how the selected ADR case has been recorded across initial and reassessment versions. This is a record-history workspace, not a clinical outcome prediction.</div><span class="pg-expand-status">CASE REPORT • VERSION HISTORY</span></div>""", unsafe_allow_html=True)
 
         # Linked reassessment timeline for the selected case.
         root_reference = str(
@@ -2555,18 +2555,20 @@ def render_case_reports_screen():
             if item_root == root_reference:
                 timeline_records.append(item)
 
-        if timeline_records:
+        if not timeline_records:
+            st.markdown("""<div class="pg-empty-state"><strong>📭 No version history available</strong><br>This case does not currently have linked reassessment records to display.</div>""", unsafe_allow_html=True)
+        else:
             timeline_records = sorted(
                 timeline_records,
                 key=lambda x: str(x.get("Date_Time", ""))
             )
 
-            first_priority = str(timeline_records[0].get("Priority", "UNKNOWN")).upper()
-            latest_priority = str(timeline_records[-1].get("Priority", "UNKNOWN")).upper()
-            priority_changed = first_priority != latest_priority
+            first_priority = str(timeline_records[0].get("Priority", "UNKNOWN"))
+            latest_priority = str(timeline_records[-1].get("Priority", "UNKNOWN"))
+            change_text = "Priority changed" if first_priority != latest_priority else "Priority stable"
 
             st.markdown(
-                f"""<div class="pg-expand-mini-summary">
+                f"""<div class="pg-timeline-summary">
                     <div><strong>{len(timeline_records)}</strong><span>Recorded versions</span></div>
                     <div><strong>{html.escape(first_priority)}</strong><span>Initial priority</span></div>
                     <div><strong>{html.escape(latest_priority)}</strong><span>Current priority</span></div>
@@ -2574,48 +2576,39 @@ def render_case_reports_screen():
                 unsafe_allow_html=True
             )
 
-            if priority_changed:
+            if first_priority != latest_priority:
                 st.warning(
-                    f"🔄 Review priority changed across the recorded case versions: **{first_priority} → {latest_priority}**. "
-                    "This timeline records the reassessment history; it does not replace professional pharmacovigilance assessment."
+                    f"🔄 **{change_text}: {first_priority} → {latest_priority}.** "
+                    "The timeline records the reassessment history and does not modify the original case version."
                 )
             else:
                 st.info(
-                    f"ℹ️ Review priority remained **{latest_priority}** across the recorded versions."
+                    f"ℹ️ **{change_text}: {latest_priority}.** "
+                    "No priority change is recorded across the available versions."
                 )
+
+            st.markdown(
+                """<div class="pg-timeline-note"><strong>How to read this timeline:</strong> Each row represents one saved version of the same linked case. Reassessment versions preserve the original record while adding new information and a new review decision.</div>""",
+                unsafe_allow_html=True
+            )
 
             timeline_rows = []
             for position, item in enumerate(timeline_records, start=1):
-                reassessment_no = str(item.get("Reassessment_Number", "")).strip()
-                version_label = (
-                    "Initial report"
-                    if not item.get("Reassessment_Of")
-                    else f"Reassessment {reassessment_no}"
-                )
-                priority_value = str(item.get("Priority", "UNKNOWN")).upper()
                 timeline_rows.append({
-                    "Step": position,
-                    "Version": version_label,
+                    "#": position,
+                    "Version": "Initial" if not item.get("Reassessment_Of") else f"Reassessment {item.get('Reassessment_Number', '')}",
                     "Date & Time": item.get("Date_Time", ""),
-                    "Priority": priority_value,
+                    "Priority": item.get("Priority", "UNKNOWN"),
                     "ADR / New Information": item.get("ADR", ""),
                     "Case Reference": item.get("Case_Reference", ""),
                 })
 
-            st.markdown("#### 📋 Version-by-Version Record")
-            st.caption(
-                "Each row represents a saved version of the same linked case. The table is read-only."
-            )
+            st.markdown("### 🧾 Version-by-Version Record")
+            st.caption("Use the table below for detailed version-level review. The information is read-only in this workspace.")
             st.dataframe(
                 pd.DataFrame(timeline_rows),
                 use_container_width=True,
                 hide_index=True
-            )
-        else:
-            st.markdown(
-                """<div class="pg-empty-state"><strong>📭 No timeline versions available</strong><br>
-                This case does not yet have a linked reassessment history. The initial case record will appear here once timeline data is available.</div>""",
-                unsafe_allow_html=True
             )
 
     with st.expander("🔗 Longitudinal ADR Case Timeline", expanded=False):
@@ -3580,6 +3573,17 @@ div[data-testid="stExpander"] div[data-testid="stAlert"]{margin:9px 0 !important
 div[data-testid="stExpander"] hr{margin:12px 0 !important;}
 div[data-testid="stExpander"] label{font-weight:650 !important;}
 div[data-testid="stExpander"] textarea{border-radius:10px !important;}
+
+.pg-timeline-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:12px 0 14px}
+.pg-timeline-summary>div{padding:11px 9px;border:1px solid #dfe8ee;border-radius:11px;background:#f8fbfd;text-align:center}
+.pg-timeline-summary strong{display:block;font-size:18px;line-height:1.15;color:#17324d}
+.pg-timeline-summary span{display:block;margin-top:3px;font-size:8px;font-weight:800;letter-spacing:.45px;text-transform:uppercase;color:#7a8793}
+.pg-timeline-note{padding:10px 12px;border-radius:11px;background:#f5f9fc;border:1px solid #dce8ef;font-size:10px;line-height:1.5;color:#607080;margin:9px 0 12px}
+.pg-timeline-version{padding:10px 12px;border:1px solid #e0e8ee;border-radius:11px;background:#fff;margin:7px 0}
+.pg-timeline-version-head{display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:11px;font-weight:800;color:#243b53}
+.pg-timeline-version-sub{margin-top:4px;font-size:9px;color:#7a8793;line-height:1.45}
+.pg-timeline-badge{display:inline-block;padding:3px 7px;border-radius:999px;background:#eef6fa;border:1px solid #d8e8f0;font-size:8px;font-weight:800;color:#486581;white-space:nowrap}
+@media(max-width:700px){.pg-timeline-summary{grid-template-columns:1fr 1fr}.pg-timeline-summary>div:last-child{grid-column:1/-1}.pg-timeline-version-head{align-items:flex-start;flex-direction:column}}
 .pg-expand-status{
     display:inline-flex;
     align-items:center;
