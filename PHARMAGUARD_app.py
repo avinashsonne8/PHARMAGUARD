@@ -575,6 +575,39 @@ div.stButton > button[kind="primary"] {
 }
 
 
+
+/* v37 Professional ADR Priority Timeline */
+.pg-timeline-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0 16px}
+.pg-timeline-stat{padding:13px 14px;border:1px solid #dbe5ec;border-radius:13px;background:#fff;box-shadow:0 2px 9px rgba(30,60,90,.035)}
+.pg-timeline-stat-label{font-size:10px;font-weight:800;color:#71808b;text-transform:uppercase;letter-spacing:.55px}
+.pg-timeline-stat-value{margin-top:4px;font-size:18px;font-weight:850;color:#17324d;word-break:break-word}
+.pg-timeline-stat-note{margin-top:3px;font-size:10px;color:#7b8794}
+.pg-timeline-track{margin:8px 0 4px;padding:2px 0}
+.pg-timeline-item{position:relative;display:grid;grid-template-columns:28px minmax(0,1fr);gap:12px;padding:0 0 14px}
+.pg-timeline-item:last-child{padding-bottom:0}
+.pg-timeline-rail{position:relative;display:flex;justify-content:center}
+.pg-timeline-rail:after{content:"";position:absolute;top:25px;bottom:-14px;width:2px;background:#d9e4eb}
+.pg-timeline-item:last-child .pg-timeline-rail:after{display:none}
+.pg-timeline-dot{position:relative;z-index:2;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:11px;font-weight:800;color:#fff;border:4px solid #fff;box-shadow:0 0 0 1px #d4e0e7}
+.pg-timeline-dot-high{background:#d64545}.pg-timeline-dot-moderate{background:#d49b00}.pg-timeline-dot-low{background:#2f855a}.pg-timeline-dot-unknown{background:#7b8794}
+.pg-timeline-card{min-width:0;padding:13px 14px;border:1px solid #dbe5ec;border-radius:14px;background:#fff;box-shadow:0 2px 10px rgba(30,60,90,.04)}
+.pg-timeline-card-current{border-color:#bcd8e8;box-shadow:0 3px 13px rgba(43,111,159,.08)}
+.pg-timeline-top{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.pg-timeline-version{font-size:13px;font-weight:850;color:#17324d}
+.pg-timeline-priority{display:inline-flex;padding:4px 8px;border-radius:999px;font-size:10px;font-weight:850}
+.pg-timeline-priority-high{background:#fff0f0;color:#a61b1b;border:1px solid #f2c7c7}
+.pg-timeline-priority-moderate{background:#fff7df;color:#8a5a00;border:1px solid #eed99b}
+.pg-timeline-priority-low{background:#edf8f0;color:#246b37;border:1px solid #cce7d3}
+.pg-timeline-priority-unknown{background:#f2f4f6;color:#59646e;border:1px solid #dce1e5}
+.pg-timeline-date{margin-top:4px;font-size:10px;color:#7b8794}
+.pg-timeline-section{margin-top:11px;padding-top:10px;border-top:1px solid #edf1f4}
+.pg-timeline-label{font-size:9px;font-weight:850;color:#7a8793;text-transform:uppercase;letter-spacing:.65px}
+.pg-timeline-value{margin-top:3px;font-size:12px;line-height:1.45;color:#334e68;overflow-wrap:anywhere}
+.pg-timeline-current{display:inline-flex;margin-top:7px;padding:3px 7px;border-radius:999px;background:#eef7fc;color:#245a78;border:1px solid #d4e7f2;font-size:9px;font-weight:850}
+.pg-timeline-change{margin:14px 0 4px;padding:12px 14px;border-radius:13px;background:#f4f9fc;border:1px solid #d6e6f1;color:#425466;font-size:12px;line-height:1.5}
+.pg-timeline-change strong{color:#17324d}
+@media(max-width:700px){.pg-timeline-summary{grid-template-columns:1fr 1fr}.pg-timeline-summary .pg-timeline-stat:first-child{grid-column:1/-1}.pg-timeline-item{grid-template-columns:25px minmax(0,1fr);gap:9px}.pg-timeline-card{padding:12px}}
+
 /* Dynamic reassessment workspace polish */
 .pg-expand-mini-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0 14px}
 .pg-expand-mini-summary>div{padding:11px 12px;border:1px solid rgba(128,128,128,.22);border-radius:10px;text-align:center}
@@ -2539,77 +2572,149 @@ def render_case_reports_screen():
                         )
 
     with st.expander("📈 ADR Priority Timeline", expanded=False):
-        st.markdown("""<div class="pg-expand-workspace-intro"><div class="pg-expand-workspace-title">Priority Decision Timeline</div><div class="pg-expand-workspace-sub">Track how the selected ADR case has been recorded across initial and reassessment versions. This is a record-history workspace, not a clinical outcome prediction.</div><span class="pg-expand-status">CASE REPORT • VERSION HISTORY</span></div>""", unsafe_allow_html=True)
+        st.markdown(
+            """<div class="pg-expand-workspace-intro">
+            <div class="pg-expand-workspace-title">Priority Decision Timeline</div>
+            <div class="pg-expand-workspace-sub">A professional version-by-version view of how the recorded ADR priority evolved during reassessment.</div>
+            <span class="pg-expand-status">CASE HISTORY • VERSION CONTROL</span>
+            </div>""",
+            unsafe_allow_html=True,
+        )
 
-        # Linked reassessment timeline for the selected case.
         root_reference = str(
             row.get("Original_Case_Reference", "")
             or row.get("Case_Reference", "")
-        )
+        ).strip()
+
         timeline_records = []
         for item in st.session_state.get("adr_history", []):
-            item_root = str(
-                item.get("Original_Case_Reference", "")
-                or item.get("Case_Reference", "")
-            )
-            if item_root == root_reference:
+            item_original = str(item.get("Original_Case_Reference", "") or "").strip()
+            item_case = str(item.get("Case_Reference", "") or "").strip()
+            if root_reference and (
+                item_original == root_reference or item_case == root_reference
+            ):
                 timeline_records.append(item)
 
-        if not timeline_records:
-            st.markdown("""<div class="pg-empty-state"><strong>📭 No version history available</strong><br>This case does not currently have linked reassessment records to display.</div>""", unsafe_allow_html=True)
-        else:
+        if timeline_records:
             timeline_records = sorted(
                 timeline_records,
                 key=lambda x: str(x.get("Date_Time", ""))
             )
 
-            first_priority = str(timeline_records[0].get("Priority", "UNKNOWN"))
-            latest_priority = str(timeline_records[-1].get("Priority", "UNKNOWN"))
-            change_text = "Priority changed" if first_priority != latest_priority else "Priority stable"
+            def _timeline_priority(value):
+                p = str(value or "UNKNOWN").strip().upper()
+                return p if p in {"HIGH", "MODERATE", "LOW"} else "UNKNOWN"
+
+            def _timeline_version(item, index):
+                reassess_no = str(item.get("Reassessment_Number", "") or "").strip()
+                reassessment_of = str(item.get("Reassessment_Of", "") or "").strip()
+                if reassess_no:
+                    return f"Reassessment {reassess_no}"
+                if reassessment_of:
+                    return f"Reassessment {index}"
+                return "Initial Report"
+
+            priorities = [_timeline_priority(x.get("Priority")) for x in timeline_records]
+            initial_priority = priorities[0] if priorities else "UNKNOWN"
+            current_priority = priorities[-1] if priorities else "UNKNOWN"
+
+            # Prefer explicit reassessment metadata. If old records lack it,
+            # only the first linked record is treated as Initial Report.
+            version_labels = []
+            for idx, item in enumerate(timeline_records):
+                if idx == 0:
+                    version_labels.append("Initial Report")
+                else:
+                    reassess_no = str(item.get("Reassessment_Number", "") or "").strip()
+                    version_labels.append(
+                        f"Reassessment {reassess_no or idx}"
+                    )
 
             st.markdown(
-                f"""<div class="pg-timeline-summary">
-                    <div><strong>{len(timeline_records)}</strong><span>Recorded versions</span></div>
-                    <div><strong>{html.escape(first_priority)}</strong><span>Initial priority</span></div>
-                    <div><strong>{html.escape(latest_priority)}</strong><span>Current priority</span></div>
+                f"""
+                <div class="pg-timeline-summary">
+                    <div class="pg-timeline-stat">
+                        <div class="pg-timeline-stat-label">Recorded Versions</div>
+                        <div class="pg-timeline-stat-value">{len(timeline_records)}</div>
+                        <div class="pg-timeline-stat-note">Linked records for this case</div>
+                    </div>
+                    <div class="pg-timeline-stat">
+                        <div class="pg-timeline-stat-label">Initial Priority</div>
+                        <div class="pg-timeline-stat-value">{html.escape(initial_priority)}</div>
+                        <div class="pg-timeline-stat-note">First recorded assessment</div>
+                    </div>
+                    <div class="pg-timeline-stat">
+                        <div class="pg-timeline-stat-label">Current Priority</div>
+                        <div class="pg-timeline-stat-value">{html.escape(current_priority)}</div>
+                        <div class="pg-timeline-stat-note">Latest recorded assessment</div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+            note = (
+                "Priority changed across the recorded case history."
+                if initial_priority != current_priority
+                else "No priority change is recorded across the linked versions shown below."
+            )
+            st.markdown(
+                f"""<div class="pg-timeline-change">
+                🔄 <strong>Priority trajectory:</strong>
+                {html.escape(initial_priority)} &nbsp;→&nbsp;
+                <strong>{html.escape(current_priority)}</strong><br>
+                <span>{html.escape(note)}</span>
                 </div>""",
-                unsafe_allow_html=True
+                unsafe_allow_html=True,
             )
-
-            if first_priority != latest_priority:
-                st.warning(
-                    f"🔄 **{change_text}: {first_priority} → {latest_priority}.** "
-                    "The timeline records the reassessment history and does not modify the original case version."
-                )
-            else:
-                st.info(
-                    f"ℹ️ **{change_text}: {latest_priority}.** "
-                    "No priority change is recorded across the available versions."
-                )
-
-            st.markdown(
-                """<div class="pg-timeline-note"><strong>How to read this timeline:</strong> Each row represents one saved version of the same linked case. Reassessment versions preserve the original record while adding new information and a new review decision.</div>""",
-                unsafe_allow_html=True
-            )
-
-            timeline_rows = []
-            for position, item in enumerate(timeline_records, start=1):
-                timeline_rows.append({
-                    "#": position,
-                    "Version": "Initial" if not item.get("Reassessment_Of") else f"Reassessment {item.get('Reassessment_Number', '')}",
-                    "Date & Time": item.get("Date_Time", ""),
-                    "Priority": item.get("Priority", "UNKNOWN"),
-                    "ADR / New Information": item.get("ADR", ""),
-                    "Case Reference": item.get("Case_Reference", ""),
-                })
 
             st.markdown("### 🧾 Version-by-Version Record")
-            st.caption("Use the table below for detailed version-level review. The information is read-only in this workspace.")
-            st.dataframe(
-                pd.DataFrame(timeline_rows),
-                use_container_width=True,
-                hide_index=True
-            )
+            timeline_html = ['<div class="pg-timeline-track">']
+
+            for idx, item in enumerate(timeline_records):
+                priority = _timeline_priority(item.get("Priority"))
+                pkey = priority.lower()
+                is_current = idx == len(timeline_records) - 1
+                decision_source = str(
+                    item.get("Decision_Source", "")
+                    or item.get("Reason", "")
+                    or "Not recorded"
+                )
+
+                timeline_html.append(
+                    f"""
+                    <div class="pg-timeline-item">
+                        <div class="pg-timeline-rail">
+                            <div class="pg-timeline-dot pg-timeline-dot-{pkey}">{idx + 1}</div>
+                        </div>
+                        <div class="pg-timeline-card {'pg-timeline-card-current' if is_current else ''}">
+                            <div class="pg-timeline-top">
+                                <div class="pg-timeline-version">{html.escape(version_labels[idx])}</div>
+                                <div class="pg-timeline-priority pg-timeline-priority-{pkey}">{html.escape(priority)}</div>
+                            </div>
+                            <div class="pg-timeline-date">🕒 {html.escape(str(item.get("Date_Time", "") or "—"))}</div>
+                            {"<div class='pg-timeline-current'>CURRENT VERSION</div>" if is_current else ""}
+                            <div class="pg-timeline-section">
+                                <div class="pg-timeline-label">ADR / New Information</div>
+                                <div class="pg-timeline-value">{html.escape(str(item.get("ADR", "") or "—"))}</div>
+                            </div>
+                            <div class="pg-timeline-section">
+                                <div class="pg-timeline-label">Decision Source</div>
+                                <div class="pg-timeline-value">{html.escape(decision_source)}</div>
+                            </div>
+                            <div class="pg-timeline-section">
+                                <div class="pg-timeline-label">Case Reference</div>
+                                <div class="pg-timeline-value">{html.escape(str(item.get("Case_Reference", "") or "—"))}</div>
+                            </div>
+                        </div>
+                    </div>
+                    """
+                )
+
+            timeline_html.append("</div>")
+            st.markdown("".join(timeline_html), unsafe_allow_html=True)
+        else:
+            st.info("No linked reassessment records are available for this case yet.")
 
     with st.expander("🔗 Longitudinal ADR Case Timeline", expanded=False):
         st.markdown("""<div class="pg-expand-workspace-intro"><div class="pg-expand-workspace-title">Longitudinal Case Timeline</div><div class="pg-expand-workspace-sub">Follow the complete case history across the initial report and linked reassessment versions.</div><span class="pg-expand-status">PHARMAGUARD WORKSPACE</span></div>""", unsafe_allow_html=True)
@@ -3573,17 +3678,6 @@ div[data-testid="stExpander"] div[data-testid="stAlert"]{margin:9px 0 !important
 div[data-testid="stExpander"] hr{margin:12px 0 !important;}
 div[data-testid="stExpander"] label{font-weight:650 !important;}
 div[data-testid="stExpander"] textarea{border-radius:10px !important;}
-
-.pg-timeline-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:12px 0 14px}
-.pg-timeline-summary>div{padding:11px 9px;border:1px solid #dfe8ee;border-radius:11px;background:#f8fbfd;text-align:center}
-.pg-timeline-summary strong{display:block;font-size:18px;line-height:1.15;color:#17324d}
-.pg-timeline-summary span{display:block;margin-top:3px;font-size:8px;font-weight:800;letter-spacing:.45px;text-transform:uppercase;color:#7a8793}
-.pg-timeline-note{padding:10px 12px;border-radius:11px;background:#f5f9fc;border:1px solid #dce8ef;font-size:10px;line-height:1.5;color:#607080;margin:9px 0 12px}
-.pg-timeline-version{padding:10px 12px;border:1px solid #e0e8ee;border-radius:11px;background:#fff;margin:7px 0}
-.pg-timeline-version-head{display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:11px;font-weight:800;color:#243b53}
-.pg-timeline-version-sub{margin-top:4px;font-size:9px;color:#7a8793;line-height:1.45}
-.pg-timeline-badge{display:inline-block;padding:3px 7px;border-radius:999px;background:#eef6fa;border:1px solid #d8e8f0;font-size:8px;font-weight:800;color:#486581;white-space:nowrap}
-@media(max-width:700px){.pg-timeline-summary{grid-template-columns:1fr 1fr}.pg-timeline-summary>div:last-child{grid-column:1/-1}.pg-timeline-version-head{align-items:flex-start;flex-direction:column}}
 .pg-expand-status{
     display:inline-flex;
     align-items:center;
