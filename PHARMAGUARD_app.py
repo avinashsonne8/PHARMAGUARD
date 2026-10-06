@@ -2682,37 +2682,39 @@ def render_case_reports_screen():
                 )
 
                 timeline_html.append(
-                    f"""
-                    <div class="pg-timeline-item">
-                        <div class="pg-timeline-rail">
-                            <div class="pg-timeline-dot pg-timeline-dot-{pkey}">{idx + 1}</div>
+                    textwrap.dedent(
+                        f"""
+                        <div class="pg-timeline-item">
+                            <div class="pg-timeline-rail">
+                                <div class="pg-timeline-dot pg-timeline-dot-{pkey}">{idx + 1}</div>
+                            </div>
+                            <div class="pg-timeline-card {'pg-timeline-card-current' if is_current else ''}">
+                                <div class="pg-timeline-top">
+                                    <div class="pg-timeline-version">{html.escape(version_labels[idx])}</div>
+                                    <div class="pg-timeline-priority pg-timeline-priority-{pkey}">{html.escape(priority)}</div>
+                                </div>
+                                <div class="pg-timeline-date">🕒 {html.escape(str(item.get("Date_Time", "") or "—"))}</div>
+                                {"<div class='pg-timeline-current'>CURRENT VERSION</div>" if is_current else ""}
+                                <div class="pg-timeline-section">
+                                    <div class="pg-timeline-label">ADR / New Information</div>
+                                    <div class="pg-timeline-value">{html.escape(str(item.get("ADR", "") or "—"))}</div>
+                                </div>
+                                <div class="pg-timeline-section">
+                                    <div class="pg-timeline-label">Decision Source</div>
+                                    <div class="pg-timeline-value">{html.escape(decision_source)}</div>
+                                </div>
+                                <div class="pg-timeline-section">
+                                    <div class="pg-timeline-label">Case Reference</div>
+                                    <div class="pg-timeline-value">{html.escape(str(item.get("Case_Reference", "") or "—"))}</div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="pg-timeline-card {'pg-timeline-card-current' if is_current else ''}">
-                            <div class="pg-timeline-top">
-                                <div class="pg-timeline-version">{html.escape(version_labels[idx])}</div>
-                                <div class="pg-timeline-priority pg-timeline-priority-{pkey}">{html.escape(priority)}</div>
-                            </div>
-                            <div class="pg-timeline-date">🕒 {html.escape(str(item.get("Date_Time", "") or "—"))}</div>
-                            {"<div class='pg-timeline-current'>CURRENT VERSION</div>" if is_current else ""}
-                            <div class="pg-timeline-section">
-                                <div class="pg-timeline-label">ADR / New Information</div>
-                                <div class="pg-timeline-value">{html.escape(str(item.get("ADR", "") or "—"))}</div>
-                            </div>
-                            <div class="pg-timeline-section">
-                                <div class="pg-timeline-label">Decision Source</div>
-                                <div class="pg-timeline-value">{html.escape(decision_source)}</div>
-                            </div>
-                            <div class="pg-timeline-section">
-                                <div class="pg-timeline-label">Case Reference</div>
-                                <div class="pg-timeline-value">{html.escape(str(item.get("Case_Reference", "") or "—"))}</div>
-                            </div>
-                        </div>
-                    </div>
-                    """
+                        """
+                    ).strip()
                 )
 
             timeline_html.append("</div>")
-            st.markdown("".join(timeline_html), unsafe_allow_html=True)
+            st.markdown("\n".join(timeline_html), unsafe_allow_html=True)
         else:
             st.info("No linked reassessment records are available for this case yet.")
 
