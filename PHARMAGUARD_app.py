@@ -2669,11 +2669,13 @@ def render_case_reports_screen():
             )
 
             st.markdown("### 🧾 Version-by-Version Record")
-            timeline_html = ['<div class="pg-timeline-track">']
 
+            # Native Streamlit renderer.
+            # The previous dynamic HTML was being displayed literally on
+            # some Streamlit/Android renders, so the timeline cards are now
+            # built with native Streamlit containers and columns.
             for idx, item in enumerate(timeline_records):
                 priority = _timeline_priority(item.get("Priority"))
-                pkey = priority.lower()
                 is_current = idx == len(timeline_records) - 1
                 decision_source = str(
                     item.get("Decision_Source", "")
@@ -2681,40 +2683,46 @@ def render_case_reports_screen():
                     or "Not recorded"
                 )
 
-                timeline_html.append(
-                    textwrap.dedent(
-                        f"""
-                        <div class="pg-timeline-item">
-                            <div class="pg-timeline-rail">
-                                <div class="pg-timeline-dot pg-timeline-dot-{pkey}">{idx + 1}</div>
-                            </div>
-                            <div class="pg-timeline-card {'pg-timeline-card-current' if is_current else ''}">
-                                <div class="pg-timeline-top">
-                                    <div class="pg-timeline-version">{html.escape(version_labels[idx])}</div>
-                                    <div class="pg-timeline-priority pg-timeline-priority-{pkey}">{html.escape(priority)}</div>
-                                </div>
-                                <div class="pg-timeline-date">🕒 {html.escape(str(item.get("Date_Time", "") or "—"))}</div>
-                                {"<div class='pg-timeline-current'>CURRENT VERSION</div>" if is_current else ""}
-                                <div class="pg-timeline-section">
-                                    <div class="pg-timeline-label">ADR / New Information</div>
-                                    <div class="pg-timeline-value">{html.escape(str(item.get("ADR", "") or "—"))}</div>
-                                </div>
-                                <div class="pg-timeline-section">
-                                    <div class="pg-timeline-label">Decision Source</div>
-                                    <div class="pg-timeline-value">{html.escape(decision_source)}</div>
-                                </div>
-                                <div class="pg-timeline-section">
-                                    <div class="pg-timeline-label">Case Reference</div>
-                                    <div class="pg-timeline-value">{html.escape(str(item.get("Case_Reference", "") or "—"))}</div>
-                                </div>
-                            </div>
-                        </div>
-                        """
-                    ).strip()
-                )
+                with st.container(border=True):
+                    left, right = st.columns([3.2, 1.0])
 
-            timeline_html.append("</div>")
-            st.markdown("\n".join(timeline_html), unsafe_allow_html=True)
+                    with left:
+                        st.markdown(f"**{version_labels[idx]}**")
+
+                    with right:
+                        if priority == "HIGH":
+                            st.error("HIGH", icon="🔴")
+                        elif priority == "MODERATE":
+                            st.warning("MODERATE", icon="🟡")
+                        elif priority == "LOW":
+                            st.success("LOW", icon="🟢")
+                        else:
+                            st.info("UNKNOWN", icon="⚪")
+
+                    st.caption(f"🕒 {str(item.get('Date_Time', '') or '—')}")
+
+                    if is_current:
+                        st.info("CURRENT VERSION", icon="📌")
+
+                    st.markdown("**ADR / New Information**")
+                    st.write(str(item.get("ADR", "") or "—"))
+
+                    st.markdown("**Decision Source**")
+                    st.write(decision_source)
+
+                    st.markdown("**Case Reference**")
+                    st.code(
+                        str(item.get("Case_Reference", "") or "—"),
+                        language=None
+                    )
+
+                if idx < len(timeline_records) - 1:
+                    st.markdown(
+                        "<div style='text-align:center;font-size:20px;"
+                        "line-height:1;margin:4px 0 8px;'>↓</div>",
+                        unsafe_allow_html=True,
+                    )
+
         else:
             st.info("No linked reassessment records are available for this case yet.")
 
