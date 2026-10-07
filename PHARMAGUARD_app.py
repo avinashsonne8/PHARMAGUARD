@@ -1339,7 +1339,18 @@ HISTORY_PATTERNS = [
     "previous history of",
     "previous",
     "prior",
-    "history"
+    "history",
+    "in the past",
+    "last year",
+    "last month",
+    "last week",
+    "years ago",
+    "months ago",
+    "weeks ago",
+    "days ago",
+    "previously",
+    "formerly",
+    "earlier"
 ]
 
 
@@ -1759,8 +1770,8 @@ def has_context_protection(text, serious_pattern):
             before_tokens = before.split()
             after_tokens = after.split()
 
-            nearby_before = " ".join(before_tokens[-6:])
-            nearby_after = " ".join(after_tokens[:6])
+            nearby_before = " ".join(before_tokens[-10:])
+            nearby_after = " ".join(after_tokens[:10])
 
             is_protected = False
 
@@ -1783,12 +1794,17 @@ def has_context_protection(text, serious_pattern):
                         is_protected = True
                         break
 
-            # Historical / previous-event context before the phrase.
+            # Historical / previous-event context before or after the phrase.
+            # Temporal phrases such as "last year", "in the past", and "years ago"
+            # are treated as historical context for this safety-gate occurrence.
             if not is_protected:
                 for pattern in HISTORY_PATTERNS:
                     if re.search(
                         rf"(?<!\w){re.escape(pattern)}(?!\w)",
                         nearby_before
+                    ) or re.search(
+                        rf"(?<!\w){re.escape(pattern)}(?!\w)",
+                        nearby_after
                     ):
                         is_protected = True
                         break
