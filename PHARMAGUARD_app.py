@@ -1239,6 +1239,16 @@ SERIOUS_PATTERNS = [
     "respiratory failure",
     "acute respiratory failure",
     "respiratory insufficiency",
+    # Explicit respiratory emergencies missing from the uploaded pattern list
+    "respiratory arrest",
+    "acute respiratory arrest",
+    "respiratory depression",
+    "respiratory paralysis",
+    "respiratory collapse",
+    "apnea",
+    "apnoea",
+    "breathing stopped",
+    "stopped breathing",
 
     # Life-threatening events
     "life threatening",
