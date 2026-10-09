@@ -1230,6 +1230,15 @@ SERIOUS_PATTERNS = [
     "stevens johnson",
     "sjs",
 
+    # Severe cutaneous adverse reaction: toxic epidermal necrolysis (TEN)
+    "toxic epidermal necrolysis",
+    "toxic epidermal necrolysis (ten)",
+    "toxic epidermal necrolysis ten",
+    "epidermal necrolysis",
+    "ten",
+    "lyell syndrome",
+    "lyell's syndrome",
+
     # Severe breathing problems
     "difficulty breathing",
     "breathing problem",
