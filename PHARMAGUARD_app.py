@@ -1304,6 +1304,10 @@ SERIOUS_PATTERNS = [
     "convulsion",
     "convulsions",
     "convulsive seizure",
+    # Status epilepticus: explicit serious neurological emergency terms
+    "status epilepticus",
+    "status-epilepticus",
+    "epileptic status",
 
     # Shock
     "shock",
