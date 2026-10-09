@@ -1218,6 +1218,13 @@ SERIOUS_PATTERNS = [
     "anaphylactic shock",
     "airway swelling",
 
+    # Severe cutaneous adverse reactions: Stevens-Johnson syndrome
+    "stevens-johnson syndrome",
+    "stevens johnson syndrome",
+    "stevens-johnson",
+    "stevens johnson",
+    "sjs",
+
     # Severe breathing problems
     "difficulty breathing",
     "breathing problem",
