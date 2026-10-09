@@ -1311,6 +1311,16 @@ SERIOUS_PATTERNS = [
     "subarachnoid haemorrhage",
     "subarachnoid hemorrhage",
 
+    # Gastrointestinal / severe bleeding signals (British and American spellings)
+    "gastrointestinal haemorrhage",
+    "gastrointestinal hemorrhage",
+    "gastrointestinal bleeding",
+    "gi haemorrhage",
+    "gi hemorrhage",
+    "gi bleeding",
+    "severe bleeding",
+    "major bleeding",
+
     # Neurological emergencies
     "loss of consciousness",
     "lost consciousness",
