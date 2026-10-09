@@ -1277,6 +1277,19 @@ SERIOUS_PATTERNS = [
     "complete av block",
     "atrioventricular block",
 
+    # Cerebrovascular / severe bleeding emergencies
+    # Include both British and American spellings and common variants.
+    "haemorrhagic infarction",
+    "hemorrhagic infarction",
+    "haemorrhagic stroke",
+    "hemorrhagic stroke",
+    "intracerebral haemorrhage",
+    "intracerebral hemorrhage",
+    "intracranial haemorrhage",
+    "intracranial hemorrhage",
+    "subarachnoid haemorrhage",
+    "subarachnoid hemorrhage",
+
     # Neurological emergencies
     "loss of consciousness",
     "lost consciousness",
