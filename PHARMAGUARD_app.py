@@ -1311,6 +1311,12 @@ SERIOUS_PATTERNS = [
     "subarachnoid haemorrhage",
     "subarachnoid hemorrhage",
 
+    # Retroperitoneal / severe internal bleeding signals
+    "retroperitoneal haemorrhage",
+    "retroperitoneal hemorrhage",
+    "retroperitoneal bleeding",
+    "retroperitoneal bleed",
+
     # Gastrointestinal / severe bleeding signals (British and American spellings)
     "gastrointestinal haemorrhage",
     "gastrointestinal hemorrhage",
