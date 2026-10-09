@@ -4061,9 +4061,26 @@ if st.button(
     if rf_priority not in {"LOW", "MODERATE", "HIGH"}:
         rf_priority = "UNKNOWN"
 
+    # Uncertainty context: retain conservative final priority for possible serious
+    # symptoms, but explicitly mark the Safety Gate interpretation for human review.
+    uncertainty_context = bool(re.search(
+        r"\b(possible|possibly|suspected|疑|unclear|uncertain|uncertainty|unknown whether|not clear whether|cannot determine whether|could be|may be)\b",
+        str(adr).lower()
+    ))
+    current_status_unclear = bool(re.search(
+        r"(unclear whether|uncertain whether|unknown whether|not clear whether|cannot determine whether|whether the patient is currently|current status is unclear)",
+        str(adr).lower()
+    ))
+
     safety_gate_priority = "NONE"
     safety_gate_signal = "No predefined Safety Gate signal detected."
-    if serious_hits:
+    if serious_hits and uncertainty_context and current_status_unclear:
+        safety_gate_priority = "NEEDS REVIEW"
+        safety_gate_signal = (
+            "Potential serious signal with unclear current status: "
+            + ", ".join(serious_hits)
+        )
+    elif serious_hits:
         safety_gate_priority = "HIGH"
         safety_gate_signal = "Serious signal: " + ", ".join(serious_hits)
     elif moderate_hits:
@@ -4078,7 +4095,11 @@ if st.button(
     with compare_c2:
         st.markdown(f"**🤖 Random Forest Prototype**\n\n**Model output:** {rf_priority}\n\nPrototype ML assistance only; not a calibrated clinical probability.")
 
-    if safety_gate_priority != "NONE" and rf_priority != safety_gate_priority:
+    if safety_gate_priority == "NEEDS REVIEW":
+        st.warning(
+            f"⚠️ Uncertain serious signal requires human review. Final PHARMAGUARD priority remains **{priority}** as a conservative safeguard; Random Forest output was **{rf_priority}**. Confirm current symptoms and urgency with a qualified clinician."
+        )
+    elif safety_gate_priority != "NONE" and rf_priority != safety_gate_priority:
         st.info(f"🛡️ Safety Gate precedence: Final PHARMAGUARD priority is **{priority}**. The prototype Random Forest output was **{rf_priority}**.")
     elif safety_gate_priority != "NONE":
         st.success(f"🛡️ Safety Gate detected a {safety_gate_priority} signal and the Random Forest output was also {rf_priority}.")
