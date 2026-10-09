@@ -1219,9 +1219,14 @@ SERIOUS_PATTERNS = [
     "airway swelling",
 
     # Severe cutaneous adverse reactions: Stevens-Johnson syndrome
+    # Include ASCII hyphen, Unicode en dash (–), em dash (—), and no-dash variants.
     "stevens-johnson syndrome",
+    "stevens–johnson syndrome",
+    "stevens—johnson syndrome",
     "stevens johnson syndrome",
     "stevens-johnson",
+    "stevens–johnson",
+    "stevens—johnson",
     "stevens johnson",
     "sjs",
 
