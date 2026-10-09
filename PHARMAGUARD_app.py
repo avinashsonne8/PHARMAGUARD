@@ -1265,6 +1265,17 @@ SERIOUS_PATTERNS = [
     "heart stopped beating",
     "cardiac collapse",
     "cardiovascular collapse",
+    "circulatory collapse",
+    "ventricular fibrillation",
+    "ventricular tachycardia",
+    "torsades de pointes",
+    "torsade de pointes",
+    "torsades",
+    "pulseless electrical activity",
+    "myocardial infarction",
+    "myocarditis",
+    "complete av block",
+    "atrioventricular block",
 
     # Neurological emergencies
     "loss of consciousness",
