@@ -1415,6 +1415,7 @@ HISTORY_PATTERNS = [
     "previous",
     "prior",
     "history",
+    "past",
     "in the past",
     "last year",
     "last month",
