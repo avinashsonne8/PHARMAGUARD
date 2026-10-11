@@ -151,9 +151,86 @@ if role == t["patient"]:
             if breathing or swelling or fainting:
                 st.error(t["urgent"])
 
+
 else:
     st.header(t["professional_welcome"])
-    st.info(t["professional_note"])
+    st.info(
+        "Prototype case-review workflow. "
+        "Cases are not saved to a secure database."
+    )
+
+    st.subheader("Case Review")
+
+    with st.form("professional_case_review"):
+        case_id = st.text_input(
+            "Patient / Case Reference ID"
+        )
+        medicine_review = st.text_input(
+            "Medicine name"
+        )
+        adr_review = st.text_area(
+            "Reported ADR / Symptoms"
+        )
+        onset_review = st.date_input(
+            "Symptom onset date",
+            value=date.today(),
+            max_value=date.today(),
+            key="professional_onset",
+        )
+
+        seriousness = st.selectbox(
+            "Seriousness review",
+            [
+                "Not assessed",
+                "Potentially serious",
+                "Not currently identified as serious",
+                "Needs further assessment",
+            ],
+        )
+
+        review_status = st.selectbox(
+            "Review status",
+            [
+                "Pending",
+                "Under Review",
+                "Reviewed",
+            ],
+        )
+
+        reviewer_notes = st.text_area(
+            "Reviewer notes"
+        )
+
+        review_submitted = st.form_submit_button(
+            "Review Case"
+        )
+
+    if review_submitted:
+        if not case_id.strip():
+            st.warning(
+                "Enter a Patient / Case Reference ID."
+            )
+        elif not medicine_review.strip():
+            st.warning("Enter the medicine name.")
+        elif not adr_review.strip():
+            st.warning("Enter the reported ADR / symptoms.")
+        else:
+            st.success("Case review summary prepared.")
+
+            st.write("**Case ID:**", case_id)
+            st.write("**Medicine:**", medicine_review)
+            st.write("**Reported ADR:**", adr_review)
+            st.write("**Symptom onset:**", onset_review)
+            st.write("**Seriousness review:**", seriousness)
+            st.write("**Review status:**", review_status)
+            st.write("**Reviewer notes:**", reviewer_notes)
+
+            st.warning(
+                "Session-only prototype: this review has "
+                "not been saved to a database. "
+                "This summary does not establish diagnosis, "
+                "drug causality, or a final clinical decision."
+            )
 
 st.caption(t["disclaimer"])
 
