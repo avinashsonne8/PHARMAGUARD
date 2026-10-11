@@ -1,5 +1,7 @@
 
 import streamlit as st
+import uuid
+from datetime import date
 
 st.set_page_config(
     page_title="PHARMAGUARD 2.0",
@@ -9,71 +11,149 @@ st.set_page_config(
 
 LANGUAGES = {
     "मराठी": {
-        "title": "PHARMAGUARD 2.0",
         "subtitle": "रुग्ण-केंद्रित औषध सुरक्षा प्रणाली",
-        "language": "भाषा निवडा",
+        "notice": "स्वतंत्र विकास Prototype — PHARMAGUARD 1.0 अपरिवर्तित आहे.",
         "role": "तुम्ही कोण आहात?",
         "patient": "रुग्ण (Patient)",
-        "professional": "आरोग्यसेवा व्यावसायिक (Healthcare Professional)",
-        "welcome_patient": "रुग्ण विभागात आपले स्वागत आहे.",
-        "welcome_professional": "आरोग्यसेवा व्यावसायिक विभागात आपले स्वागत आहे.",
-        "notice": "हा स्वतंत्र विकास prototype आहे. PHARMAGUARD 1.0 बदललेला नाही.",
-        "disclaimer": "Prototype only — वैद्यकीय निदान किंवा उपचाराचा पर्याय नाही.",
+        "professional": "आरोग्यसेवा व्यावसायिक",
+        "report": "औषधाच्या दुष्परिणामाची नोंद करा",
+        "pid": "Patient Reference ID",
+        "name": "नाव (ऐच्छिक)",
+        "age": "वय",
+        "medicine": "औषधाचे नाव",
+        "symptoms": "काय त्रास किंवा लक्षणे झाली?",
+        "onset": "लक्षणे कधी सुरू झाली?",
+        "emergency": "गंभीर लक्षणे आहेत का?",
+        "breathing": "श्वास घेण्यास त्रास",
+        "swelling": "घसा किंवा जीभ सुजणे",
+        "fainting": "बेशुद्ध पडणे किंवा कोसळणे",
+        "submit": "नोंद तपासा",
+        "required": "औषधाचे नाव आणि लक्षणे भरणे आवश्यक आहे.",
+        "urgent": "तातडीची सूचना: श्वास घेण्यास त्रास, घसा/जीभ सुजणे किंवा बेशुद्ध पडणे असल्यास त्वरित आपत्कालीन वैद्यकीय मदत घ्या. फॉर्म भरण्यासाठी थांबू नका.",
+        "review": "फॉर्मची प्राथमिक तपासणी पूर्ण. ही नोंद फक्त या prototype मध्ये आहे; सुरक्षित database मध्ये save केलेली नाही.",
+        "professional_welcome": "आरोग्यसेवा व्यावसायिक विभाग",
+        "professional_note": "पुढील टप्प्यात अधिकृत केस-रिव्ह्यू workflow जोडू.",
+        "disclaimer": "हा prototype वैद्यकीय निदान किंवा उपचाराचा पर्याय नाही.",
     },
     "हिंदी": {
-        "title": "PHARMAGUARD 2.0",
         "subtitle": "रोगी-केंद्रित दवा सुरक्षा प्रणाली",
-        "language": "भाषा चुनें",
+        "notice": "स्वतंत्र Prototype — PHARMAGUARD 1.0 अपरिवर्तित है।",
         "role": "आप कौन हैं?",
         "patient": "रोगी (Patient)",
         "professional": "स्वास्थ्य सेवा पेशेवर",
-        "welcome_patient": "रोगी विभाग में आपका स्वागत है।",
-        "welcome_professional": "स्वास्थ्य सेवा पेशेवर विभाग में आपका स्वागत है।",
-        "notice": "यह स्वतंत्र विकास prototype है। PHARMAGUARD 1.0 में बदलाव नहीं किया गया है।",
-        "disclaimer": "केवल prototype — चिकित्सा निदान या उपचार का विकल्प नहीं।",
+        "report": "दवा की प्रतिकूल प्रतिक्रिया दर्ज करें",
+        "pid": "Patient Reference ID",
+        "name": "नाम (वैकल्पिक)",
+        "age": "उम्र",
+        "medicine": "दवा का नाम",
+        "symptoms": "क्या परेशानी या लक्षण हुए?",
+        "onset": "लक्षण कब शुरू हुए?",
+        "emergency": "क्या गंभीर लक्षण हैं?",
+        "breathing": "सांस लेने में परेशानी",
+        "swelling": "गले या जीभ में सूजन",
+        "fainting": "बेहोशी या गिर जाना",
+        "submit": "प्रविष्टि जाँचें",
+        "required": "दवा का नाम और लक्षण भरना आवश्यक है।",
+        "urgent": "तत्काल सूचना: सांस लेने में परेशानी, गले/जीभ में सूजन या बेहोशी होने पर तुरंत आपातकालीन चिकित्सा सहायता लें। फॉर्म भरने के लिए प्रतीक्षा न करें।",
+        "review": "प्रारंभिक जाँच पूरी। यह प्रविष्टि केवल इस prototype में है; सुरक्षित database में save नहीं हुई है।",
+        "professional_welcome": "स्वास्थ्य सेवा पेशेवर विभाग",
+        "professional_note": "अगले चरण में केस-रिव्यू workflow जोड़ेंगे।",
+        "disclaimer": "यह prototype चिकित्सा निदान या उपचार का विकल्प नहीं है।",
     },
     "English": {
-        "title": "PHARMAGUARD 2.0",
         "subtitle": "Patient-Centric Medication Safety System",
-        "language": "Choose language",
+        "notice": "Independent development prototype. PHARMAGUARD 1.0 remains unchanged.",
         "role": "Who are you?",
         "patient": "Patient",
         "professional": "Healthcare Professional",
-        "welcome_patient": "Welcome to the Patient section.",
-        "welcome_professional": "Welcome to the Healthcare Professional section.",
-        "notice": "Independent development prototype. PHARMAGUARD 1.0 remains unchanged.",
-        "disclaimer": "Prototype only — not a substitute for medical diagnosis or treatment.",
+        "report": "Report a Possible Adverse Drug Reaction",
+        "pid": "Patient Reference ID",
+        "name": "Name (optional)",
+        "age": "Age",
+        "medicine": "Medicine name",
+        "symptoms": "What symptoms or reaction occurred?",
+        "onset": "When did the symptoms start?",
+        "emergency": "Are any emergency warning signs present?",
+        "breathing": "Difficulty breathing",
+        "swelling": "Throat or tongue swelling",
+        "fainting": "Fainting or collapse",
+        "submit": "Review report",
+        "required": "Medicine name and symptoms are required.",
+        "urgent": "URGENT: If there is difficulty breathing, throat/tongue swelling, or fainting, seek emergency medical help immediately. Do not wait to complete this form.",
+        "review": "Initial form check complete. This report exists only in this prototype session; it has NOT been saved to a secure database.",
+        "professional_welcome": "Healthcare Professional section",
+        "professional_note": "A dedicated case-review workflow will be added in a later step.",
+        "disclaimer": "This prototype is not a substitute for medical diagnosis or treatment.",
     },
 }
 
 st.session_state.setdefault("language", "मराठी")
-st.session_state.setdefault("role", None)
-
 language = st.selectbox(
-    "Language / भाषा / भाषा",
+    "Language / भाषा",
     list(LANGUAGES.keys()),
-    key="language",
 )
-
 t = LANGUAGES[language]
 
-st.title(f"🛡️ {t['title']}")
+st.title("🛡️ PHARMAGUARD 2.0")
 st.subheader(t["subtitle"])
 st.info(t["notice"])
-
-st.divider()
-st.markdown(f"### {t['role']}")
 
 role = st.radio(
     t["role"],
     [t["patient"], t["professional"]],
-    horizontal=False,
-    key=f"role_{language}",
 )
 
 if role == t["patient"]:
-    st.success(t["welcome_patient"])
+    st.header(t["report"])
+
+    if "patient_reference" not in st.session_state:
+        st.session_state["patient_reference"] = (
+            "PHG2-" + uuid.uuid4().hex[:8].upper()
+        )
+
+    st.caption(
+        f'{t["pid"]}: {st.session_state["patient_reference"]}'
+    )
+
+    with st.form("patient_adr_report"):
+        name = st.text_input(t["name"])
+        age = st.number_input(
+            t["age"], min_value=1, max_value=120, value=30
+        )
+        medicine = st.text_input(t["medicine"])
+        symptoms = st.text_area(t["symptoms"])
+        onset = st.date_input(
+            t["onset"], value=date.today(),
+            max_value=date.today()
+        )
+
+        st.markdown(f'**{t["emergency"]}**')
+        breathing = st.checkbox(t["breathing"])
+        swelling = st.checkbox(t["swelling"])
+        fainting = st.checkbox(t["fainting"])
+
+        submitted = st.form_submit_button(t["submit"])
+
+    if breathing or swelling or fainting:
+        st.error(t["urgent"])
+
+    if submitted:
+        if not medicine.strip() or not symptoms.strip():
+            st.warning(t["required"])
+        else:
+            st.success(t["review"])
+            st.write(f'**{t["pid"]}:** {st.session_state["patient_reference"]}')
+            st.write(f'**{t["age"]}:** {age}')
+            st.write(f'**{t["medicine"]}:** {medicine}')
+            st.write(f'**{t["symptoms"]}:** {symptoms}')
+            st.write(f'**{t["onset"]}:** {onset}')
+
+            if breathing or swelling or fainting:
+                st.error(t["urgent"])
+
 else:
-    st.success(t["welcome_professional"])
+    st.header(t["professional_welcome"])
+    st.info(t["professional_note"])
 
 st.caption(t["disclaimer"])
+
