@@ -158,6 +158,40 @@ else:
         "Prototype case-review workflow. "
         "Cases are not saved to a secure database."
     )
+    
+    st.subheader("Emergency Safety Review")
+    st.warning(
+        "Check for urgent warning signs before continuing "
+        "the routine case review."
+    )
+
+    emergency_flags = st.multiselect(
+        "Emergency warning signs reported",
+        [
+            "Difficulty breathing",
+            "Throat or tongue swelling",
+            "Fainting or collapse",
+            "Severe bleeding",
+            "Seizure",
+            "Severe chest pain",
+        ],
+        key="professional_emergency_flags",
+    )
+
+    if emergency_flags:
+        st.error(
+            "URGENT: Emergency warning sign(s) reported: "
+            + ", ".join(emergency_flags)
+        )
+        st.error(
+            "Seek immediate emergency medical assessment. "
+            "Do not delay urgent care for this form."
+        )
+    else:
+        st.info(
+            "No emergency warning signs selected here. "
+            "This does not rule out a medical emergency."
+        )
 
     st.subheader("Case Review")
 
