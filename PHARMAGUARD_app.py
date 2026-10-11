@@ -3799,7 +3799,6 @@ div[data-testid="stExpander"] textarea{border-radius:10px !important;}
     .pg-expand-workspace-intro{padding:10px 11px;}
     .pg-expand-workspace-title{font-size:13px;}
 }
-</style>
 </style>""", unsafe_allow_html=True)
 
 # SCREEN ROUTING
@@ -3884,7 +3883,7 @@ st.markdown(
     textwrap.dedent(f"""
     <div class="pg-id-card">
         <div class="pg-id-label">Current case identifier</div>
-        <div class="pg-id-value">{patient_id if patient_id else 'Not entered'}</div>
+        <div class="pg-id-value">{html.escape(str(patient_id)) if patient_id else 'Not entered'}</div>
     </div>
     """).strip(),
     unsafe_allow_html=True
