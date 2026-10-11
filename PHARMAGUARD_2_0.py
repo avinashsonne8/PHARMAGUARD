@@ -12,7 +12,7 @@ st.set_page_config(
 LANGUAGES = {
     "मराठी": {
         "subtitle": "रुग्ण-केंद्रित औषध सुरक्षा प्रणाली",
-        "notice": "स्वतंत्र विकास Prototype — PHARMAGUARD 1.0 अपरिवर्तित आहे.",
+        "notice": "स्वतंत्र Prototype — PHARMAGUARD 1.0 अपरिवर्तित आहे.",
         "role": "तुम्ही कोण आहात?",
         "patient": "रुग्ण (Patient)",
         "professional": "आरोग्यसेवा व्यावसायिक",
@@ -30,9 +30,9 @@ LANGUAGES = {
         "submit": "नोंद तपासा",
         "required": "औषधाचे नाव आणि लक्षणे भरणे आवश्यक आहे.",
         "urgent": "तातडीची सूचना: श्वास घेण्यास त्रास, घसा/जीभ सुजणे किंवा बेशुद्ध पडणे असल्यास त्वरित आपत्कालीन वैद्यकीय मदत घ्या. फॉर्म भरण्यासाठी थांबू नका.",
-        "review": "फॉर्मची प्राथमिक तपासणी पूर्ण. ही नोंद फक्त या prototype मध्ये आहे; सुरक्षित database मध्ये save केलेली नाही.",
+        "review": "फॉर्मची प्राथमिक तपासणी पूर्ण. ही नोंद फक्त या prototype session मध्ये आहे; सुरक्षित database मध्ये save केलेली नाही.",
         "professional_welcome": "आरोग्यसेवा व्यावसायिक विभाग",
-        "professional_note": "पुढील टप्प्यात अधिकृत केस-रिव्ह्यू workflow जोडू.",
+        "professional_note": "केस-रिव्ह्यू Prototype",
         "disclaimer": "हा prototype वैद्यकीय निदान किंवा उपचाराचा पर्याय नाही.",
     },
     "हिंदी": {
@@ -55,9 +55,9 @@ LANGUAGES = {
         "submit": "प्रविष्टि जाँचें",
         "required": "दवा का नाम और लक्षण भरना आवश्यक है।",
         "urgent": "तत्काल सूचना: सांस लेने में परेशानी, गले/जीभ में सूजन या बेहोशी होने पर तुरंत आपातकालीन चिकित्सा सहायता लें। फॉर्म भरने के लिए प्रतीक्षा न करें।",
-        "review": "प्रारंभिक जाँच पूरी। यह प्रविष्टि केवल इस prototype में है; सुरक्षित database में save नहीं हुई है।",
+        "review": "प्रारंभिक जाँच पूरी। यह प्रविष्टि केवल इस prototype session में है; सुरक्षित database में save नहीं हुई है।",
         "professional_welcome": "स्वास्थ्य सेवा पेशेवर विभाग",
-        "professional_note": "अगले चरण में केस-रिव्यू workflow जोड़ेंगे।",
+        "professional_note": "केस-रिव्यू Prototype",
         "disclaimer": "यह prototype चिकित्सा निदान या उपचार का विकल्प नहीं है।",
     },
     "English": {
@@ -82,15 +82,26 @@ LANGUAGES = {
         "urgent": "URGENT: If there is difficulty breathing, throat/tongue swelling, or fainting, seek emergency medical help immediately. Do not wait to complete this form.",
         "review": "Initial form check complete. This report exists only in this prototype session; it has NOT been saved to a secure database.",
         "professional_welcome": "Healthcare Professional section",
-        "professional_note": "A dedicated case-review workflow will be added in a later step.",
+        "professional_note": "Case Review Prototype",
         "disclaimer": "This prototype is not a substitute for medical diagnosis or treatment.",
     },
 }
 
+EMERGENCY_SIGNS = [
+    "Difficulty breathing",
+    "Throat or tongue swelling",
+    "Fainting or collapse",
+    "Severe bleeding",
+    "Seizure",
+    "Severe chest pain",
+]
+
 st.session_state.setdefault("language", "मराठी")
+
 language = st.selectbox(
     "Language / भाषा",
     list(LANGUAGES.keys()),
+    key="app_language",
 )
 t = LANGUAGES[language]
 
@@ -101,6 +112,7 @@ st.info(t["notice"])
 role = st.radio(
     t["role"],
     [t["patient"], t["professional"]],
+    key="user_role",
 )
 
 if role == t["patient"]:
@@ -123,8 +135,9 @@ if role == t["patient"]:
         medicine = st.text_input(t["medicine"])
         symptoms = st.text_area(t["symptoms"])
         onset = st.date_input(
-            t["onset"], value=date.today(),
-            max_value=date.today()
+            t["onset"],
+            value=date.today(),
+            max_value=date.today(),
         )
 
         st.markdown(f'**{t["emergency"]}**')
@@ -142,7 +155,10 @@ if role == t["patient"]:
             st.warning(t["required"])
         else:
             st.success(t["review"])
-            st.write(f'**{t["pid"]}:** {st.session_state["patient_reference"]}')
+            st.write(
+                f'**{t["pid"]}:** '
+                f'{st.session_state["patient_reference"]}'
+            )
             st.write(f'**{t["age"]}:** {age}')
             st.write(f'**{t["medicine"]}:** {medicine}')
             st.write(f'**{t["symptoms"]}:** {symptoms}')
@@ -151,30 +167,19 @@ if role == t["patient"]:
             if breathing or swelling or fainting:
                 st.error(t["urgent"])
 
-
 else:
     st.header(t["professional_welcome"])
-    st.info(
-        "Prototype case-review workflow. "
-        "Cases are not saved to a secure database."
-    )
-    
+    st.info(t["professional_note"])
+
     st.subheader("Emergency Safety Review")
     st.warning(
-        "Check for urgent warning signs before continuing "
-        "the routine case review."
+        "Check for urgent warning signs before routine review. "
+        "Do not delay emergency medical care for this form."
     )
 
     emergency_flags = st.multiselect(
         "Emergency warning signs reported",
-        [
-            "Difficulty breathing",
-            "Throat or tongue swelling",
-            "Fainting or collapse",
-            "Severe bleeding",
-            "Seizure",
-            "Severe chest pain",
-        ],
+        EMERGENCY_SIGNS,
         key="professional_emergency_flags",
     )
 
@@ -189,22 +194,18 @@ else:
         )
     else:
         st.info(
-            "No emergency warning signs selected here. "
+            "No emergency warning signs selected. "
             "This does not rule out a medical emergency."
         )
 
+    st.divider()
     st.subheader("Case Review")
 
     with st.form("professional_case_review"):
-        case_id = st.text_input(
-            "Patient / Case Reference ID"
-        )
-        medicine_review = st.text_input(
-            "Medicine name"
-        )
-        adr_review = st.text_area(
-            "Reported ADR / Symptoms"
-        )
+        case_id = st.text_input("Patient / Case Reference ID")
+        medicine_review = st.text_input("Medicine name")
+        adr_review = st.text_area("Reported ADR / Symptoms")
+
         onset_review = st.date_input(
             "Symptom onset date",
             value=date.today(),
@@ -224,33 +225,41 @@ else:
 
         review_status = st.selectbox(
             "Review status",
-            [
-                "Pending",
-                "Under Review",
-                "Reviewed",
-            ],
+            ["Pending", "Under Review", "Reviewed"],
         )
 
-        reviewer_notes = st.text_area(
-            "Reviewer notes"
-        )
+        reviewer_notes = st.text_area("Reviewer notes")
 
-        review_submitted = st.form_submit_button(
-            "Review Case"
-        )
+        review_submitted = st.form_submit_button("Review Case")
 
     if review_submitted:
         if not case_id.strip():
-            st.warning(
-                "Enter a Patient / Case Reference ID."
-            )
+            st.warning("Enter a Patient / Case Reference ID.")
         elif not medicine_review.strip():
             st.warning("Enter the medicine name.")
         elif not adr_review.strip():
             st.warning("Enter the reported ADR / symptoms.")
         else:
-            st.success("Case review summary prepared.")
+            st.subheader("Case Review Summary")
 
+            if emergency_flags:
+                st.error("EMERGENCY STATUS: URGENT")
+                st.write(
+                    "**Emergency warning signs reported:** "
+                    + ", ".join(emergency_flags)
+                )
+                st.error(
+                    "Immediate emergency medical assessment is needed. "
+                    "Do not delay urgent care for routine case review."
+                )
+            else:
+                st.info(
+                    "EMERGENCY STATUS: No emergency flags selected "
+                    "in this review. This does not rule out an emergency."
+                )
+                st.write("**Emergency warning signs reported:** None selected")
+
+            st.divider()
             st.write("**Case ID:**", case_id)
             st.write("**Medicine:**", medicine_review)
             st.write("**Reported ADR:**", adr_review)
@@ -260,11 +269,9 @@ else:
             st.write("**Reviewer notes:**", reviewer_notes)
 
             st.warning(
-                "Session-only prototype: this review has "
-                "not been saved to a database. "
-                "This summary does not establish diagnosis, "
+                "Session-only prototype: this review has not been saved "
+                "to a database. This summary does not establish diagnosis, "
                 "drug causality, or a final clinical decision."
             )
 
 st.caption(t["disclaimer"])
-
