@@ -1,6 +1,9 @@
 
 import streamlit as st
 import uuid
+import json
+from urllib.request import Request, urlopen
+from urllib.error import URLError, HTTPError
 from datetime import date
 
 st.set_page_config(
@@ -8,6 +11,53 @@ st.set_page_config(
     page_icon="🛡️",
     layout="wide",
 )
+
+def save_case_to_google_sheets(payload):
+    """
+    Save a case through the PHARMAGUARD 2.0 Apps Script web app.
+    Configure these in Streamlit Cloud -> Settings -> Secrets:
+      PHARMAGUARD_API_URL = "your deployed Apps Script /exec URL"
+      PHARMAGUARD_API_TOKEN = "same token as Apps Script Script Properties"
+    Never hardcode the token in this file.
+    """
+    try:
+        api_url = st.secrets.get("PHARMAGUARD_API_URL", "").strip()
+        api_token = st.secrets.get("PHARMAGUARD_API_TOKEN", "").strip()
+
+        if not api_url or not api_token:
+            return False, (
+                "Google Sheets integration is not configured yet. "
+                "Add PHARMAGUARD_API_URL and PHARMAGUARD_API_TOKEN to "
+                "Streamlit Cloud Secrets after deploying the Apps Script web app."
+            )
+
+        payload = dict(payload)
+        payload["api_token"] = api_token
+
+        request = Request(
+            api_url,
+            data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+
+        with urlopen(request, timeout=20) as response:
+            body = response.read().decode("utf-8")
+            result = json.loads(body)
+
+        if result.get("success") is True:
+            return True, result.get("message", "Case saved successfully.")
+
+        return False, result.get("message", "The API did not save the case.")
+
+    except (HTTPError, URLError, TimeoutError, json.JSONDecodeError) as error:
+        return False, (
+            "Could not save the case to Google Sheets. "
+            "Check the deployment URL, access settings, and API configuration."
+        )
+    except Exception:
+        return False, "Could not save the case. Check the API configuration."
+
 
 LANGUAGES = {
     "मराठी": {
@@ -154,7 +204,38 @@ if role == t["patient"]:
         if not medicine.strip() or not symptoms.strip():
             st.warning(t["required"])
         else:
-            st.success(t["review"])
+            patient_flags = []
+            if breathing:
+                patient_flags.append(t["breathing"])
+            if swelling:
+                patient_flags.append(t["swelling"])
+            if fainting:
+                patient_flags.append(t["fainting"])
+
+            patient_emergency_status = (
+                "URGENT - emergency warning sign reported"
+                if patient_flags
+                else "No listed emergency flags selected"
+            )
+
+            saved, save_message = save_case_to_google_sheets({
+                "case_id": st.session_state["patient_reference"],
+                "role": "Patient",
+                "age": int(age),
+                "sex": "Not provided",
+                "medicine": medicine.strip(),
+                "adr": symptoms.strip(),
+                "emergency_flags": patient_flags,
+                "emergency_status": patient_emergency_status,
+                "seriousness": "Needs healthcare professional assessment",
+                "review_status": "Pending",
+                "reviewer_notes": (
+                    "Reported symptom onset: " + str(onset)
+                    + ("; Optional name provided by patient."
+                       if name.strip() else "")
+                ),
+            })
+
             st.write(
                 f'**{t["pid"]}:** '
                 f'{st.session_state["patient_reference"]}'
@@ -164,7 +245,12 @@ if role == t["patient"]:
             st.write(f'**{t["symptoms"]}:** {symptoms}')
             st.write(f'**{t["onset"]}:** {onset}')
 
-            if breathing or swelling or fainting:
+            if saved:
+                st.success("Report saved to the PHARMAGUARD 2.0 database.")
+            else:
+                st.warning("Report was not saved to the database. " + save_message)
+
+            if patient_flags:
                 st.error(t["urgent"])
 
 else:
@@ -268,10 +354,36 @@ else:
             st.write("**Review status:**", review_status)
             st.write("**Reviewer notes:**", reviewer_notes)
 
-            st.warning(
-                "Session-only prototype: this review has not been saved "
-                "to a database. This summary does not establish diagnosis, "
-                "drug causality, or a final clinical decision."
+            professional_emergency_status = (
+                "URGENT - emergency warning sign reported"
+                if emergency_flags
+                else "No emergency flags selected in this review"
+            )
+
+            saved, save_message = save_case_to_google_sheets({
+                "case_id": case_id.strip(),
+                "role": "Healthcare Professional",
+                "medicine": medicine_review.strip(),
+                "adr": adr_review.strip(),
+                "emergency_flags": emergency_flags,
+                "emergency_status": professional_emergency_status,
+                "seriousness": seriousness,
+                "review_status": review_status,
+                "reviewer_notes": (
+                    "Symptom onset: " + str(onset_review)
+                    + ("; " + reviewer_notes.strip()
+                       if reviewer_notes.strip() else "")
+                ),
+            })
+
+            if saved:
+                st.success("Case review saved to the PHARMAGUARD 2.0 database.")
+            else:
+                st.warning("Case review was not saved to the database. " + save_message)
+
+            st.caption(
+                "Prototype support only. This summary does not establish "
+                "diagnosis, drug causality, or a final clinical decision."
             )
 
 st.caption(t["disclaimer"])
