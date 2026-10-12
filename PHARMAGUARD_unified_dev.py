@@ -993,6 +993,41 @@ def _navigate_to(page):
     st.session_state["active_page"] = page
 
 
+LANGUAGE_TEXT = {
+    "English": {
+        "selector": "Language", "patient": "👤 Patient Corner", "professional": "🩺 Healthcare Professional Corner",
+        "patient_caption": "Report a possible medicine-related reaction for healthcare-professional review.",
+        "emergency": "If you have difficulty breathing, throat/tongue swelling, collapse, or another severe symptom, seek emergency medical help now. Do not wait for this form.",
+        "case_ref": "Case Reference", "age": "Age", "sex": "Sex", "not_provided": "Not provided", "female": "Female", "male": "Male", "other": "Other",
+        "medicine": "Medicine name *", "symptoms": "Reported symptoms / possible ADR *", "onset": "When did symptoms start?", "breathing": "Difficulty breathing", "swelling": "Throat or tongue swelling", "fainting": "Fainting or collapse", "bleeding": "Severe bleeding", "submit": "Submit ADR report",
+        "urgent": "URGENT: Seek immediate emergency medical assessment. Do not delay care to submit this report.", "required": "Enter both the medicine name and symptoms.", "saved": "Report saved to the configured patient-safety database.", "not_saved": "Report was not confirmed as saved. ", "disclaimer": "This report is not a diagnosis or confirmation that a medicine caused the symptoms.",
+        "pro_warning": "Check emergency warning signs first. This form does not replace clinical assessment or urgent care.", "flags": "Emergency warning signs reported", "no_flags": "No listed emergency flags selected; this does not rule out an emergency.", "case_id": "Patient / Case Reference ID *", "seriousness": "Seriousness review", "not_assessed": "Not assessed", "potentially_serious": "Potentially serious", "not_identified": "Not currently identified as serious", "needs_assessment": "Needs further assessment", "status": "Review status", "pending": "Pending", "under_review": "Under Review", "reviewed": "Reviewed", "notes": "Reviewer notes", "save_review": "Save case review", "required_pro": "Enter the case reference, medicine name, and reported symptoms.", "review_saved": "Case review saved to the configured patient-safety database.", "review_not_saved": "Case review was not confirmed as saved. ", "urgent_prefix": "URGENT: ", "urgent_suffix": ". Arrange immediate emergency assessment.", "no_flags_pro": "No emergency flags selected in this review", "role_patient": "Patient", "role_pro": "Healthcare Professional", "seriousness_value": "Needs healthcare professional assessment", "pending_value": "Pending", "no_flags_value": "No listed emergency flags selected", "urgent_value": "URGENT - emergency warning sign reported", "reviewer_onset": "Reported symptom onset: "
+    },
+    "मराठी": {
+        "selector": "भाषा निवडा", "patient": "👤 रुग्ण विभाग", "professional": "🩺 आरोग्यसेवा व्यावसायिक विभाग",
+        "patient_caption": "औषधामुळे झालेल्या संभाव्य त्रासाची नोंद आरोग्यसेवा व्यावसायिकांच्या तपासणीसाठी करा.",
+        "emergency": "श्वास घेण्यास त्रास, घसा/जीभ सुजणे, बेशुद्ध पडणे किंवा इतर गंभीर लक्षणे असल्यास त्वरित आपत्कालीन वैद्यकीय मदत घ्या. हा फॉर्म भरण्यासाठी थांबू नका.",
+        "case_ref": "केस संदर्भ क्रमांक", "age": "वय", "sex": "लिंग", "not_provided": "माहिती दिलेली नाही", "female": "स्त्री", "male": "पुरुष", "other": "इतर",
+        "medicine": "औषधाचे नाव *", "symptoms": "नोंदवलेली लक्षणे / संभाव्य ADR *", "onset": "लक्षणे कधी सुरू झाली?", "breathing": "श्वास घेण्यास त्रास", "swelling": "घसा किंवा जीभ सुजणे", "fainting": "बेशुद्ध पडणे किंवा कोसळणे", "bleeding": "तीव्र रक्तस्राव", "submit": "ADR नोंद सबमिट करा",
+        "urgent": "तातडीची सूचना: त्वरित आपत्कालीन वैद्यकीय तपासणी करून घ्या. नोंद भरण्यासाठी उपचार उशिरा करू नका.", "required": "औषधाचे नाव आणि लक्षणे दोन्ही भरा.", "saved": "अहवाल संबंधित patient-safety database मध्ये सेव्ह झाला.", "not_saved": "अहवाल सेव्ह झाल्याची पुष्टी मिळाली नाही. ", "disclaimer": "ही नोंद निदान नाही आणि औषधामुळेच लक्षणे झाली याची पुष्टीही नाही.",
+        "pro_warning": "आधी आपत्कालीन लक्षणे तपासा. हा फॉर्म वैद्यकीय तपासणी किंवा तातडीच्या उपचारांचा पर्याय नाही.", "flags": "नोंदवलेली आपत्कालीन लक्षणे", "no_flags": "यादीतील आपत्कालीन लक्षणे निवडलेली नाहीत; तरीही आपत्कालीन स्थिती नसल्याची खात्री होत नाही.", "case_id": "रुग्ण / केस संदर्भ क्रमांक *", "seriousness": "गंभीरतेचे मूल्यांकन", "not_assessed": "मूल्यांकन केलेले नाही", "potentially_serious": "संभाव्यतः गंभीर", "not_identified": "सध्या गंभीर म्हणून ओळखलेले नाही", "needs_assessment": "अधिक मूल्यांकन आवश्यक", "status": "तपासणीची स्थिती", "pending": "प्रलंबित", "under_review": "तपासणी सुरू", "reviewed": "तपासणी पूर्ण", "notes": "तपासणी करणाऱ्याच्या नोंदी", "save_review": "केस तपासणी सेव्ह करा", "required_pro": "केस संदर्भ क्रमांक, औषधाचे नाव आणि लक्षणे भरा.", "review_saved": "केस तपासणी सेव्ह झाली.", "review_not_saved": "केस तपासणी सेव्ह झाल्याची पुष्टी मिळाली नाही. ", "urgent_prefix": "तातडीची सूचना: ", "urgent_suffix": ". त्वरित आपत्कालीन वैद्यकीय तपासणी करा.", "no_flags_pro": "या तपासणीत आपत्कालीन लक्षणे निवडलेली नाहीत", "role_patient": "रुग्ण", "role_pro": "आरोग्यसेवा व्यावसायिक", "seriousness_value": "आरोग्यसेवा व्यावसायिकांचे मूल्यांकन आवश्यक", "pending_value": "प्रलंबित", "no_flags_value": "यादीतील आपत्कालीन लक्षणे निवडलेली नाहीत", "urgent_value": "तातडीचे - आपत्कालीन लक्षण नोंदवले", "reviewer_onset": "लक्षणे सुरू झाल्याची तारीख: "
+    },
+    "हिंदी": {
+        "selector": "भाषा चुनें", "patient": "👤 रोगी विभाग", "professional": "🩺 स्वास्थ्य सेवा पेशेवर विभाग",
+        "patient_caption": "दवा से हुई संभावित प्रतिक्रिया को स्वास्थ्य सेवा पेशेवर की समीक्षा के लिए दर्ज करें।",
+        "emergency": "सांस लेने में परेशानी, गले/जीभ में सूजन, बेहोशी या अन्य गंभीर लक्षण हों तो तुरंत आपातकालीन चिकित्सा सहायता लें। इस फॉर्म के लिए प्रतीक्षा न करें।",
+        "case_ref": "केस संदर्भ संख्या", "age": "उम्र", "sex": "लिंग", "not_provided": "नहीं दिया गया", "female": "महिला", "male": "पुरुष", "other": "अन्य",
+        "medicine": "दवा का नाम *", "symptoms": "दर्ज लक्षण / संभावित ADR *", "onset": "लक्षण कब शुरू हुए?", "breathing": "सांस लेने में परेशानी", "swelling": "गले या जीभ में सूजन", "fainting": "बेहोशी या गिर जाना", "bleeding": "गंभीर रक्तस्राव", "submit": "ADR रिपोर्ट जमा करें",
+        "urgent": "तत्काल: तुरंत आपातकालीन चिकित्सा जांच कराएं। रिपोर्ट जमा करने के लिए उपचार में देरी न करें।", "required": "दवा का नाम और लक्षण दोनों भरें।", "saved": "रिपोर्ट patient-safety database में सेव हो गई।", "not_saved": "रिपोर्ट सेव होने की पुष्टि नहीं हुई। ", "disclaimer": "यह रिपोर्ट निदान नहीं है और यह पुष्टि नहीं करती कि लक्षण दवा के कारण ही हुए।",
+        "pro_warning": "पहले आपातकालीन चेतावनी संकेत जांचें। यह फॉर्म चिकित्सकीय जांच या तत्काल उपचार का विकल्प नहीं है।", "flags": "दर्ज आपातकालीन चेतावनी संकेत", "no_flags": "सूची के आपातकालीन संकेत नहीं चुने गए; इससे आपातकाल न होने की पुष्टि नहीं होती।", "case_id": "रोगी / केस संदर्भ संख्या *", "seriousness": "गंभीरता की समीक्षा", "not_assessed": "मूल्यांकन नहीं हुआ", "potentially_serious": "संभावित रूप से गंभीर", "not_identified": "अभी गंभीर नहीं पहचाना गया", "needs_assessment": "आगे मूल्यांकन आवश्यक", "status": "समीक्षा स्थिति", "pending": "लंबित", "under_review": "समीक्षा जारी", "reviewed": "समीक्षा पूरी", "notes": "समीक्षक की टिप्पणियां", "save_review": "केस समीक्षा सेव करें", "required_pro": "केस संदर्भ, दवा का नाम और लक्षण भरें।", "review_saved": "केस समीक्षा सेव हो गई।", "review_not_saved": "केस समीक्षा सेव होने की पुष्टि नहीं हुई। ", "urgent_prefix": "तत्काल: ", "urgent_suffix": ". तुरंत आपातकालीन जांच कराएं।", "no_flags_pro": "इस समीक्षा में कोई आपातकालीन संकेत नहीं चुना गया", "role_patient": "रोगी", "role_pro": "स्वास्थ्य सेवा पेशेवर", "seriousness_value": "स्वास्थ्य सेवा पेशेवर का मूल्यांकन आवश्यक", "pending_value": "लंबित", "no_flags_value": "सूची के आपातकालीन संकेत नहीं चुने गए", "urgent_value": "तत्काल - आपातकालीन संकेत दर्ज", "reviewer_onset": "लक्षण शुरू होने की तारीख: "
+    }
+}
+
+st.session_state.setdefault("pg_language", "English")
+
+with st.sidebar:
+    st.selectbox("Language / भाषा / भाषा निवडा", ["English", "मराठी", "हिंदी"], key="pg_language")
+
 with st.sidebar:
     if "active_page" not in st.session_state:
         st.session_state["active_page"] = "🏠 Dashboard"
@@ -3848,108 +3883,89 @@ def _pg2_save_case(payload):
 
 
 def _pg2_patient_corner():
-    st.title("👤 Patient Corner")
-    st.caption("Report a possible medicine-related reaction for healthcare-professional review.")
-    st.warning(
-        "If you have difficulty breathing, throat/tongue swelling, collapse, "
-        "or another severe symptom, seek emergency medical help now. Do not wait for this form."
-    )
+    t = LANGUAGE_TEXT[st.session_state.get("pg_language", "English")]
+    st.title(t["patient"])
+    st.caption(t["patient_caption"])
+    st.warning(t["emergency"])
     if "unified_patient_case_id" not in st.session_state:
         st.session_state["unified_patient_case_id"] = "PHG2-" + uuid.uuid4().hex[:8].upper()
-    st.caption("Case Reference: " + st.session_state["unified_patient_case_id"])
+    st.caption(t["case_ref"] + ": " + st.session_state["unified_patient_case_id"])
     with st.form("unified_patient_report"):
-        age = st.number_input("Age", min_value=1, max_value=120, value=30)
-        sex = st.selectbox("Sex", ["Not provided", "Female", "Male", "Other"])
-        medicine = st.text_input("Medicine name *")
-        symptoms = st.text_area("Reported symptoms / possible ADR *")
-        onset = st.date_input("When did symptoms start?", value=date.today(), max_value=date.today())
-        breathing = st.checkbox("Difficulty breathing")
-        swelling = st.checkbox("Throat or tongue swelling")
-        fainting = st.checkbox("Fainting or collapse")
-        severe_bleeding = st.checkbox("Severe bleeding")
-        submitted = st.form_submit_button("Submit ADR report")
+        age = st.number_input(t["age"], min_value=1, max_value=120, value=30)
+        sex = st.selectbox(t["sex"], [t["not_provided"], t["female"], t["male"], t["other"]])
+        medicine = st.text_input(t["medicine"])
+        symptoms = st.text_area(t["symptoms"])
+        onset = st.date_input(t["onset"], value=date.today(), max_value=date.today())
+        breathing = st.checkbox(t["breathing"])
+        swelling = st.checkbox(t["swelling"])
+        fainting = st.checkbox(t["fainting"])
+        severe_bleeding = st.checkbox(t["bleeding"])
+        submitted = st.form_submit_button(t["submit"])
     flags = []
     if breathing: flags.append("Difficulty breathing")
     if swelling: flags.append("Throat or tongue swelling")
     if fainting: flags.append("Fainting or collapse")
     if severe_bleeding: flags.append("Severe bleeding")
     if flags:
-        st.error("URGENT: Seek immediate emergency medical assessment. Do not delay care to submit this report.")
+        st.error(t["urgent"])
     if submitted:
         if not medicine.strip() or not symptoms.strip():
-            st.warning("Enter both the medicine name and symptoms.")
+            st.warning(t["required"])
         else:
             payload = {
-                "case_id": st.session_state["unified_patient_case_id"],
-                "role": "Patient",
-                "age": int(age),
-                "sex": sex,
-                "medicine": medicine.strip(),
-                "adr": symptoms.strip(),
+                "case_id": st.session_state["unified_patient_case_id"], "role": "Patient",
+                "age": int(age), "sex": sex, "medicine": medicine.strip(), "adr": symptoms.strip(),
                 "emergency_flags": flags,
                 "emergency_status": "URGENT - emergency warning sign reported" if flags else "No listed emergency flags selected",
-                "seriousness": "Needs healthcare professional assessment",
-                "review_status": "Pending",
+                "seriousness": "Needs healthcare professional assessment", "review_status": "Pending",
                 "reviewer_notes": "Reported symptom onset: " + str(onset),
             }
             saved, message = _pg2_save_case(payload)
-            st.write("**Case Reference:**", st.session_state["unified_patient_case_id"])
-            if saved:
-                st.success("Report saved to the configured patient-safety database.")
-            else:
-                st.error("Report was not confirmed as saved. " + message)
-            st.caption("This report is not a diagnosis or confirmation that a medicine caused the symptoms.")
+            st.write("**" + t["case_ref"] + ":**", st.session_state["unified_patient_case_id"])
+            if saved: st.success(t["saved"])
+            else: st.error(t["not_saved"] + message)
+            st.caption(t["disclaimer"])
 
 
 def _pg2_professional_corner():
-    st.title("🩺 Healthcare Professional Corner")
-    st.warning("Check emergency warning signs first. This form does not replace clinical assessment or urgent care.")
-    flags = st.multiselect(
-        "Emergency warning signs reported",
-        ["Difficulty breathing", "Throat or tongue swelling", "Fainting or collapse",
-         "Severe bleeding", "Seizure", "Severe chest pain"],
-        key="unified_professional_emergency_flags",
-    )
-    if flags:
-        st.error("URGENT: " + ", ".join(flags) + ". Arrange immediate emergency assessment.")
-    else:
-        st.info("No listed emergency flags selected; this does not rule out an emergency.")
+    t = LANGUAGE_TEXT[st.session_state.get("pg_language", "English")]
+    st.title(t["professional"])
+    st.warning(t["pro_warning"])
+    flag_labels = [t["breathing"], t["swelling"], t["fainting"], t["bleeding"], "Seizure" if t["selector"] == "Language" else ("झटका / आकडी" if t["selector"] == "भाषा निवडा" else "दौरा"), "Severe chest pain" if t["selector"] == "Language" else ("तीव्र छातीत दुखणे" if t["selector"] == "भाषा निवडा" else "तेज सीने में दर्द")]
+    canonical_flags = ["Difficulty breathing", "Throat or tongue swelling", "Fainting or collapse", "Severe bleeding", "Seizure", "Severe chest pain"]
+    chosen = st.multiselect(t["flags"], flag_labels, key="unified_professional_emergency_flags_" + st.session_state.get("pg_language", "English"))
+    flags = [canonical_flags[flag_labels.index(x)] for x in chosen]
+    if flags: st.error(t["urgent_prefix"] + ", ".join(chosen) + t["urgent_suffix"])
+    else: st.info(t["no_flags"])
+    seriousness_options = [t["not_assessed"], t["potentially_serious"], t["not_identified"], t["needs_assessment"]]
+    seriousness_map = dict(zip(seriousness_options, ["Not assessed", "Potentially serious", "Not currently identified as serious", "Needs further assessment"]))
+    status_options = [t["pending"], t["under_review"], t["reviewed"]]
+    status_map = dict(zip(status_options, ["Pending", "Under Review", "Reviewed"]))
     with st.form("unified_professional_review"):
-        case_id = st.text_input("Patient / Case Reference ID *")
-        age = st.number_input("Age (if known)", min_value=0, max_value=120, value=0)
-        sex = st.selectbox("Sex (if known)", ["Not provided", "Female", "Male", "Other"])
-        medicine = st.text_input("Medicine name *")
-        adr = st.text_area("Reported ADR / symptoms *")
-        seriousness = st.selectbox(
-            "Seriousness review",
-            ["Not assessed", "Potentially serious", "Not currently identified as serious", "Needs further assessment"],
-        )
-        status = st.selectbox("Review status", ["Pending", "Under Review", "Reviewed"])
-        notes = st.text_area("Reviewer notes")
-        submitted = st.form_submit_button("Save case review")
+        case_id = st.text_input(t["case_id"])
+        age = st.number_input(t["age"] + " (if known)", min_value=0, max_value=120, value=0)
+        sex_labels = [t["not_provided"], t["female"], t["male"], t["other"]]
+        sex_values = ["Not provided", "Female", "Male", "Other"]
+        sex = sex_values[sex_labels.index(st.selectbox(t["sex"] + " (if known)", sex_labels))]
+        medicine = st.text_input(t["medicine"])
+        adr = st.text_area(t["symptoms"])
+        seriousness_label = st.selectbox(t["seriousness"], seriousness_options)
+        status_label = st.selectbox(t["status"], status_options)
+        notes = st.text_area(t["notes"])
+        submitted = st.form_submit_button(t["save_review"])
     if submitted:
-        if not case_id.strip() or not medicine.strip() or not adr.strip():
-            st.warning("Enter the case reference, medicine name, and reported symptoms.")
+        if not case_id.strip() or not medicine.strip() or not adr.strip(): st.warning(t["required_pro"])
         else:
             payload = {
-                "case_id": case_id.strip(),
-                "role": "Healthcare Professional",
-                "age": int(age) if age else "",
-                "sex": sex,
-                "medicine": medicine.strip(),
-                "adr": adr.strip(),
-                "emergency_flags": flags,
+                "case_id": case_id.strip(), "role": "Healthcare Professional", "age": int(age) if age else "",
+                "sex": sex, "medicine": medicine.strip(), "adr": adr.strip(), "emergency_flags": flags,
                 "emergency_status": "URGENT - emergency warning sign reported" if flags else "No emergency flags selected in this review",
-                "seriousness": seriousness,
-                "review_status": status,
-                "reviewer_notes": notes.strip(),
+                "seriousness": seriousness_map[seriousness_label], "review_status": status_map[status_label], "reviewer_notes": notes.strip(),
             }
             saved, message = _pg2_save_case(payload)
-            if saved:
-                st.success("Case review saved to the configured patient-safety database.")
-            else:
-                st.error("Case review was not confirmed as saved. " + message)
-    st.caption("Review support only; this does not establish diagnosis, drug causality, or a final clinical decision.")
+            if saved: st.success(t["review_saved"])
+            else: st.error(t["review_not_saved"] + message)
+    st.caption(t["disclaimer"])
 
 
 # SCREEN ROUTING
