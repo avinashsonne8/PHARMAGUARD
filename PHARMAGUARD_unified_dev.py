@@ -2086,6 +2086,79 @@ def evaluate_adr_priority(age, sex, drug, adr):
         moderate_hits,
     )
 
+
+# =========================================================
+# SAFETY GATE REGRESSION TESTS — MANUAL / DEVELOPMENT USE
+# =========================================================
+def run_safety_gate_regression_tests():
+    """
+    Diagnostic runner for three safety-gate edge cases.
+    This function does not run automatically; call it from a test/dev button
+    or from a separate test script when validating changes.
+    """
+    test_cases = [
+        {
+            "name": "Current breathing difficulty",
+            "adr": "Patient has difficulty breathing now",
+            "expected_priority": "HIGH",
+            "check": "priority",
+        },
+        {
+            "name": "Past respiratory failure with no current symptoms",
+            "adr": (
+                "Patient had respiratory failure last year; "
+                "no current symptoms"
+            ),
+            "expected_priority": None,
+            "check": "no_current_serious_signal",
+        },
+        {
+            "name": "Negated breathing difficulty",
+            "adr": "Patient has no breathing difficulty",
+            "expected_priority": None,
+            "check": "no_current_serious_signal",
+        },
+    ]
+
+    results = []
+    for case in test_cases:
+        output = evaluate_adr_priority(
+            age=30,
+            sex="Unknown",
+            drug="Test medicine",
+            adr=case["adr"],
+        )
+        priority, flag, reason, recommendation, source, serious_hits, moderate_hits = output
+
+        if case["check"] == "priority":
+            passed = priority == case["expected_priority"]
+        else:
+            # These two cases should not trigger a serious signal specifically
+            # from a past or explicitly negated breathing event. The model may
+            # still assign its own priority when no Safety Gate signal applies.
+            breathing_terms = (
+                "breath", "respir", "airway", "asphyx", "dyspn", "apn"
+            )
+            serious_text = " ".join(str(hit).lower() for hit in serious_hits)
+            passed = not any(term in serious_text for term in breathing_terms)
+
+        results.append({
+            "Test": case["name"],
+            "Expected": (
+                case["expected_priority"]
+                if case["expected_priority"] is not None
+                else "No breathing-related serious signal"
+            ),
+            "Actual priority": priority,
+            "Serious signals": ", ".join(serious_hits) if serious_hits else "None",
+            "Decision source": source,
+            "Reason": reason,
+            "Result": "PASS" if passed else "CHECK",
+        })
+
+    return pd.DataFrame(results)
+
+
 # =========================================================
 # SESSION HISTORY
 # =========================================================
