@@ -2132,7 +2132,14 @@ def run_safety_gate_regression_tests():
         priority, flag, reason, recommendation, source, serious_hits, moderate_hits = output
 
         if case["check"] == "priority":
-            passed = priority == case["expected_priority"]
+            # A current breathing emergency must be HIGH, explicitly attributed
+            # to the Safety Gate, and accompanied by a recorded serious signal.
+            passed = (
+                priority == case["expected_priority"]
+                and str(source).startswith("Safety Gate")
+                and bool(serious_hits)
+                and "serious" in str(reason).lower()
+            )
         else:
             # These two cases should not trigger a serious signal specifically
             # from a past or explicitly negated breathing event. The model may
@@ -2154,6 +2161,14 @@ def run_safety_gate_regression_tests():
             "Serious signals": ", ".join(serious_hits) if serious_hits else "None",
             "Decision source": source,
             "Reason": reason,
+            "Explainability check": (
+                "Priority + Safety Gate source + signal + reason verified"
+                if case["check"] == "priority" and passed
+                else "Safety Gate source/signal/reason needs review"
+                if case["check"] == "priority"
+                else "No breathing-related serious signal" if passed
+                else "Unexpected breathing-related serious signal"
+            ),
             "Result": "PASS" if passed else "CHECK",
         })
 
