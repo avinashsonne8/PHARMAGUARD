@@ -1127,7 +1127,6 @@ with st.sidebar:
     )
 
 
-
 # =========================================================
 # V36 STABLE — STREAMLIT NATIVE DARK-MODE COMPATIBILITY
 # Do not detect phone/OS theme. Streamlit controls the active theme.
@@ -2086,120 +2085,6 @@ def evaluate_adr_priority(age, sex, drug, adr):
         serious_hits,
         moderate_hits,
     )
-
-
-# =========================================================
-# SAFETY GATE REGRESSION TESTS — MANUAL / DEVELOPMENT USE
-# =========================================================
-def run_safety_gate_regression_tests():
-    """
-    Diagnostic runner for three safety-gate edge cases.
-    This function does not run automatically; call it from a test/dev button
-    or from a separate test script when validating changes.
-    """
-    test_cases = [
-        {
-            "name": "Current breathing difficulty",
-            "adr": "Patient has difficulty breathing now",
-            "expected_priority": "HIGH",
-            "check": "priority",
-        },
-        {
-            "name": "Past respiratory failure with no current symptoms",
-            "adr": (
-                "Patient had respiratory failure last year; "
-                "no current symptoms"
-            ),
-            "expected_priority": None,
-            "check": "no_current_serious_signal",
-        },
-        {
-            "name": "Negated breathing difficulty",
-            "adr": "Patient has no breathing difficulty",
-            "expected_priority": None,
-            "check": "no_current_serious_signal",
-        },
-    ]
-
-    results = []
-    for case in test_cases:
-        output = evaluate_adr_priority(
-            age=30,
-            sex="Unknown",
-            drug="Test medicine",
-            adr=case["adr"],
-        )
-        priority, flag, reason, recommendation, source, serious_hits, moderate_hits = output
-
-        if case["check"] == "priority":
-            # A current breathing emergency must be HIGH, explicitly attributed
-            # to the Safety Gate, and accompanied by a recorded serious signal.
-            passed = (
-                priority == case["expected_priority"]
-                and str(source).startswith("Safety Gate")
-                and bool(serious_hits)
-                and "serious" in str(reason).lower()
-            )
-        else:
-            # These two cases should not trigger a serious signal specifically
-            # from a past or explicitly negated breathing event. The model may
-            # still assign its own priority when no Safety Gate signal applies.
-            breathing_terms = (
-                "breath", "respir", "airway", "asphyx", "dyspn", "apn"
-            )
-            serious_text = " ".join(str(hit).lower() for hit in serious_hits)
-            passed = not any(term in serious_text for term in breathing_terms)
-
-        results.append({
-            "Test": case["name"],
-            "Expected": (
-                case["expected_priority"]
-                if case["expected_priority"] is not None
-                else "No breathing-related serious signal"
-            ),
-            "Actual priority": priority,
-            "Serious signals": ", ".join(serious_hits) if serious_hits else "None",
-            "Decision source": source,
-            "Reason": reason,
-            "Explainability check": (
-                "Priority + Safety Gate source + signal + reason verified"
-                if case["check"] == "priority" and passed
-                else "Safety Gate source/signal/reason needs review"
-                if case["check"] == "priority"
-                else "No breathing-related serious signal" if passed
-                else "Unexpected breathing-related serious signal"
-            ),
-            "Result": "PASS" if passed else "CHECK",
-        })
-
-    return pd.DataFrame(results)
-
-
-# Developer-only regression checks; hidden unless explicitly enabled.
-with st.expander("🧪 Developer tools", expanded=False):
-    enable_safety_tests = st.checkbox(
-        "Enable Safety Gate regression tests",
-        key="pg_enable_safety_gate_tests",
-        value=False,
-        help="Internal prototype checks only; not a clinical validation."
-    )
-    if enable_safety_tests:
-        st.markdown("### 🧪 Safety Gate Regression Tests")
-        st.caption(
-            "Developer-only prototype checks. These do not establish clinical validity "
-            "and do not replace pharmacist/clinician review."
-        )
-        if st.button("Run Safety Gate tests", key="pg_run_safety_gate_tests"):
-            try:
-                test_results = run_safety_gate_regression_tests()
-                st.dataframe(test_results, use_container_width=True, hide_index=True)
-                if not test_results.empty and (test_results["Result"] == "PASS").all():
-                    st.success("All included regression checks passed.")
-                else:
-                    st.warning("One or more checks need review. Inspect the results above.")
-            except Exception as exc:
-                st.error(f"Regression tests could not complete: {exc}")
-
 
 # =========================================================
 # SESSION HISTORY
@@ -4215,6 +4100,21 @@ drug = st.text_input(
 )
 
 # =========================================================
+# EVIDENCE GAP RADAR — OPTIONAL TIMELINE DETAILS
+# This is reviewer support only; it does not alter priority.
+# =========================================================
+st.markdown("### 🧭 ADR Evidence Gap Radar (New)")
+st.caption("Optional timeline checks help reviewers spot missing dates or chronology conflicts. They do not establish causality and do not change the Safety Gate or model priority.")
+use_drug_start_date = st.checkbox("Drug start date is available", value=False, key="egr_has_drug_start")
+drug_start_date = None
+if use_drug_start_date:
+    drug_start_date = st.date_input("Drug start date", value=date.today(), key="egr_drug_start")
+use_adr_onset_date = st.checkbox("ADR / symptom onset date is available", value=False, key="egr_has_onset")
+adr_onset_date = None
+if use_adr_onset_date:
+    adr_onset_date = st.date_input("ADR / symptom onset date", value=date.today(), key="egr_onset")
+
+# =========================================================
 # ADR INPUT
 # =========================================================
 
@@ -4329,6 +4229,41 @@ if st.button(
         st.success(
             "✅ Core ADR information appears complete for this prototype review."
         )
+
+    # -----------------------------------------------------
+    # NEW — EVIDENCE GAP RADAR (reviewer-support only)
+    # -----------------------------------------------------
+    st.markdown("### 🧭 Evidence Gap Radar Results")
+    evidence_gaps = []
+    if not drug.strip():
+        evidence_gaps.append("Suspected drug name is missing.")
+    if not adr.strip():
+        evidence_gaps.append("ADR description is missing.")
+    if drug_start_date is None:
+        evidence_gaps.append("Drug start date was not provided.")
+    if adr_onset_date is None:
+        evidence_gaps.append("ADR onset date was not provided.")
+
+    if drug_start_date is not None and adr_onset_date is not None:
+        if adr_onset_date < drug_start_date:
+            st.error(
+                "🕒 Timeline conflict: the reported ADR onset date is earlier than the drug start date. "
+                "Verify both dates and the case history before drawing conclusions."
+            )
+            evidence_gaps.append("ADR onset precedes reported drug start; chronology needs verification.")
+        elif adr_onset_date == drug_start_date:
+            st.warning(
+                "🕒 Same-day timeline: ADR onset and drug start are recorded on the same date. "
+                "Confirm the sequence and, if available, the times."
+            )
+        else:
+            st.success("🕒 Timeline check: the entered dates are in chronological order. This alone does not prove causality.")
+
+    if evidence_gaps:
+        st.warning("**Review checklist — information to confirm:**\n\n" + "\n".join(f"- {item}" for item in evidence_gaps))
+    else:
+        st.success("Evidence Gap Radar: required fields for this limited check are present. Other clinical details may still be needed.")
+    st.caption("Safety safeguard: Evidence Gap Radar is advisory only. It does not downgrade or override the existing Safety Gate / Random Forest priority and does not diagnose or assess causality.")
 
     # -----------------------------------------------------
     # RUN THE SHARED SAFETY-FIRST PRIORITY ENGINE
