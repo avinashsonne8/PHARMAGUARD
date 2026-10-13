@@ -1126,6 +1126,32 @@ with st.sidebar:
         unsafe_allow_html=True
     )
 
+    # Developer-only regression checks; hidden unless explicitly enabled.
+    with st.expander("🧪 Developer tools", expanded=False):
+        st.checkbox(
+            "Enable Safety Gate regression tests",
+            key="pg_enable_safety_gate_tests",
+            value=False,
+            help="Internal prototype checks only; not a clinical validation."
+        )
+
+if st.session_state.get("pg_enable_safety_gate_tests", False):
+    st.markdown("### 🧪 Safety Gate Regression Tests")
+    st.caption(
+        "Developer-only prototype checks. These do not establish clinical validity "
+        "and do not replace pharmacist/clinician review."
+    )
+    if st.button("Run Safety Gate tests", key="pg_run_safety_gate_tests"):
+        try:
+            test_results = run_safety_gate_regression_tests()
+            st.dataframe(test_results, use_container_width=True, hide_index=True)
+            if not test_results.empty and (test_results["Result"] == "PASS").all():
+                st.success("All included regression checks passed.")
+            else:
+                st.warning("One or more checks need review. Inspect the results above.")
+        except Exception as exc:
+            st.error(f"Regression tests could not complete: {exc}")
+
 
 # =========================================================
 # V36 STABLE — STREAMLIT NATIVE DARK-MODE COMPATIBILITY
