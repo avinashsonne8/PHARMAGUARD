@@ -4368,6 +4368,19 @@ if st.button(
 
     meta = priority_meta.get(priority, priority_meta["UNKNOWN"])
 
+    # UI-only clarification: keep final priority unchanged, but make human review visible.
+    review_banner = ""
+    if safety_gate_priority == "NEEDS REVIEW":
+        review_banner = (
+            '<div class="pg-review-required-banner" role="status" '
+            'style="margin:12px 0;padding:14px;border:2px solid #d97706;'
+            'border-radius:12px;background:#fff7ed;color:#7c2d12;">'
+            '<strong>⚠️ HUMAN REVIEW REQUIRED</strong><br>'
+            'A potentially serious signal was detected, but the current status is unclear. '
+            'Confirm current symptoms and urgency with a qualified clinician.'
+            '</div>'
+        )
+
     safe_patient_id = html.escape(str(patient_id))
     safe_age = html.escape(str(age))
     safe_sex = html.escape(str(sex))
@@ -4391,6 +4404,8 @@ if st.button(
                     </div>
                 </div>
             </div>
+
+            {review_banner}
 
             <div class="pg-case-strip">
                 <div class="pg-case-item">
