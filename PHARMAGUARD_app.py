@@ -1,16 +1,21 @@
-# PHARMAGUARD Professional UI v32 — Dashboard Mobile Polish
-# Dashboard HTML rendering fix — backend/Safety Gate/ML/database logic preserved.
-import streamlit as st
-import pandas as pd
-import joblib
-import requests
-import re
-import uuid
-import textwrap
+# PHARMAGUARD — AI-assisted ADR review-priority prototype.
+# Safety Gate rules take precedence over the Random Forest prototype output.
+# Styling lives in styles.css (same folder as this file).
 import html
+import logging
+import re
+import textwrap
+import uuid
+from datetime import date, datetime
 from pathlib import Path
 
-from datetime import datetime
+import joblib
+import pandas as pd
+import requests
+import streamlit as st
+
+logger = logging.getLogger("pharmaguard")
+BASE_DIR = Path(__file__).resolve().parent
 
 
 # =========================================================
@@ -24,608 +29,28 @@ st.set_page_config(
 )
 
 
+@st.cache_resource
+def _read_stylesheet(filename="styles.css"):
+    try:
+        return (BASE_DIR / filename).read_text(encoding="utf-8")
+    except OSError:
+        logger.warning("Stylesheet %s not found; using default styling.", filename)
+        return ""
+
+
+_css_text = _read_stylesheet()
+if _css_text:
+    st.markdown(f"<style>{_css_text}</style>", unsafe_allow_html=True)
+else:
+    st.warning("styles.css was not found next to the app file; the interface will use default styling.")
+
+
 # =========================================================
 # PROFESSIONAL HEADER
 # =========================================================
 
 st.markdown("""
-<style>
-.pg-header { text-align:center; padding:18px 12px 16px 12px; border-radius:16px; background:linear-gradient(135deg,#eef7ff 0%,#f7fbff 100%); border:1px solid #d7e7f5; margin-bottom:18px; }
-.pg-shield { font-size:42px; line-height:1; margin-bottom:4px; }
-.pg-title { font-size:34px; font-weight:800; letter-spacing:1px; margin:0; }
-.pg-subtitle { font-size:16px; margin:5px 0 3px 0; }
-.pg-tag { display:inline-block; padding:5px 12px; border-radius:999px; font-size:12px; font-weight:700; background:#e8f1f8; }
-.pg-section { margin-top:14px; padding:10px 14px; border-left:5px solid #2b6f9f; background:#f7fafc; border-radius:8px; }
-.pg-note { font-size:13px; color:#5b6570; padding:7px 10px; background:#f7f7f7; border-radius:7px; }
-.pg-result-card { display:flex; align-items:center; gap:14px; padding:16px 18px; border-radius:14px; margin:8px 0 16px 0; border:1px solid #d9e2ea; }
-.pg-result-high { background:#fff1f1; border-left:7px solid #c62828; }
-.pg-result-moderate { background:#fff8e6; border-left:7px solid #d99000; }
-.pg-result-low { background:#eef9f1; border-left:7px solid #2e7d32; }
-.pg-result-unknown { background:#f4f5f6; border-left:7px solid #7b8794; }
-.pg-result-icon { font-size:30px; line-height:1; }
-.pg-result-label { font-size:22px; font-weight:800; letter-spacing:.4px; }
-.pg-result-message { font-size:14px; margin-top:3px; color:#4f5963; }
-.pg-result-detail { padding:14px 16px; border:1px solid #dfe6ec; border-radius:12px; background:#ffffff; margin:10px 0 12px 0; }
-.pg-detail-title { font-size:16px; font-weight:800; margin-bottom:9px; }
-.pg-detail-row { display:flex; gap:12px; padding:7px 0; border-top:1px solid #edf0f2; font-size:14px; }
-.pg-detail-row b { min-width:180px; }
-@media (max-width: 700px) { .pg-result-label { font-size:19px; } .pg-detail-row { display:block; } .pg-detail-row b { display:block; margin-bottom:3px; } }
-.pg-dashboard-header { display:flex; align-items:center; gap:12px; padding:14px 16px; margin:10px 0 12px 0; border-radius:14px; background:#f5f9fc; border:1px solid #dbe8f1; }
-.pg-dashboard-icon { font-size:30px; line-height:1; }
-.pg-dashboard-title { font-size:25px; font-weight:800; letter-spacing:.2px; }
-.pg-dashboard-subtitle { font-size:13px; color:#65717d; margin-top:2px; }
-.pg-kpi { padding:14px 12px; min-height:112px; border-radius:14px; background:#f7fafc; border:1px solid #dbe6ee; box-shadow:0 2px 8px rgba(40,70,90,.05); }
-.pg-kpi-high { border-left:5px solid #c94b4b; }
-.pg-kpi-moderate { border-left:5px solid #d69a22; }
-.pg-kpi-low { border-left:5px solid #4f9b67; }
-.pg-kpi-label { font-size:13px; font-weight:700; color:#56616c; }
-.pg-kpi-value { font-size:30px; font-weight:800; margin-top:7px; line-height:1.05; }
-.pg-kpi-foot { font-size:11px; color:#7a848d; margin-top:7px; }
-.pg-appbar { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 14px; margin:0 0 14px 0; border:1px solid #dbe8f1; border-radius:12px; background:#ffffff; box-shadow:0 2px 10px rgba(30,60,90,.04); }
-.pg-brand-mini { font-weight:800; letter-spacing:.5px; font-size:16px; }
-.pg-status { display:inline-flex; align-items:center; gap:6px; padding:5px 10px; border-radius:999px; background:#eef8f1; color:#236b3a; font-size:12px; font-weight:700; }
-.pg-hero { padding:18px; border-radius:16px; background:linear-gradient(135deg,#f4faff 0%,#ffffff 70%); border:1px solid #d8e8f4; margin-bottom:16px; }
-.pg-hero-title { font-size:25px; font-weight:800; margin-bottom:5px; }
-.pg-hero-text { color:#5f6d78; font-size:14px; line-height:1.55; }
-/* =========================================================
-   PHARMAGUARD PROFESSIONAL DASHBOARD
-   ========================================================= */
 
-.pg-dashboard-hero {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 20px;
-    margin-bottom: 18px;
-    border-radius: 18px;
-    background: linear-gradient(
-        135deg,
-        #eef7ff 0%,
-        #ffffff 100%
-    );
-    border: 1px solid #d7e7f3;
-    box-shadow: 0 4px 18px rgba(30,60,90,.06);
-}
-
-.pg-dashboard-icon {
-    width: 52px;
-    height: 52px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 15px;
-    background: #0b1f33;
-    font-size: 27px;
-}
-
-.pg-dashboard-title {
-    font-size: 24px;
-    font-weight: 800;
-    color: #102a43;
-}
-
-.pg-dashboard-copy {
-    min-width: 0;
-}
-
-.pg-dashboard-subtitle {
-    margin-top: 3px;
-    font-size: 13px;
-    color: #657786;
-}
-
-.pg-stat-card {
-    min-height: 145px;
-    padding: 17px;
-    margin-bottom: 12px;
-    border-radius: 16px;
-    background: #ffffff;
-    border: 1px solid #dbe7ef;
-    box-shadow: 0 3px 14px rgba(30,60,90,.06);
-}
-
-.pg-stat-icon {
-    font-size: 22px;
-    margin-bottom: 8px;
-}
-
-.pg-stat-label {
-    font-size: 12px;
-    font-weight: 700;
-    color: #657786;
-}
-
-.pg-stat-value {
-    margin-top: 3px;
-    font-size: 28px;
-    font-weight: 800;
-    color: #102a43;
-}
-
-.pg-stat-note {
-    margin-top: 4px;
-    font-size: 11px;
-    color: #7b8794;
-}
-
-.pg-high-card {
-    border-top: 4px solid #d64545;
-}
-
-.pg-moderate-card {
-    border-top: 4px solid #d49b00;
-}
-
-.pg-low-card {
-    border-top: 4px solid #2f855a;
-}
-
-.pg-empty-state {
-    text-align: center;
-    padding: 35px 20px;
-    margin-top: 12px;
-    border-radius: 16px;
-    background: #f8fbfd;
-    border: 1px dashed #cbd9e3;
-}
-
-.pg-empty-icon {
-    font-size: 34px;
-}
-
-.pg-empty-title {
-    margin-top: 8px;
-    font-size: 18px;
-    font-weight: 800;
-    color: #243b53;
-}
-
-.pg-empty-text {
-    margin-top: 5px;
-    font-size: 13px;
-    color: #718096;
-}
-
-.pg-dashboard-info {
-    margin-top: 20px;
-    padding: 16px 18px;
-    border-radius: 15px;
-    background: #f4f9fc;
-    border: 1px solid #d9e8f1;
-}
-
-.pg-info-title {
-    font-size: 15px;
-    font-weight: 800;
-    color: #102a43;
-}
-
-.pg-info-text {
-    margin-top: 5px;
-    font-size: 13px;
-    line-height: 1.5;
-    color: #52606d;
-}
-
-.pg-info-note {
-    margin-top: 8px;
-    font-size: 11px;
-    font-weight: 700;
-    color: #6b7c8c;
-}
-
-@media (max-width: 700px) {
-
-    .pg-dashboard-title {
-        font-size: 20px;
-    }
-
-    .pg-dashboard-subtitle {
-        font-size: 12px;
-    }
-
-    .pg-stat-card {
-        min-height: 125px;
-    }
-
-    .pg-stat-value {
-        font-size: 25px;
-    }
-
-}
-
-
-
-/* =========================================================
-   v32 — MOBILE-FIRST DASHBOARD GRID + RECENT CASE CARDS
-   ========================================================= */
-.pg-kpi-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:4px 0 18px 0; }
-.pg-kpi-grid-card { min-width:0; min-height:118px; padding:14px; border-radius:15px; background:var(--pg-surface,#fff); border:1px solid var(--pg-border,#dbe7ef); box-shadow:0 3px 12px rgba(30,60,90,.05); overflow:hidden; }
-.pg-kpi-grid-icon { font-size:20px; line-height:1; }
-.pg-kpi-grid-label { margin-top:8px; font-size:11px; font-weight:750; color:var(--pg-text,#657786); opacity:.78; }
-.pg-kpi-grid-value { margin-top:2px; font-size:25px; line-height:1.15; font-weight:850; color:var(--pg-text,#102a43); }
-.pg-kpi-grid-note { margin-top:5px; font-size:10px; line-height:1.3; color:var(--pg-text,#7b8794); opacity:.68; }
-.pg-kpi-total { border-top:4px solid #7b8794; }
-.pg-kpi-high { border-top:4px solid #d64545; }
-.pg-kpi-moderate { border-top:4px solid #d49b00; }
-.pg-kpi-low { border-top:4px solid #2f855a; }
-.pg-recent-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:4px; }
-.pg-recent-card { min-width:0; padding:13px 14px; border-radius:14px; background:var(--pg-surface,#fff); border:1px solid var(--pg-border,#dbe7ef); box-shadow:0 2px 10px rgba(30,60,90,.04); overflow:hidden; }
-.pg-recent-ref { font-size:11px; font-weight:800; color:var(--pg-text,#243b53); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.pg-recent-drug { margin-top:7px; font-size:13px; font-weight:750; color:var(--pg-text,#102a43); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.pg-recent-adr { margin-top:4px; min-height:18px; font-size:11px; line-height:1.35; color:var(--pg-text,#52606d); opacity:.78; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-.pg-recent-bottom { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:10px; }
-.pg-priority-badge { display:inline-flex; align-items:center; gap:3px; padding:4px 7px; border-radius:999px; font-size:10px; font-weight:800; white-space:nowrap; }
-.pg-priority-high { background:rgba(214,69,69,.12); color:#a82f2f; }
-.pg-priority-moderate { background:rgba(212,155,0,.14); color:#8b6700; }
-.pg-priority-low { background:rgba(47,133,90,.13); color:#236b48; }
-.pg-priority-unknown { background:rgba(123,135,148,.13); color:#65717d; }
-.pg-recent-date { min-width:0; font-size:9px; color:var(--pg-text,#7b8794); opacity:.62; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-@media (max-width:700px) {
-  .pg-kpi-grid { gap:9px; }
-  .pg-kpi-grid-card { min-height:105px; padding:12px; }
-  .pg-kpi-grid-value { font-size:23px; }
-  .pg-recent-grid { grid-template-columns:1fr; gap:9px; }
-}
-
-/* =========================================================
-   UI-3 — PROFESSIONAL ANALYSIS RESULT
-   ========================================================= */
-.pg-result-hero {
-    padding: 20px;
-    margin: 8px 0 16px 0;
-    border-radius: 18px;
-    border: 1px solid #dbe7ef;
-    background: linear-gradient(135deg,#f7fbff 0%,#ffffff 100%);
-    box-shadow: 0 4px 16px rgba(30,60,90,.05);
-}
-.pg-result-kicker {
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 1.2px;
-    text-transform: uppercase;
-    color: #64748b;
-    margin-bottom: 5px;
-}
-.pg-result-main {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-.pg-result-main-icon {
-    width: 58px;
-    height: 58px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 16px;
-    font-size: 30px;
-    flex: 0 0 58px;
-}
-.pg-result-main-label {
-    font-size: 27px;
-    font-weight: 850;
-    line-height: 1.1;
-    color: #102a43;
-}
-.pg-result-main-message {
-    margin-top: 5px;
-    color: #52606d;
-    font-size: 13px;
-    line-height: 1.45;
-}
-.pg-result-high-main { background: #fff0f0; border: 1px solid #f2caca; }
-.pg-result-moderate-main { background: #fff8e8; border: 1px solid #f0ddb0; }
-.pg-result-low-main { background: #eef9f1; border: 1px solid #cce5d2; }
-.pg-result-unknown-main { background: #f4f6f8; border: 1px solid #dce2e7; }
-.pg-result-high-icon { background: #ffe0e0; }
-.pg-result-moderate-icon { background: #ffedbf; }
-.pg-result-low-icon { background: #dff2e3; }
-.pg-result-unknown-icon { background: #e7ebee; }
-
-.pg-case-strip {
-    display: grid;
-    grid-template-columns: 1.4fr 0.7fr 0.7fr;
-    gap: 10px;
-    margin: 0 0 16px 0;
-}
-.pg-case-item {
-    padding: 12px 14px;
-    border: 1px solid #dfe7ed;
-    border-radius: 12px;
-    background: #ffffff;
-}
-.pg-case-label {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: .7px;
-    color: #7a8793;
-    font-weight: 800;
-}
-.pg-case-value {
-    margin-top: 4px;
-    font-size: 14px;
-    font-weight: 750;
-    color: #263746;
-    word-break: break-word;
-}
-
-.pg-assessment-card {
-    padding: 16px;
-    border: 1px solid #dfe7ed;
-    border-radius: 15px;
-    background: #ffffff;
-    margin: 0 0 14px 0;
-    box-shadow: 0 2px 10px rgba(30,60,90,.035);
-}
-.pg-assessment-title {
-    font-size: 16px;
-    font-weight: 800;
-    color: #17324d;
-    margin-bottom: 11px;
-}
-.pg-assessment-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-}
-.pg-assessment-item {
-    padding: 11px 12px;
-    border-radius: 10px;
-    background: #f7fafc;
-    border: 1px solid #e5edf2;
-}
-.pg-assessment-label {
-    font-size: 10px;
-    color: #7a8793;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: .6px;
-}
-.pg-assessment-value {
-    margin-top: 4px;
-    font-size: 13px;
-    color: #334e68;
-    line-height: 1.45;
-    word-break: break-word;
-}
-.pg-signal-card {
-    padding: 14px 15px;
-    border-radius: 13px;
-    background: #f7fafc;
-    border: 1px solid #dfe7ed;
-    margin: 0 0 14px 0;
-}
-.pg-signal-title {
-    font-size: 12px;
-    font-weight: 800;
-    color: #486581;
-    text-transform: uppercase;
-    letter-spacing: .6px;
-}
-.pg-signal-text {
-    margin-top: 6px;
-    font-size: 14px;
-    line-height: 1.5;
-    color: #243b53;
-}
-.pg-action-card {
-    padding: 15px 16px;
-    border-radius: 14px;
-    background: #f4f9fd;
-    border: 1px solid #d6e6f1;
-    margin: 0 0 14px 0;
-}
-.pg-action-title {
-    font-size: 15px;
-    font-weight: 800;
-    color: #17324d;
-    margin-bottom: 5px;
-}
-.pg-action-text {
-    font-size: 13px;
-    line-height: 1.5;
-    color: #52606d;
-}
-.pg-result-disclaimer {
-    font-size: 11px;
-    line-height: 1.5;
-    color: #6b7785;
-    padding: 10px 12px;
-    border-radius: 10px;
-    background: #f8fafb;
-    border: 1px solid #e3e8ec;
-    margin-top: 12px;
-}
-@media (max-width: 700px) {
-    .pg-result-main-label { font-size: 23px; }
-    .pg-result-main-icon { width: 50px; height: 50px; flex-basis: 50px; font-size: 26px; }
-    .pg-case-strip { grid-template-columns: 1fr; }
-    .pg-assessment-grid { grid-template-columns: 1fr; }
-}
-
-\n.pg-db-status { display:flex; justify-content:space-between; gap:12px; padding:12px 14px; margin:10px 0 18px 0; border:1px solid #dbe8f1; border-radius:12px; background:#f7fbff; color:#536575; font-size:13px; }\n.pg-db-status span:first-child { font-weight:800; color:#236b3a; }\n@media (max-width: 700px) { .pg-db-status { display:block; } .pg-db-status span { display:block; margin:3px 0; } }\n.pg-disclaimer { margin-top:22px; padding:12px 14px; border-radius:10px; background:#f7f8fa; border:1px solid #e1e5e9; color:#66717b; font-size:12px; line-height:1.5; }
-div.stButton > button { border-radius:10px; font-weight:700; min-height:44px; }
-@media (max-width: 700px) { .pg-appbar { padding:9px 10px; } .pg-hero-title { font-size:21px; } .pg-title { font-size:29px; } .pg-subtitle { font-size:14px; } }
-
-
-/* =========================================================
-   UI-2 — PROFESSIONAL NEW ADR ANALYSIS
-   ========================================================= */
-.pg-analysis-hero {
-    padding: 20px;
-    margin: 8px 0 16px 0;
-    border-radius: 18px;
-    background: linear-gradient(135deg,#f1f8ff 0%,#ffffff 100%);
-    border: 1px solid #d7e7f3;
-    box-shadow: 0 4px 16px rgba(30,60,90,.05);
-}
-.pg-analysis-title {
-    font-size: 25px;
-    font-weight: 800;
-    color: #102a43;
-    margin-bottom: 4px;
-}
-.pg-analysis-subtitle {
-    color: #657786;
-    font-size: 13px;
-    line-height: 1.5;
-}
-.pg-stepbar {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin: 0 0 18px 0;
-}
-.pg-step {
-    flex: 1 1 150px;
-    padding: 9px 11px;
-    border-radius: 10px;
-    background: #f7fafc;
-    border: 1px solid #dbe6ee;
-    color: #52606d;
-    font-size: 12px;
-    font-weight: 700;
-    text-align: center;
-}
-.pg-step-active {
-    background: #eaf4fb;
-    border-color: #b9d5e8;
-    color: #174a6b;
-}
-.pg-form-card {
-    padding: 16px;
-    margin: 0 0 14px 0;
-    border-radius: 16px;
-    background: #ffffff;
-    border: 1px solid #dbe7ef;
-    box-shadow: 0 3px 12px rgba(30,60,90,.045);
-}
-.pg-form-title {
-    font-size: 16px;
-    font-weight: 800;
-    color: #243b53;
-    margin-bottom: 3px;
-}
-.pg-form-subtitle {
-    font-size: 12px;
-    color: #7b8794;
-    margin-bottom: 10px;
-}
-.pg-id-card {
-    padding: 12px 14px;
-    border-radius: 12px;
-    background: #f5f9fc;
-    border: 1px solid #d9e8f2;
-    margin: 0 0 12px 0;
-}
-.pg-id-label {
-    font-size: 11px;
-    font-weight: 700;
-    color: #657786;
-    text-transform: uppercase;
-    letter-spacing: .4px;
-}
-.pg-id-value {
-    margin-top: 3px;
-    font-size: 15px;
-    font-weight: 800;
-    color: #102a43;
-    word-break: break-word;
-}
-.pg-input-tip {
-    padding: 10px 12px;
-    margin: 8px 0 0 0;
-    border-radius: 10px;
-    background: #f8fbfd;
-    border: 1px solid #e1ebf2;
-    color: #607080;
-    font-size: 12px;
-    line-height: 1.5;
-}
-.pg-analyze-box {
-    padding: 14px;
-    margin-top: 14px;
-    border-radius: 16px;
-    background: linear-gradient(135deg,#f7fbfe 0%,#ffffff 100%);
-    border: 1px solid #d8e7f1;
-}
-.pg-analyze-title {
-    font-size: 15px;
-    font-weight: 800;
-    color: #243b53;
-    margin-bottom: 4px;
-}
-.pg-analyze-subtitle {
-    font-size: 12px;
-    color: #718096;
-    margin-bottom: 10px;
-}
-div.stButton > button[kind="primary"] {
-    min-height: 48px;
-    border-radius: 12px;
-    font-weight: 800;
-    letter-spacing: .2px;
-}
-@media (max-width: 700px) {
-    .pg-analysis-title { font-size: 21px; }
-    .pg-analysis-hero { padding: 16px; }
-    .pg-step { flex-basis: 100%; }
-    .pg-form-card { padding: 13px; }
-}
-
-
-
-/* v37 Professional ADR Priority Timeline */
-.pg-timeline-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0 16px}
-.pg-timeline-stat{padding:13px 14px;border:1px solid #dbe5ec;border-radius:13px;background:#fff;box-shadow:0 2px 9px rgba(30,60,90,.035)}
-.pg-timeline-stat-label{font-size:10px;font-weight:800;color:#71808b;text-transform:uppercase;letter-spacing:.55px}
-.pg-timeline-stat-value{margin-top:4px;font-size:18px;font-weight:850;color:#17324d;word-break:break-word}
-.pg-timeline-stat-note{margin-top:3px;font-size:10px;color:#7b8794}
-.pg-timeline-track{margin:8px 0 4px;padding:2px 0}
-.pg-timeline-item{position:relative;display:grid;grid-template-columns:28px minmax(0,1fr);gap:12px;padding:0 0 14px}
-.pg-timeline-item:last-child{padding-bottom:0}
-.pg-timeline-rail{position:relative;display:flex;justify-content:center}
-.pg-timeline-rail:after{content:"";position:absolute;top:25px;bottom:-14px;width:2px;background:#d9e4eb}
-.pg-timeline-item:last-child .pg-timeline-rail:after{display:none}
-.pg-timeline-dot{position:relative;z-index:2;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:11px;font-weight:800;color:#fff;border:4px solid #fff;box-shadow:0 0 0 1px #d4e0e7}
-.pg-timeline-dot-high{background:#d64545}.pg-timeline-dot-moderate{background:#d49b00}.pg-timeline-dot-low{background:#2f855a}.pg-timeline-dot-unknown{background:#7b8794}
-.pg-timeline-card{min-width:0;padding:13px 14px;border:1px solid #dbe5ec;border-radius:14px;background:#fff;box-shadow:0 2px 10px rgba(30,60,90,.04)}
-.pg-timeline-card-current{border-color:#bcd8e8;box-shadow:0 3px 13px rgba(43,111,159,.08)}
-.pg-timeline-top{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
-.pg-timeline-version{font-size:13px;font-weight:850;color:#17324d}
-.pg-timeline-priority{display:inline-flex;padding:4px 8px;border-radius:999px;font-size:10px;font-weight:850}
-.pg-timeline-priority-high{background:#fff0f0;color:#a61b1b;border:1px solid #f2c7c7}
-.pg-timeline-priority-moderate{background:#fff7df;color:#8a5a00;border:1px solid #eed99b}
-.pg-timeline-priority-low{background:#edf8f0;color:#246b37;border:1px solid #cce7d3}
-.pg-timeline-priority-unknown{background:#f2f4f6;color:#59646e;border:1px solid #dce1e5}
-.pg-timeline-date{margin-top:4px;font-size:10px;color:#7b8794}
-.pg-timeline-section{margin-top:11px;padding-top:10px;border-top:1px solid #edf1f4}
-.pg-timeline-label{font-size:9px;font-weight:850;color:#7a8793;text-transform:uppercase;letter-spacing:.65px}
-.pg-timeline-value{margin-top:3px;font-size:12px;line-height:1.45;color:#334e68;overflow-wrap:anywhere}
-.pg-timeline-current{display:inline-flex;margin-top:7px;padding:3px 7px;border-radius:999px;background:#eef7fc;color:#245a78;border:1px solid #d4e7f2;font-size:9px;font-weight:850}
-.pg-timeline-change{margin:14px 0 4px;padding:12px 14px;border-radius:13px;background:#f4f9fc;border:1px solid #d6e6f1;color:#425466;font-size:12px;line-height:1.5}
-.pg-timeline-change strong{color:#17324d}
-@media(max-width:700px){.pg-timeline-summary{grid-template-columns:1fr 1fr}.pg-timeline-summary .pg-timeline-stat:first-child{grid-column:1/-1}.pg-timeline-item{grid-template-columns:25px minmax(0,1fr);gap:9px}.pg-timeline-card{padding:12px}}
-
-/* Dynamic reassessment workspace polish */
-.pg-expand-mini-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0 14px}
-.pg-expand-mini-summary>div{padding:11px 12px;border:1px solid rgba(128,128,128,.22);border-radius:10px;text-align:center}
-.pg-expand-mini-summary strong{display:block;font-size:.92rem}
-.pg-expand-mini-summary span{display:block;font-size:.72rem;opacity:.72;margin-top:3px;line-height:1.35}
-.pg-reassess-result{padding:14px 16px;border:1px solid rgba(128,128,128,.22);border-radius:12px;margin:12px 0;line-height:1.65}
-.pg-reassess-result-title{font-weight:800;margin-bottom:7px}
-@media (max-width:640px){.pg-expand-mini-summary{grid-template-columns:1fr}.pg-expand-mini-summary>div{text-align:left}}
-</style>
-<style>
-/* Case History expandable workspace */
-.pg-expand-mini-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0 14px}
-.pg-expand-mini-summary>div{padding:11px 12px;border:1px solid rgba(128,128,128,.22);border-radius:10px;text-align:center}
-.pg-expand-mini-summary strong{display:block;font-size:1rem}
-.pg-expand-mini-summary span{display:block;font-size:.72rem;opacity:.72;margin-top:2px}
-.pg-empty-state{padding:16px;border:1px dashed rgba(128,128,128,.35);border-radius:10px;text-align:center;margin:8px 0 4px;line-height:1.6}
-@media (max-width:640px){.pg-expand-mini-summary{grid-template-columns:1fr 1fr}.pg-expand-mini-summary>div:last-child{grid-column:1/-1}}
-</style>
 
 <div class="pg-appbar">
 <div class="pg-brand-mini">🛡️ PHARMAGUARD</div>
@@ -644,336 +69,13 @@ div.stButton > button[kind="primary"] {
 """, unsafe_allow_html=True)
 
 # =========================================================
-# UI-5 — CASE REPORTS / ABOUT / SETTINGS STYLES
+# CASE REPORTS / ABOUT / SETTINGS STYLES
 # =========================================================
-st.markdown(textwrap.dedent("""
-<style>
-.pg-ui5-hero { padding:18px; border-radius:16px; background:linear-gradient(135deg,#f4faff,#ffffff); border:1px solid #d8e8f4; margin-bottom:16px; }
-.pg-ui5-title { font-size:25px; font-weight:800; margin-bottom:4px; }
-.pg-ui5-sub { color:#65727d; font-size:14px; line-height:1.5; }
-.pg-case-card { padding:18px; border:1px solid #dbe5ec; border-radius:16px; background:#fff; margin:10px 0 16px 0; box-shadow:0 2px 10px rgba(30,60,90,.04); }
-.pg-case-ref { font-size:12px; color:#687682; font-weight:700; letter-spacing:.3px; }
-.pg-case-title { font-size:20px; font-weight:800; margin-top:4px; }
-.pg-case-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:14px; }
-.pg-case-field { padding:10px 12px; background:#f7fafc; border-radius:10px; border:1px solid #e6edf2; }
-.pg-case-label { font-size:11px; color:#71808b; font-weight:700; text-transform:uppercase; }
-.pg-case-value { font-size:14px; font-weight:600; margin-top:3px; word-break:break-word; }
-.pg-priority { display:inline-block; padding:7px 13px; border-radius:999px; font-weight:800; font-size:13px; }
-.pg-high { background:#fff0f0; color:#a61b1b; border:1px solid #f2c7c7; }
-.pg-moderate { background:#fff7df; color:#8a5a00; border:1px solid #eed99b; }
-.pg-low { background:#edf8f0; color:#246b37; border:1px solid #cce7d3; }
-.pg-uncertain { background:#f2f4f6; color:#59646e; border:1px solid #dce1e5; }
-.pg-section-card { padding:16px; border:1px solid #dbe5ec; border-radius:14px; background:#fff; margin:10px 0; }
-.pg-section-card h4 { margin:0 0 6px 0; }
-.pg-method-step { padding:12px 14px; border-left:4px solid #2b6f9f; background:#f7fafc; border-radius:8px; margin:7px 0; }
-.pg-disclaimer-box { padding:16px; border-radius:14px; background:#fff8e8; border:1px solid #ead9a7; line-height:1.55; }
-.pg-setting-row { padding:13px 14px; border-bottom:1px solid #e8edf1; }
-.pg-setting-label { font-size:12px; color:#71808b; font-weight:700; }
-.pg-setting-value { font-size:15px; font-weight:700; margin-top:2px; }
-@media (max-width:700px) { .pg-ui5-title{font-size:21px;} .pg-case-grid{grid-template-columns:1fr;} .pg-case-card{padding:14px;} }
-
-/* =========================================================
-   CASE REPORT — PROFESSIONAL REVIEW LAYOUT
-   Presentation only; backend/scientific logic unchanged.
-   ========================================================= */
-.pg-report-hero {
-    padding:18px;
-    border-radius:18px;
-    background:linear-gradient(135deg,#f5fbff,#ffffff);
-    border:1px solid #d7e8f2;
-    margin-bottom:14px;
-}
-.pg-report-kicker {
-    font-size:10px; font-weight:850; letter-spacing:1.05px;
-    text-transform:uppercase; color:#6b7d8b; margin-bottom:5px;
-}
-.pg-report-title { font-size:25px; font-weight:850; color:#102a43; line-height:1.15; }
-.pg-report-sub { margin-top:5px; color:#687783; font-size:13px; line-height:1.5; }
-.pg-report-overview {
-    display:grid; grid-template-columns:1.5fr .7fr .7fr; gap:10px; margin:10px 0 16px;
-}
-.pg-report-stat { padding:12px 13px; border:1px solid #dbe5ec; border-radius:13px; background:#fff; }
-.pg-report-stat-label { font-size:10px; font-weight:800; color:#71808b; text-transform:uppercase; letter-spacing:.5px; }
-.pg-report-stat-value { margin-top:4px; font-size:14px; font-weight:800; word-break:break-word; }
-.pg-report-section-title { margin:18px 0 7px; font-size:17px; font-weight:850; color:#243746; }
-.pg-report-section-sub { color:#71808b; font-size:12px; margin:-2px 0 8px; line-height:1.4; }
-.pg-report-decision { padding:15px; border-radius:15px; border:1px solid #dbe5ec; background:#fff; }
-.pg-report-decision-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:9px; margin-top:10px; }
-.pg-report-decision-item { padding:10px 11px; border-radius:10px; background:#f7fafc; border:1px solid #e5edf2; }
-.pg-report-decision-label { font-size:10px; color:#71808b; font-weight:800; text-transform:uppercase; }
-.pg-report-decision-value { margin-top:3px; font-size:13px; font-weight:750; word-break:break-word; }
-.pg-report-why { padding:14px; border-radius:13px; background:#f8fbfd; border:1px solid #dbe8ef; line-height:1.55; }
-.pg-report-action { padding:14px 15px; border-radius:13px; background:#eef8ff; border:1px solid #cfe6f5; line-height:1.5; }
-@media (max-width:700px) {
-    .pg-report-title{font-size:21px;}
-    .pg-report-overview{grid-template-columns:1fr 1fr;}
-    .pg-report-overview .pg-report-stat:first-child{grid-column:1/-1;}
-    .pg-report-decision-grid{grid-template-columns:1fr;}
-}
-
-/* =========================================================
-   UI-7 — PROFESSIONAL SIDEBAR NAVIGATION
-   ========================================================= */
-section[data-testid="stSidebar"] {
-    background: #f8fbfd;
-    border-right: 1px solid #dce7ee;
-}
-
-section[data-testid="stSidebar"] > div {
-    padding-top: 1.1rem;
-}
-
-.pg-sidebar-brand {
-    padding: 4px 2px 14px 2px;
-}
-
-.pg-sidebar-brand-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.pg-sidebar-logo {
-    width: 42px;
-    height: 42px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 13px;
-    background: #102a43;
-    font-size: 22px;
-    box-shadow: 0 5px 14px rgba(16,42,67,.12);
-}
-
-.pg-sidebar-name {
-    font-size: 17px;
-    font-weight: 850;
-    letter-spacing: .35px;
-    color: #102a43;
-}
-
-.pg-sidebar-subtitle {
-    margin-top: 2px;
-    font-size: 10px;
-    font-weight: 650;
-    color: #71808b;
-}
-
-.pg-sidebar-status {
-    display: inline-block;
-    margin-top: 10px;
-    padding: 4px 9px;
-    border-radius: 999px;
-    background: #eaf6ef;
-    border: 1px solid #cfe8d8;
-    color: #276749;
-    font-size: 10px;
-    font-weight: 750;
-}
-
-.pg-sidebar-section {
-    margin: 16px 2px 6px 2px;
-    font-size: 9px;
-    line-height: 1.2;
-    font-weight: 850;
-    letter-spacing: 1.15px;
-    color: #8292a2;
-}
-
-section[data-testid="stSidebar"] div.stButton > button {
-    min-height: 42px;
-    margin: 2px 0;
-    padding: 0 12px;
-    border-radius: 10px;
-    border: 1px solid transparent;
-    text-align: left;
-    justify-content: flex-start;
-    font-size: 13px;
-    font-weight: 700;
-    box-shadow: none;
-}
-
-section[data-testid="stSidebar"] div.stButton > button[kind="secondary"] {
-    background: transparent;
-    color: #425466;
-}
-
-section[data-testid="stSidebar"] div.stButton > button[kind="secondary"]:hover {
-    background: #edf4f8;
-    border-color: #d8e5ec;
-    color: #102a43;
-}
-
-section[data-testid="stSidebar"] div.stButton > button[kind="primary"] {
-    background: #102a43;
-    border-color: #102a43;
-    color: #ffffff;
-    box-shadow: 0 4px 12px rgba(16,42,67,.14);
-}
-
-section[data-testid="stSidebar"] div.stButton > button[kind="primary"]:hover {
-    background: #173d5f;
-    border-color: #173d5f;
-}
-
-.pg-sidebar-divider {
-    height: 1px;
-    margin: 18px 2px 12px 2px;
-    background: #dce7ee;
-}
-
-.pg-sidebar-note {
-    padding: 12px;
-    border-radius: 12px;
-    background: #ffffff;
-    border: 1px solid #dce7ee;
-}
-
-.pg-sidebar-note-title {
-    font-size: 11px;
-    font-weight: 800;
-    color: #243b53;
-}
-
-.pg-sidebar-note-text {
-    margin-top: 4px;
-    font-size: 10px;
-    line-height: 1.45;
-    color: #71808b;
-}
-
-@media (max-width: 700px) {
-    .pg-sidebar-name { font-size: 16px; }
-    .pg-sidebar-section { margin-top: 13px; }
-    section[data-testid="stSidebar"] div.stButton > button {
-        min-height: 44px;
-    }
-}
-
-
-.pg-sidebar-section { margin-top: 12px; margin-bottom: 6px; font-size: 10px; letter-spacing: 1.2px; font-weight: 800; color: #7a8793; }
-.pg-sidebar-note-text { font-size: 11px; line-height: 1.45; color: #71808b; }
-button[data-baseweb="tab"] { font-weight: 700; }
-</style>
-""").strip(), unsafe_allow_html=True)
-
 
 
 # =========================================================
-# UI-6 — FINAL MOBILE POLISH
+# FINAL MOBILE POLISH
 # =========================================================
-st.markdown(textwrap.dedent("""
-<style>
-.block-container { padding-top: 1rem; padding-bottom: 2.5rem; }
-
-@media (max-width: 700px) {
-    .block-container {
-        padding-left: 0.75rem;
-        padding-right: 0.75rem;
-        padding-top: 0.65rem;
-    }
-    h1 { font-size: 1.55rem !important; }
-    h2 { font-size: 1.30rem !important; }
-    h3 { font-size: 1.10rem !important; }
-    p, li, label, .stMarkdown { line-height: 1.45; }
-}
-
-.pg-ui6-card {
-    padding: 15px 16px;
-    margin: 0 0 13px 0;
-    border: 1px solid #dce6ed;
-    border-radius: 15px;
-    background: #ffffff;
-    box-shadow: 0 2px 10px rgba(30,60,90,.04);
-}
-
-.pg-ui6-title {
-    font-size: 15px;
-    font-weight: 800;
-    color: #17324d;
-}
-
-.pg-ui6-text {
-    margin-top: 4px;
-    font-size: 12px;
-    line-height: 1.5;
-    color: #62717d;
-}
-
-section[data-testid="stSidebar"] {
-    border-right: 1px solid #dbe6ee;
-}
-
-section[data-testid="stSidebar"] .stRadio label {
-    font-size: 13px;
-}
-
-@media (max-width: 700px) {
-    section[data-testid="stSidebar"] .stRadio label { font-size: 14px; }
-
-    div.stButton > button,
-    div.stDownloadButton > button {
-        min-height: 46px;
-        width: 100%;
-    }
-
-    .pg-result-hero { padding: 15px; }
-
-    .pg-result-main { align-items: flex-start; }
-
-    .pg-result-main-message { font-size: 12px; }
-}
-
-div.stButton > button,
-div.stDownloadButton > button {
-    min-height: 44px;
-    border-radius: 11px;
-    font-weight: 750;
-}
-
-div[data-baseweb="input"] input,
-div[data-baseweb="select"] > div,
-textarea {
-    border-radius: 10px !important;
-}
-
-textarea { min-height: 105px !important; }
-
-.pg-result-main-label,
-.pg-case-title,
-.pg-stat-value,
-.pg-case-value,
-.pg-assessment-value,
-.pg-signal-text,
-.pg-action-text {
-    overflow-wrap: anywhere;
-}
-
-div[data-testid="stDataFrame"] {
-    border-radius: 12px;
-    overflow: hidden;
-}
-
-div[data-testid="stAlert"] { border-radius: 12px; }
-
-hr {
-    margin-top: 0.8rem;
-    margin-bottom: 0.8rem;
-}
-
-.pg-ui6-footer {
-    margin-top: 24px;
-    padding: 11px 13px;
-    border-radius: 11px;
-    background: #f7fafc;
-    border: 1px solid #e1e8ed;
-    text-align: center;
-    font-size: 11px;
-    line-height: 1.45;
-    color: #71808b;
-}
-</style>
-""").strip(), unsafe_allow_html=True)
 
 
 # =========================================================
@@ -987,6 +89,41 @@ hr {
 def _navigate_to(page):
     st.session_state["active_page"] = page
 
+
+LANGUAGE_TEXT = {
+    "English": {
+        "selector": "Language", "seizure": "Seizure", "chest_pain": "Severe chest pain", "patient": "👤 Patient Corner", "professional": "🩺 Healthcare Professional Corner",
+        "patient_caption": "Report a possible medicine-related reaction for healthcare-professional review.",
+        "emergency": "If you have difficulty breathing, throat/tongue swelling, collapse, or another severe symptom, seek emergency medical help now. Do not wait for this form.",
+        "case_ref": "Case Reference", "age": "Age", "sex": "Sex", "age_known": "Age (if known)", "sex_known": "Sex (if known)", "choose_option": "Choose Option", "not_provided": "Not provided", "female": "Female", "male": "Male", "other": "Other",
+        "medicine": "Medicine name *", "symptoms": "Reported symptoms / possible ADR *", "onset": "When did symptoms start?", "breathing": "Difficulty breathing", "swelling": "Throat or tongue swelling", "fainting": "Fainting or collapse", "bleeding": "Severe bleeding", "submit": "Submit ADR report",
+        "urgent": "URGENT: Seek immediate emergency medical assessment. Do not delay care to submit this report.", "required": "Enter both the medicine name and symptoms.", "saved": "Report saved to the configured patient-safety database.", "not_saved": "Report was not confirmed as saved. ", "disclaimer": "This report is not a diagnosis or confirmation that a medicine caused the symptoms.",
+        "pro_warning": "Check emergency warning signs first. This form does not replace clinical assessment or urgent care.", "flags": "Emergency warning signs reported", "no_flags": "No listed emergency flags selected; this does not rule out an emergency.", "case_id": "Patient / Case Reference ID *", "seriousness": "Seriousness review", "not_assessed": "Not assessed", "potentially_serious": "Potentially serious", "not_identified": "Not currently identified as serious", "needs_assessment": "Needs further assessment", "status": "Review status", "pending": "Pending", "under_review": "Under Review", "reviewed": "Reviewed", "notes": "Reviewer notes", "save_review": "Save case review", "required_pro": "Enter the case reference, medicine name, and reported symptoms.", "review_saved": "Case review saved to the configured patient-safety database.", "review_not_saved": "Case review was not confirmed as saved. ", "urgent_prefix": "URGENT: ", "urgent_suffix": ". Arrange immediate emergency assessment.", "no_flags_pro": "No emergency flags selected in this review", "role_patient": "Patient", "role_pro": "Healthcare Professional", "seriousness_value": "Needs healthcare professional assessment", "pending_value": "Pending", "no_flags_value": "No listed emergency flags selected", "urgent_value": "URGENT - emergency warning sign reported", "reviewer_onset": "Reported symptom onset: "
+    },
+    "मराठी": {
+        "selector": "भाषा निवडा", "seizure": "झटका / आकडी", "chest_pain": "तीव्र छातीत दुखणे", "patient": "👤 रुग्ण विभाग", "professional": "🩺 आरोग्यसेवा व्यावसायिक विभाग",
+        "patient_caption": "औषधामुळे झालेल्या संभाव्य त्रासाची नोंद आरोग्यसेवा व्यावसायिकांच्या तपासणीसाठी करा.",
+        "emergency": "श्वास घेण्यास त्रास, घसा/जीभ सुजणे, बेशुद्ध पडणे किंवा इतर गंभीर लक्षणे असल्यास त्वरित आपत्कालीन वैद्यकीय मदत घ्या. हा फॉर्म भरण्यासाठी थांबू नका.",
+        "case_ref": "केस संदर्भ क्रमांक", "age": "वय", "sex": "लिंग", "age_known": "वय (माहित असल्यास)", "sex_known": "लिंग (माहित असल्यास)", "choose_option": "पर्याय निवडा", "not_provided": "माहिती दिलेली नाही", "female": "स्त्री", "male": "पुरुष", "other": "इतर",
+        "medicine": "औषधाचे नाव *", "symptoms": "नोंदवलेली लक्षणे / संभाव्य ADR *", "onset": "लक्षणे कधी सुरू झाली?", "breathing": "श्वास घेण्यास त्रास", "swelling": "घसा किंवा जीभ सुजणे", "fainting": "बेशुद्ध पडणे किंवा कोसळणे", "bleeding": "तीव्र रक्तस्राव", "submit": "ADR नोंद सबमिट करा",
+        "urgent": "तातडीची सूचना: त्वरित आपत्कालीन वैद्यकीय तपासणी करून घ्या. नोंद भरण्यासाठी उपचार उशिरा करू नका.", "required": "औषधाचे नाव आणि लक्षणे दोन्ही भरा.", "saved": "अहवाल संबंधित patient-safety database मध्ये सेव्ह झाला.", "not_saved": "अहवाल सेव्ह झाल्याची पुष्टी मिळाली नाही. ", "disclaimer": "ही नोंद निदान नाही आणि औषधामुळेच लक्षणे झाली याची पुष्टीही नाही.",
+        "pro_warning": "आधी आपत्कालीन लक्षणे तपासा. हा फॉर्म वैद्यकीय तपासणी किंवा तातडीच्या उपचारांचा पर्याय नाही.", "flags": "नोंदवलेली आपत्कालीन लक्षणे", "no_flags": "यादीतील आपत्कालीन लक्षणे निवडलेली नाहीत; तरीही आपत्कालीन स्थिती नसल्याची खात्री होत नाही.", "case_id": "रुग्ण / केस संदर्भ क्रमांक *", "seriousness": "गंभीरतेचे मूल्यांकन", "not_assessed": "मूल्यांकन केलेले नाही", "potentially_serious": "संभाव्यतः गंभीर", "not_identified": "सध्या गंभीर म्हणून ओळखलेले नाही", "needs_assessment": "अधिक मूल्यांकन आवश्यक", "status": "तपासणीची स्थिती", "pending": "प्रलंबित", "under_review": "तपासणी सुरू", "reviewed": "तपासणी पूर्ण", "notes": "तपासणी करणाऱ्याच्या नोंदी", "save_review": "केस तपासणी सेव्ह करा", "required_pro": "केस संदर्भ क्रमांक, औषधाचे नाव आणि लक्षणे भरा.", "review_saved": "केस तपासणी सेव्ह झाली.", "review_not_saved": "केस तपासणी सेव्ह झाल्याची पुष्टी मिळाली नाही. ", "urgent_prefix": "तातडीची सूचना: ", "urgent_suffix": ". त्वरित आपत्कालीन वैद्यकीय तपासणी करा.", "no_flags_pro": "या तपासणीत आपत्कालीन लक्षणे निवडलेली नाहीत", "role_patient": "रुग्ण", "role_pro": "आरोग्यसेवा व्यावसायिक", "seriousness_value": "आरोग्यसेवा व्यावसायिकांचे मूल्यांकन आवश्यक", "pending_value": "प्रलंबित", "no_flags_value": "यादीतील आपत्कालीन लक्षणे निवडलेली नाहीत", "urgent_value": "तातडीचे - आपत्कालीन लक्षण नोंदवले", "reviewer_onset": "लक्षणे सुरू झाल्याची तारीख: "
+    },
+    "हिंदी": {
+        "selector": "भाषा चुनें", "seizure": "दौरा", "chest_pain": "तेज सीने में दर्द", "patient": "👤 रोगी विभाग", "professional": "🩺 स्वास्थ्य सेवा पेशेवर विभाग",
+        "patient_caption": "दवा से हुई संभावित प्रतिक्रिया को स्वास्थ्य सेवा पेशेवर की समीक्षा के लिए दर्ज करें।",
+        "emergency": "सांस लेने में परेशानी, गले/जीभ में सूजन, बेहोशी या अन्य गंभीर लक्षण हों तो तुरंत आपातकालीन चिकित्सा सहायता लें। इस फॉर्म के लिए प्रतीक्षा न करें।",
+        "case_ref": "केस संदर्भ संख्या", "age": "उम्र", "sex": "लिंग", "age_known": "उम्र (यदि पता हो)", "sex_known": "लिंग (यदि पता हो)", "choose_option": "विकल्प चुनें", "not_provided": "नहीं दिया गया", "female": "महिला", "male": "पुरुष", "other": "अन्य",
+        "medicine": "दवा का नाम *", "symptoms": "दर्ज लक्षण / संभावित ADR *", "onset": "लक्षण कब शुरू हुए?", "breathing": "सांस लेने में परेशानी", "swelling": "गले या जीभ में सूजन", "fainting": "बेहोशी या गिर जाना", "bleeding": "गंभीर रक्तस्राव", "submit": "ADR रिपोर्ट जमा करें",
+        "urgent": "तत्काल: तुरंत आपातकालीन चिकित्सा जांच कराएं। रिपोर्ट जमा करने के लिए उपचार में देरी न करें।", "required": "दवा का नाम और लक्षण दोनों भरें।", "saved": "रिपोर्ट patient-safety database में सेव हो गई।", "not_saved": "रिपोर्ट सेव होने की पुष्टि नहीं हुई। ", "disclaimer": "यह रिपोर्ट निदान नहीं है और यह पुष्टि नहीं करती कि लक्षण दवा के कारण ही हुए।",
+        "pro_warning": "पहले आपातकालीन चेतावनी संकेत जांचें। यह फॉर्म चिकित्सकीय जांच या तत्काल उपचार का विकल्प नहीं है।", "flags": "दर्ज आपातकालीन चेतावनी संकेत", "no_flags": "सूची के आपातकालीन संकेत नहीं चुने गए; इससे आपातकाल न होने की पुष्टि नहीं होती।", "case_id": "रोगी / केस संदर्भ संख्या *", "seriousness": "गंभीरता की समीक्षा", "not_assessed": "मूल्यांकन नहीं हुआ", "potentially_serious": "संभावित रूप से गंभीर", "not_identified": "अभी गंभीर नहीं पहचाना गया", "needs_assessment": "आगे मूल्यांकन आवश्यक", "status": "समीक्षा स्थिति", "pending": "लंबित", "under_review": "समीक्षा जारी", "reviewed": "समीक्षा पूरी", "notes": "समीक्षक की टिप्पणियां", "save_review": "केस समीक्षा सेव करें", "required_pro": "केस संदर्भ, दवा का नाम और लक्षण भरें।", "review_saved": "केस समीक्षा सेव हो गई।", "review_not_saved": "केस समीक्षा सेव होने की पुष्टि नहीं हुई। ", "urgent_prefix": "तत्काल: ", "urgent_suffix": ". तुरंत आपातकालीन जांच कराएं।", "no_flags_pro": "इस समीक्षा में कोई आपातकालीन संकेत नहीं चुना गया", "role_patient": "रोगी", "role_pro": "स्वास्थ्य सेवा पेशेवर", "seriousness_value": "स्वास्थ्य सेवा पेशेवर का मूल्यांकन आवश्यक", "pending_value": "लंबित", "no_flags_value": "सूची के आपातकालीन संकेत नहीं चुने गए", "urgent_value": "तत्काल - आपातकालीन संकेत दर्ज", "reviewer_onset": "लक्षण शुरू होने की तारीख: "
+    }
+}
+
+st.session_state.setdefault("pg_language", "English")
+
+with st.sidebar:
+    st.selectbox("Language / भाषा / भाषा निवडा", ["English", "मराठी", "हिंदी"], key="pg_language")
 
 with st.sidebar:
     if "active_page" not in st.session_state:
@@ -1051,6 +188,17 @@ with st.sidebar:
         args=(analytics_page,)
     )
 
+    st.markdown('<div class="pg-sidebar-section">PATIENT SAFETY</div>', unsafe_allow_html=True)
+    for page in ("👤 Patient Corner", "🩺 Healthcare Professional Corner"):
+        st.button(
+            page,
+            key=f"nav_{page}",
+            use_container_width=True,
+            type="primary" if current_page == page else "secondary",
+            on_click=_navigate_to,
+            args=(page,)
+        )
+
     st.markdown('<div class="pg-sidebar-section">PROJECT</div>', unsafe_allow_html=True)
     project_page = "ℹ️ Project Info"
     st.button(
@@ -1077,106 +225,13 @@ with st.sidebar:
 
 
 # =========================================================
-# V36 STABLE — STREAMLIT NATIVE DARK-MODE COMPATIBILITY
+# STREAMLIT NATIVE DARK-MODE COMPATIBILITY
 # Do not detect phone/OS theme. Streamlit controls the active theme.
 # Only custom PHARMAGUARD surfaces are patched; backend/scientific logic is unchanged.
-st.markdown("""
-<style>
-:root {
-  --pg-bg: var(--background-color, #ffffff);
-  --pg-surface: var(--secondary-background-color, #f7f9fb);
-  --pg-text: var(--text-color, #1f2937);
-  --pg-border: var(--border-color, #d9e2ea);
-  --pg-primary: var(--primary-color, #2b6f9f);
-}
-
-/* Custom PHARMAGUARD surfaces */
-.pg-header, .pg-dashboard-hero, .pg-hero, .pg-stat-card,
-.pg-kpi-grid-card, .pg-recent-card, .pg-form-card, .pg-id-card,
-.pg-analyze-box, .pg-result-hero, .pg-case-item, .pg-assessment-card,
-.pg-signal-card, .pg-action-card, .pg-ui6-card, .pg-section-card,
-.pg-case-card, .pg-dashboard-info, .pg-sidebar-note {
-  background: var(--pg-surface) !important;
-  border-color: var(--pg-border) !important;
-  color: var(--pg-text) !important;
-  box-shadow: none !important;
-}
-
-/* Text inside custom cards follows Streamlit's selected theme */
-.pg-header *, .pg-dashboard-hero *, .pg-hero *, .pg-stat-card *,
-.pg-kpi-grid-card *, .pg-recent-card *, .pg-form-card *, .pg-id-card *,
-.pg-analyze-box *, .pg-result-hero *, .pg-case-item *, .pg-assessment-card *,
-.pg-signal-card *, .pg-action-card *, .pg-ui6-card *, .pg-section-card *,
-.pg-case-card *, .pg-dashboard-info *, .pg-sidebar-note * {
-  color: var(--pg-text) !important;
-}
-
-/* Preserve semantic priority colors */
-.pg-priority-high, .pg-priority-high *, .pg-high, .pg-high * { color: #d64545 !important; }
-.pg-priority-moderate, .pg-priority-moderate *, .pg-moderate, .pg-moderate * { color: #d49b00 !important; }
-.pg-priority-low, .pg-priority-low *, .pg-low, .pg-low * { color: #2f855a !important; }
-.pg-priority-unknown, .pg-priority-unknown *, .pg-uncertain, .pg-uncertain * { color: #7b8794 !important; }
-
-/* Native Streamlit controls remain theme-owned */
-div[data-baseweb="input"] input,
-div[data-baseweb="textarea"] textarea,
-div[data-baseweb="select"] > div {
-  color: var(--pg-text) !important;
-  background: var(--pg-bg) !important;
-  border-color: var(--pg-border) !important;
-}
-
-input::placeholder, textarea::placeholder {
-  color: var(--pg-text) !important; opacity: .55 !important;
-}
-
-/* Sidebar */
-section[data-testid="stSidebar"] {
-  background: var(--pg-surface) !important;
-  color: var(--pg-text) !important;
-  border-color: var(--pg-border) !important;
-}
-section[data-testid="stSidebar"] div.stButton > button[kind="secondary"] {
-  background: transparent !important;
-  color: var(--pg-text) !important;
-  border-color: transparent !important;
-}
-section[data-testid="stSidebar"] div.stButton > button[kind="secondary"]:hover {
-  background: var(--pg-bg) !important;
-  color: var(--pg-text) !important;
-  border-color: var(--pg-border) !important;
-}
-
-/* Quick-action / ordinary buttons: readable in both Streamlit themes */
-div.stButton > button[kind="secondary"] {
-  background: var(--pg-surface) !important;
-  color: var(--pg-text) !important;
-  border-color: var(--pg-border) !important;
-}
-div.stButton > button[kind="secondary"]:hover,
-div.stButton > button[kind="secondary"]:focus {
-  background: var(--pg-bg) !important;
-  color: var(--pg-text) !important;
-  border-color: var(--pg-primary) !important;
-}
-div.stButton > button[kind="secondary"] * { color: inherit !important; }
-
-/* Headings rendered by Streamlit */
-[data-testid="stAppViewContainer"] h1,
-[data-testid="stAppViewContainer"] h2,
-[data-testid="stAppViewContainer"] h3,
-[data-testid="stAppViewContainer"] h4 {
-  color: var(--pg-text) !important;
-}
-
-/* No prefers-color-scheme: Streamlit theme is the single source of truth. */
-</style>
-""", unsafe_allow_html=True)
 
 # MODEL + GOOGLE SHEET
 # =========================================================
 
-BASE_DIR = Path(__file__).resolve().parent
 MODEL_FILE = str(BASE_DIR / "PHARMAGUARD_RandomForest_Model.joblib")
 
 try:
@@ -1471,7 +526,7 @@ MODERATE_CONTEXT_PATTERNS = [
 
 
 # =========================================================
-# STEP 96B — ADR INPUT VALIDATION
+# ADR INPUT VALIDATION
 # =========================================================
 
 # Common ADR/medical terms used in this project.
@@ -1588,33 +643,47 @@ def _json_safe(value):
 
 
 def save_to_google_sheet(data, return_details=False):
+    """POST one record to the database endpoint; True only if it was really accepted."""
+
+    def _result(ok, status=None, text=""):
+        return (ok, status, text[:500]) if return_details else ok
+
+    if not GOOGLE_SHEET_URL:
+        return _result(False, None, "GOOGLE_SHEET_URL is not configured.")
 
     try:
-        safe_data = _json_safe(data)
-
         response = requests.post(
             GOOGLE_SHEET_URL,
-            json=safe_data,
-            timeout=15
+            json=_json_safe(data),
+            timeout=15,
         )
-
         ok = response.status_code in {200, 201}
 
-        if return_details:
-            return (
-                ok,
-                response.status_code,
-                response.text[:500] if response.text else ""
-            )
+        # Apps Script often answers HTTP 200 even when the script failed,
+        # so also honour an explicit failure flag in the JSON body.
+        if ok:
+            try:
+                body = response.json()
+                if isinstance(body, dict) and (
+                    body.get("success") is False or body.get("error")
+                ):
+                    ok = False
+            except ValueError:
+                pass  # plain-text reply: HTTP status is all we have
 
-        return ok
+        if not ok:
+            logger.warning("Database save rejected: HTTP %s", response.status_code)
+        return _result(ok, response.status_code, response.text or "")
 
-    except Exception as exc:
+    except requests.RequestException as exc:
+        logger.warning("Database save failed: %s", exc)
+        return _result(False, None, str(exc))
 
-        if return_details:
-            return False, None, str(exc)[:500]
 
-        return False
+def make_case_reference(now=None):
+    """Collision-resistant case reference (timestamp + random suffix)."""
+    now = now or datetime.now()
+    return f"PHG-CASE-{now.strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:8].upper()}"
 
 
 # =========================================================
@@ -1622,24 +691,35 @@ def save_to_google_sheet(data, return_details=False):
 # =========================================================
 
 @st.cache_data(ttl=60, show_spinner=False)
+def _fetch_sheet_records():
+    """Cached raw fetch. Raises on failure so errors are never cached as 'empty'."""
+    response = requests.get(GOOGLE_SHEET_URL, timeout=8)
+    response.raise_for_status()
+    return response.json()
+
+
 def load_from_google_sheet():
-
+    """Return the database as a DataFrame; failures are recorded, not hidden."""
+    st.session_state["sheet_load_error"] = ""
+    if not GOOGLE_SHEET_URL:
+        st.session_state["sheet_load_error"] = "Database URL is not configured."
+        return pd.DataFrame()
     try:
-
-        response = requests.get(
-            GOOGLE_SHEET_URL,
-            timeout=5
+        return pd.DataFrame(_fetch_sheet_records())
+    except Exception as exc:
+        logger.warning("Database load failed: %s", exc)
+        st.session_state["sheet_load_error"] = (
+            "The case database could not be reached, so saved cases may be missing."
         )
-
-        if response.status_code == 200:
-
-            return pd.DataFrame(response.json())
-
         return pd.DataFrame()
 
+
+def invalidate_sheet_cache():
+    """Drop only the database cache (not every cache in the app)."""
+    try:
+        _fetch_sheet_records.clear()
     except Exception:
-
-        return pd.DataFrame()
+        pass
 
 
 # =========================================================
@@ -1901,72 +981,35 @@ def has_context_protection(text, serious_pattern):
 # MACHINE LEARNING PREDICTION
 # =========================================================
 
+@st.cache_data(show_spinner=False, max_entries=1024)
 def model_predict(age, sex, drug, adr):
-
+    """Random Forest prototype prediction (cached: same inputs -> same output)."""
     X = pd.DataFrame([{
-
         "Age": age,
-
         "Sex": sex,
-
         "Drug": drug,
-
         "ADR": adr,
-
-        "Age_Missing": 0,
-
-        "Drug_Missing": int(
-            not str(drug).strip()
-        ),
-
-        "ADR_Missing": int(
-            not str(adr).strip()
-        )
-
+        "Age_Missing": int(pd.isna(age)),
+        "Drug_Missing": int(not str(drug).strip()),
+        "ADR_Missing": int(not str(adr).strip()),
     }])
 
-
-    # Model package with preprocessor
+    # Model package with a separate preprocessor
     if isinstance(model, dict):
-
-        estimator = (
-            model.get("model")
-            or model.get("estimator")
-        )
-
-        preprocessor = model.get(
-            "preprocessor"
-        )
-
-        if (
-            estimator is not None
-            and preprocessor is not None
-        ):
-
+        estimator = model.get("model") or model.get("estimator")
+        preprocessor = model.get("preprocessor")
+        if estimator is not None and preprocessor is not None:
             try:
-
-                return str(
-                    estimator.predict(
-                        preprocessor.transform(X)
-                    )[0]
-                ).upper()
-
+                return str(estimator.predict(preprocessor.transform(X))[0]).upper()
             except Exception:
-
-                pass
-
+                logger.exception("Packaged model prediction failed; trying direct predict.")
 
     # Direct model prediction
     try:
-
-        return str(
-            model.predict(X)[0]
-        ).upper()
-
+        return str(model.predict(X)[0]).upper()
     except Exception:
-
+        logger.exception("Model prediction failed; returning UNKNOWN.")
         return "UNKNOWN"
-
 
 
 # =========================================================
@@ -2048,6 +1091,11 @@ if "adr_history" not in st.session_state:
 # LOAD PERMANENT DATABASE ONCE
 # =========================================================
 
+def _retry_database_load():
+    invalidate_sheet_cache()
+    st.session_state.pop("database_loaded", None)
+
+
 if "database_loaded" not in st.session_state:
 
     database_df = load_from_google_sheet()
@@ -2059,6 +1107,10 @@ if "database_loaded" not in st.session_state:
         )
 
     st.session_state.database_loaded = True
+
+if st.session_state.get("sheet_load_error"):
+    st.sidebar.warning(st.session_state["sheet_load_error"])
+    st.sidebar.button("🔄 Retry database load", on_click=_retry_database_load)
 
 
 # =========================================================
@@ -2581,13 +1633,11 @@ def render_case_reports_screen():
                     else:
                         reassessment_number = 1
 
-                    new_case_reference = (
-                        f"PHG-CASE-{datetime.now().strftime('%Y%m%d-%H%M%S')}-"
-                        f"{uuid.uuid4().hex[:8].upper()}"
-                    )
+                    reassess_now = datetime.now()
+                    new_case_reference = make_case_reference(reassess_now)
 
                     new_record = {
-                        "Date_Time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "Date_Time": reassess_now.strftime("%Y-%m-%d %H:%M:%S"),
                         "Patient_ID": row.get("Patient_ID", ""),
                         "Age": row.get("Age", ""),
                         "Sex": row.get("Sex", "Unknown"),
@@ -2628,10 +1678,7 @@ def render_case_reports_screen():
                     )
 
                     if saved:
-                        try:
-                            st.cache_data.clear()
-                        except Exception:
-                            pass
+                        invalidate_sheet_cache()
 
                         st.session_state.adr_history.append(new_record.copy())
 
@@ -3626,185 +2673,143 @@ def render_settings_screen():
 # =========================================================
 
 
-st.markdown("""
-<style>
-/* =========================================================
-   UI-10 — PROFESSIONAL DATABASE WORKSPACE
-   Presentation-only: backend/database logic preserved.
-   ========================================================= */
-.pg-db-hero{display:flex;align-items:center;gap:13px;padding:17px 18px;margin:4px 0 10px;border-radius:18px;background:linear-gradient(135deg,#f3f9fd 0%,#fff 82%);border:1px solid #d7e7f0;box-shadow:0 4px 16px rgba(30,60,90,.04)}
-.pg-db-hero-icon{width:43px;height:43px;display:flex;align-items:center;justify-content:center;border-radius:13px;background:#eaf4fb;font-size:22px;border:1px solid #d3e6f1}.pg-db-hero-title{font-size:24px;font-weight:850;color:#102a43;letter-spacing:-.15px}.pg-db-hero-sub{font-size:11px;color:#687887;line-height:1.5;margin-top:2px}
-.pg-db-summary{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px;padding:8px 10px;border-radius:11px;background:#f8fbfd;border:1px solid #e0ebf2;color:#61717e;font-size:10px}.pg-db-summary span{padding:3px 7px;border-radius:999px;background:#fff;border:1px solid #e3ebf0}
-.pg-db-status{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:9px 11px;margin:0 0 15px;border-radius:10px;font-size:10px}.pg-db-status-ok{background:#f1faf4;border:1px solid #cfe8d6;color:#2b6d3c}.pg-db-status-warn{background:#fff8e8;border:1px solid #eedca7;color:#7c5a00}
-.pg-db-card-list{display:flex;flex-direction:column;gap:8px;margin:4px 0 7px}.pg-db-card{padding:12px 13px;border-radius:13px;background:#fff;border:1px solid #dfe8ee;box-shadow:0 2px 9px rgba(30,60,90,.03)}.pg-db-card-top{display:flex;align-items:center;justify-content:space-between;gap:8px}.pg-db-ref{font-size:10px;font-weight:850;color:#526474;word-break:break-all}.pg-db-drug{font-size:14px;font-weight:800;color:#243b53;margin-top:6px}.pg-db-adr{font-size:11px;line-height:1.45;color:#667785;margin-top:3px}.pg-db-meta{display:flex;flex-wrap:wrap;gap:9px;margin-top:8px;padding-top:7px;border-top:1px solid #edf1f4;font-size:9px;color:#82909b}.pg-db-source{margin-top:7px;font-size:9px;color:#647887}
-.pg-db-priority-high,.pg-db-priority-moderate,.pg-db-priority-low,.pg-db-priority-unknown{display:inline-block;padding:4px 8px;border-radius:999px;font-size:9px;font-weight:850;white-space:nowrap}.pg-db-priority-high{background:#fff0f0;color:#a61b1b;border:1px solid #f2c7c7}.pg-db-priority-moderate{background:#fff7df;color:#8a5a00;border:1px solid #eed99b}.pg-db-priority-low{background:#edf8f0;color:#246b37;border:1px solid #cce7d3}.pg-db-priority-unknown{background:#f2f4f6;color:#59646e;border:1px solid #dce1e5}
-@media(max-width:700px){.pg-db-hero{padding:14px}.pg-db-hero-title{font-size:21px}.pg-db-hero-icon{width:39px;height:39px;font-size:20px}.pg-db-summary{gap:4px}.pg-db-status{display:block}.pg-db-status span{display:block}.pg-db-status span+span{margin-top:3px}.pg-db-card{padding:11px 12px}}
-</style>
-""", unsafe_allow_html=True)
-
-st.markdown("""
-<style>
-/* =========================================================
-   UI-9 — PROFESSIONAL CASES WORKSPACE
-   Presentation-only: no scoring, database or review logic changed.
-   ========================================================= */
-.pg-cases-hero{display:flex;align-items:center;gap:13px;padding:18px 19px;margin:4px 0 10px;border-radius:18px;background:linear-gradient(135deg,#f3f9fd 0%,#fff 82%);border:1px solid #d7e7f0;box-shadow:0 4px 16px rgba(30,60,90,.04)}
-.pg-cases-hero-icon{width:45px;height:45px;display:flex;align-items:center;justify-content:center;border-radius:13px;background:#eaf4fb;font-size:23px;border:1px solid #d3e6f1}
-.pg-cases-hero-title{font-size:26px;font-weight:850;color:#102a43;letter-spacing:-.2px}.pg-cases-hero-sub{font-size:12px;color:#687887;line-height:1.5;margin-top:2px}
-.pg-cases-summary{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 15px;padding:9px 11px;border-radius:11px;background:#f8fbfd;border:1px solid #e0ebf2;color:#61717e;font-size:10px}.pg-cases-summary span{padding:3px 7px;border-radius:999px;background:#fff;border:1px solid #e3ebf0}
-.pg-cases-section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:2px 0 12px}.pg-cases-section-title{font-size:18px;font-weight:850;color:#243b53}.pg-cases-section-sub{font-size:11px;color:#7a8793;margin-top:2px}.pg-cases-section-chip{padding:5px 9px;border-radius:999px;background:#edf6fb;border:1px solid #d4e7f1;color:#38627e;font-size:9px;font-weight:800;white-space:nowrap}
-.pg-case-kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:0 0 15px}.pg-case-kpi{padding:11px 10px;border-radius:12px;background:#fff;border:1px solid #dfe8ee;box-shadow:0 2px 8px rgba(30,60,90,.025)}.pg-case-kpi-icon{font-size:14px}.pg-case-kpi-label{font-size:9px;font-weight:800;color:#748290;text-transform:uppercase;letter-spacing:.45px;margin-top:2px}.pg-case-kpi-value{font-size:22px;font-weight:850;color:#17324d;line-height:1.05;margin-top:4px}.pg-case-kpi-note{font-size:9px;color:#8a96a0;margin-top:3px}.pg-case-kpi-high{border-left:3px solid #d94b4b}.pg-case-kpi-moderate{border-left:3px solid #d5a31a}.pg-case-kpi-low{border-left:3px solid #4c9a64}.pg-case-kpi-total{border-left:3px solid #5f89a6}
-.pg-case-history-list{display:flex;flex-direction:column;gap:8px;margin:4px 0 10px}.pg-case-history-card{padding:12px 13px;border-radius:13px;background:#fff;border:1px solid #dfe8ee;box-shadow:0 2px 9px rgba(30,60,90,.03)}.pg-case-history-top{display:flex;align-items:center;justify-content:space-between;gap:8px}.pg-case-history-ref{font-size:11px;font-weight:850;color:#526474;word-break:break-all}.pg-case-history-drug{font-size:14px;font-weight:800;color:#243b53;margin-top:6px}.pg-case-history-adr{font-size:11px;line-height:1.45;color:#667785;margin-top:3px}.pg-case-history-meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;padding-top:7px;border-top:1px solid #edf1f4;font-size:9px;color:#82909b}
-.pg-case-priority-high,.pg-case-priority-moderate,.pg-case-priority-low,.pg-case-priority-unknown{display:inline-block;padding:4px 8px;border-radius:999px;font-size:9px;font-weight:850;white-space:nowrap}.pg-case-priority-high{background:#fff0f0;color:#a61b1b;border:1px solid #f2c7c7}.pg-case-priority-moderate{background:#fff7df;color:#8a5a00;border:1px solid #eed99b}.pg-case-priority-low{background:#edf8f0;color:#246b37;border:1px solid #cce7d3}.pg-case-priority-unknown{background:#f2f4f6;color:#59646e;border:1px solid #dce1e5}
-@media(max-width:700px){.pg-cases-hero{padding:15px 14px}.pg-cases-hero-title{font-size:22px}.pg-cases-hero-icon{width:40px;height:40px;font-size:20px}.pg-cases-summary{gap:5px}.pg-case-kpi-grid{grid-template-columns:1fr 1fr;gap:7px}.pg-case-kpi{padding:10px 9px}.pg-case-kpi-value{font-size:20px}.pg-cases-section-head{align-items:flex-start}.pg-cases-section-chip{margin-top:2px}}
-</style>
-""", unsafe_allow_html=True)
-
-# UI-8 — PROFESSIONAL NEW ADR ANALYSIS POLISH
-# Stable v36 backend/logic preserved.
+# PROFESSIONAL NEW ADR ANALYSIS POLISH
 # =========================================================
-st.markdown("""
-<style>
-.pg-analysis-hero{position:relative;overflow:hidden;padding:22px 22px 20px;margin:4px 0 14px;border-radius:20px;background:linear-gradient(135deg,#eef7ff 0%,#fff 78%);border:1px solid #d5e6f2;box-shadow:0 5px 20px rgba(30,60,90,.06)}
-.pg-analysis-hero:before{content:"🛡️";position:absolute;right:18px;top:13px;font-size:42px;opacity:.10}
-.pg-analysis-title{font-size:27px;font-weight:850;color:#102a43;letter-spacing:-.2px;margin-bottom:5px}
-.pg-analysis-subtitle{max-width:760px;color:#5d6d7c;font-size:13px;line-height:1.55}
-.pg-stepbar{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin:0 0 18px}
-.pg-step{min-width:0;padding:9px 7px;border-radius:10px;background:#f7fafc;border:1px solid #dce7ee;color:#71808b;font-size:10px;font-weight:750;text-align:center}
-.pg-step-active{background:#eaf4fb;border-color:#9fc5de;color:#174a6b;box-shadow:inset 0 -2px 0 #2b6f9f}
-.pg-form-card{position:relative;padding:15px 16px 11px;margin:0 0 8px;border-radius:14px 14px 8px 8px;background:#fff;border:1px solid #dbe7ef;border-bottom:3px solid #e7f0f5;box-shadow:0 2px 10px rgba(30,60,90,.035)}
-.pg-form-title{font-size:15px;font-weight:850;color:#243b53;letter-spacing:.05px}
-.pg-form-subtitle{font-size:11px;color:#7a8793;margin-top:3px;margin-bottom:2px}
-.pg-id-card{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 13px;margin:0 0 13px;border-radius:10px;background:#f5f9fc;border:1px solid #d9e8f2}
-.pg-id-label{font-size:10px;font-weight:800;color:#70808d;text-transform:uppercase;letter-spacing:.6px}
-.pg-id-value{margin-top:0;font-size:13px;font-weight:850;color:#17324d;word-break:break-word}
-.pg-input-tip{padding:10px 12px;margin:8px 0 2px;border-radius:10px;background:#f7fbfd;border:1px solid #dceaf2;color:#607080;font-size:11px;line-height:1.5}
-.pg-analyze-box{padding:15px 16px;margin:16px 0 8px;border-radius:15px;background:linear-gradient(135deg,#f2f8fc 0%,#fff 100%);border:1px solid #d6e6f0}
-.pg-analyze-title{font-size:15px;font-weight:850;color:#17324d}.pg-analyze-subtitle{font-size:11px;color:#718096;margin-top:3px}
-div[data-testid="stTextInput"],div[data-testid="stNumberInput"],div[data-testid="stSelectbox"],div[data-testid="stTextArea"]{margin-bottom:7px}
-div[data-testid="stTextArea"] textarea{min-height:135px!important}
-div.stButton>button[kind="primary"]{min-height:50px;border-radius:12px;font-size:14px;font-weight:850;letter-spacing:.25px}
-@media(max-width:700px){.pg-analysis-hero{padding:17px 15px}.pg-analysis-title{font-size:22px}.pg-analysis-hero:before{font-size:32px;right:12px}.pg-stepbar{grid-template-columns:1fr 1fr;gap:6px}.pg-step:first-child{grid-column:1/-1}.pg-id-card{display:block}.pg-id-value{margin-top:4px}.pg-form-card{padding:13px 13px 9px}}
-</style>
-""", unsafe_allow_html=True)
 
 # =========================================================
 # =========================================================
 # CASE REPORT COLLAPSED WORKFLOW POLISH
 # Presentation-only: keep advanced review tools compact on mobile.
 # =========================================================
-st.markdown(
-    """
-    <style>
-    div[data-testid="stExpander"] { margin-bottom: 0.55rem; }
-    div[data-testid="stExpander"] summary { font-weight: 700; }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
 
 
+# =========================================================
+# PHARMAGUARD UNIFIED PATIENT / PROFESSIONAL WORKFLOWS
+# Separate API configuration; original 1.0 engine/database untouched.
+# =========================================================
+def _pg2_save_case(payload):
+    try:
+        api_url = str(st.secrets.get("PHARMAGUARD_API_URL", "")).strip()
+        api_token = str(st.secrets.get("PHARMAGUARD_API_TOKEN", "")).strip()
+        if not api_url or not api_token:
+            return False, "Patient/Professional API not configured in Streamlit Secrets."
+        # Apps Script web apps cannot read custom headers, so the shared secret
+        # travels in the JSON body over HTTPS. Rotate it periodically and never log it.
+        outgoing = dict(payload)
+        outgoing["api_token"] = api_token
+        response = requests.post(api_url, json=outgoing, timeout=20)
+        response.raise_for_status()
+        result = response.json()
+        if isinstance(result, dict) and result.get("success") is True:
+            return True, result.get("message", "Saved.")
+        message = result.get("message") if isinstance(result, dict) else None
+        return False, message or "API did not confirm saving."
+    except (requests.RequestException, ValueError) as exc:
+        logger.warning("Case API save failed: %s", type(exc).__name__)
+        return False, "Could not save. Check API URL, access settings, and Secrets."
+    except Exception:
+        logger.exception("Unexpected error while saving case via API.")
+        return False, "Could not save. Check API configuration."
 
-st.markdown("""
-<style>
-/* =========================================================
-   UI-11 — PROFESSIONAL PROJECT & SYSTEM WORKSPACE
-   Presentation-only: methodology/status/disclaimer logic preserved.
-   ========================================================= */
-.pg-project-hero{display:flex;align-items:center;gap:13px;padding:18px 18px;margin:4px 0 14px;border-radius:18px;background:linear-gradient(135deg,#f3f9fd 0%,#fff 82%);border:1px solid #d7e7f0;box-shadow:0 4px 16px rgba(30,60,90,.04)}
-.pg-project-hero-icon{width:45px;height:45px;display:flex;align-items:center;justify-content:center;border-radius:13px;background:#eaf4fb;border:1px solid #d3e6f1;font-size:23px}.pg-project-hero-title{font-size:25px;font-weight:850;color:#102a43;letter-spacing:-.2px}.pg-project-hero-sub{font-size:11px;color:#687887;line-height:1.5;margin-top:2px}
-.pg-project-intro{padding:15px 16px;margin:0 0 15px;border-radius:14px;background:#f7fbfd;border:1px solid #dceaf2;border-left:4px solid #5d9ac0}.pg-project-intro-title{font-size:15px;font-weight:850;color:#243b53}.pg-project-intro-text{font-size:11px;line-height:1.55;color:#667785;margin-top:5px}
-.pg-project-component{padding:13px 14px;margin:0 0 9px;border-radius:13px;background:#fff;border:1px solid #dfe8ee;box-shadow:0 2px 9px rgba(30,60,90,.025);font-size:11px;line-height:1.5;color:#667785}.pg-project-component-title{font-size:14px;font-weight:850;color:#243b53;margin-bottom:3px}.pg-project-safety{margin-top:2px;border-left:4px solid #5d9ac0}
-.pg-status-row{display:flex;align-items:center;gap:11px;padding:11px 12px;margin:0 0 7px;border-radius:12px;background:#fff;border:1px solid #dfe8ee}.pg-status-icon{width:28px;text-align:center;font-size:15px}.pg-status-main{min-width:0}.pg-status-label{font-size:9px;font-weight:800;color:#7a8793;text-transform:uppercase;letter-spacing:.45px}.pg-status-value{font-size:12px;font-weight:750;color:#243b53;margin-top:2px;word-break:break-word}
-.pg-status-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-top:3px}.pg-status-summary span{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 7px;border-radius:11px;background:#f8fbfd;border:1px solid #dfe8ee}.pg-status-summary b{font-size:19px;color:#17324d}.pg-status-summary small{font-size:8px;font-weight:800;color:#7a8793;letter-spacing:.4px;margin-top:2px}
-.pg-scientific-card{padding:16px;margin:0 0 13px;border-radius:14px;background:#fffaf0;border:1px solid #eedda9;border-left:4px solid #d3a52c}.pg-scientific-title{font-size:14px;font-weight:850;color:#604c00}.pg-scientific-text{font-size:11px;line-height:1.55;color:#6e6240;margin-top:7px}.pg-scope-note{padding:11px 12px;border-radius:11px;background:#f7fbfd;border:1px solid #dceaf2;color:#607080;font-size:10px;line-height:1.5}
-@media(max-width:700px){.pg-project-hero{padding:15px 14px}.pg-project-hero-title{font-size:22px}.pg-project-hero-icon{width:40px;height:40px;font-size:20px}.pg-status-summary{grid-template-columns:1fr 1fr}.pg-status-row{padding:10px 11px}}
-</style>
-""", unsafe_allow_html=True)
+
+def _pg2_patient_corner():
+    t = LANGUAGE_TEXT[st.session_state.get("pg_language", "English")]
+    st.title(t["patient"])
+    st.caption(t["patient_caption"])
+    st.warning(t["emergency"])
+    if "unified_patient_case_id" not in st.session_state:
+        st.session_state["unified_patient_case_id"] = "PHG2-" + uuid.uuid4().hex[:8].upper()
+    st.caption(t["case_ref"] + ": " + st.session_state["unified_patient_case_id"])
+    with st.form("unified_patient_report"):
+        age = st.number_input(t["age"], min_value=0, max_value=120, value=30)
+        sex = st.selectbox(t["sex"], [t["not_provided"], t["female"], t["male"], t["other"]])
+        medicine = st.text_input(t["medicine"])
+        symptoms = st.text_area(t["symptoms"])
+        onset = st.date_input(t["onset"], value=date.today(), max_value=date.today())
+        breathing = st.checkbox(t["breathing"])
+        swelling = st.checkbox(t["swelling"])
+        fainting = st.checkbox(t["fainting"])
+        severe_bleeding = st.checkbox(t["bleeding"])
+        submitted = st.form_submit_button(t["submit"])
+    flags = []
+    if breathing: flags.append("Difficulty breathing")
+    if swelling: flags.append("Throat or tongue swelling")
+    if fainting: flags.append("Fainting or collapse")
+    if severe_bleeding: flags.append("Severe bleeding")
+    if flags:
+        st.error(t["urgent"])
+    if submitted:
+        if not medicine.strip() or not symptoms.strip():
+            st.warning(t["required"])
+        else:
+            payload = {
+                "case_id": st.session_state["unified_patient_case_id"], "role": "Patient",
+                "age": int(age), "sex": sex, "medicine": medicine.strip(), "adr": symptoms.strip(),
+                "emergency_flags": flags,
+                "emergency_status": "URGENT - emergency warning sign reported" if flags else "No listed emergency flags selected",
+                "seriousness": "Needs healthcare professional assessment", "review_status": "Pending",
+                "reviewer_notes": "Reported symptom onset: " + str(onset),
+            }
+            saved, message = _pg2_save_case(payload)
+            st.write("**" + t["case_ref"] + ":**", st.session_state["unified_patient_case_id"])
+            if saved: st.success(t["saved"])
+            else: st.error(t["not_saved"] + message)
+            st.caption(t["disclaimer"])
 
 
-st.markdown("""<style>
-/* =========================================================
-   UI-11 — PROFESSIONAL EXPANDABLE WORKSPACES
-   Presentation-only. Backend, calculations and navigation unchanged.
-   ========================================================= */
-.pg-expand-workspace-intro{
-    padding:11px 13px;
-    margin:2px 0 13px 0;
-    border-radius:12px;
-    background:linear-gradient(135deg,#f7fbfe 0%,#ffffff 100%);
-    border:1px solid #dce8ef;
-}
-.pg-expand-workspace-title{
-    font-size:14px;
-    font-weight:850;
-    color:#243b53;
-    line-height:1.35;
-}
-.pg-expand-workspace-sub{
-    margin-top:3px;
-    font-size:11px;
-    color:#71808b;
-    line-height:1.45;
-}
-/* Native accordion shell */
-div[data-testid="stExpander"]{
-    border:1px solid #d9e5ec !important;
-    border-radius:14px !important;
-    background:#ffffff !important;
-    box-shadow:0 2px 10px rgba(30,60,90,.035) !important;
-    margin:9px 0 12px 0 !important;
-    overflow:hidden !important;
-}
-div[data-testid="stExpander"] summary{
-    padding:13px 15px !important;
-    background:#f8fbfd !important;
-    border-bottom:1px solid #e4edf2 !important;
-    font-weight:800 !important;
-    color:#243b53 !important;
-}
-div[data-testid="stExpander"] summary:hover{background:#f2f8fb !important;}
-div[data-testid="stExpander"] > details > div{
-    padding:14px 15px 16px 15px !important;
-    background:#ffffff !important;
-}
-div[data-testid="stExpander"] [data-testid="stMarkdownContainer"] p{
-    line-height:1.5;
-}
-div[data-testid="stExpander"] div[data-testid="stDataFrame"]{
-    border:1px solid #e0e8ee;
-    border-radius:10px;
-    margin-top:8px;
-}
-div[data-testid="stExpander"] div[data-testid="stAlert"]{margin:9px 0 !important;}
-div[data-testid="stExpander"] hr{margin:12px 0 !important;}
-div[data-testid="stExpander"] label{font-weight:650 !important;}
-div[data-testid="stExpander"] textarea{border-radius:10px !important;}
-.pg-expand-status{
-    display:inline-flex;
-    align-items:center;
-    gap:5px;
-    padding:4px 8px;
-    border-radius:999px;
-    background:#eef6fa;
-    border:1px solid #d8e8f0;
-    color:#486581;
-    font-size:10px;
-    font-weight:800;
-    margin-top:7px;
-}
-@media(max-width:700px){
-    div[data-testid="stExpander"] summary{padding:12px 12px !important;}
-    div[data-testid="stExpander"] > details > div{padding:12px 12px 14px !important;}
-    .pg-expand-workspace-intro{padding:10px 11px;}
-    .pg-expand-workspace-title{font-size:13px;}
-}
-</style>""", unsafe_allow_html=True)
+def _pg2_professional_corner():
+    t = LANGUAGE_TEXT[st.session_state.get("pg_language", "English")]
+    st.title(t["professional"])
+    st.warning(t["pro_warning"])
+    flag_labels = [t["breathing"], t["swelling"], t["fainting"], t["bleeding"], t["seizure"], t["chest_pain"]]
+    canonical_flags = ["Difficulty breathing", "Throat or tongue swelling", "Fainting or collapse", "Severe bleeding", "Seizure", "Severe chest pain"]
+    chosen = st.multiselect(t["flags"], flag_labels, key="unified_professional_emergency_flags_" + st.session_state.get("pg_language", "English"))
+    flags = [canonical_flags[flag_labels.index(x)] for x in chosen]
+    if flags: st.error(t["urgent_prefix"] + ", ".join(chosen) + t["urgent_suffix"])
+    else: st.info(t["no_flags"])
+    seriousness_options = [t["not_assessed"], t["potentially_serious"], t["not_identified"], t["needs_assessment"]]
+    seriousness_map = dict(zip(seriousness_options, ["Not assessed", "Potentially serious", "Not currently identified as serious", "Needs further assessment"]))
+    status_options = [t["pending"], t["under_review"], t["reviewed"]]
+    status_map = dict(zip(status_options, ["Pending", "Under Review", "Reviewed"]))
+    with st.form("unified_professional_review"):
+        case_id = st.text_input(t["case_id"])
+        age = st.number_input(t["age_known"], min_value=0, max_value=120, value=0)
+        sex_labels = [t["not_provided"], t["female"], t["male"], t["other"]]
+        sex_values = ["Not provided", "Female", "Male", "Other"]
+        sex = sex_values[sex_labels.index(st.selectbox(t["sex_known"], sex_labels, placeholder=t["choose_option"]))]
+        medicine = st.text_input(t["medicine"])
+        adr = st.text_area(t["symptoms"])
+        seriousness_label = st.selectbox(t["seriousness"], seriousness_options)
+        status_label = st.selectbox(t["status"], status_options)
+        notes = st.text_area(t["notes"])
+        submitted = st.form_submit_button(t["save_review"])
+    if submitted:
+        if not case_id.strip() or not medicine.strip() or not adr.strip(): st.warning(t["required_pro"])
+        else:
+            payload = {
+                "case_id": case_id.strip(), "role": "Healthcare Professional", "age": int(age) if age else "",
+                "sex": sex, "medicine": medicine.strip(), "adr": adr.strip(), "emergency_flags": flags,
+                "emergency_status": "URGENT - emergency warning sign reported" if flags else "No emergency flags selected in this review",
+                "seriousness": seriousness_map[seriousness_label], "review_status": status_map[status_label], "reviewer_notes": notes.strip(),
+            }
+            saved, message = _pg2_save_case(payload)
+            if saved: st.success(t["review_saved"])
+            else: st.error(t["review_not_saved"] + message)
+    st.caption(t["disclaimer"])
+
 
 # SCREEN ROUTING
 # =========================================================
 
 active_page = st.session_state.get("active_page", "🏠 Dashboard")
+
+if active_page == "👤 Patient Corner":
+    _pg2_patient_corner()
+    st.stop()
+
+if active_page == "🩺 Healthcare Professional Corner":
+    _pg2_professional_corner()
+    st.stop()
 
 if active_page == "🏠 Dashboard":
     render_dashboard_screen()
@@ -3925,6 +2930,21 @@ drug = st.text_input(
 )
 
 # =========================================================
+# EVIDENCE GAP RADAR — OPTIONAL TIMELINE DETAILS
+# This is reviewer support only; it does not alter priority.
+# =========================================================
+st.markdown("### 🧭 ADR Evidence Gap Radar (New)")
+st.caption("Optional timeline checks help reviewers spot missing dates or chronology conflicts. They do not establish causality and do not change the Safety Gate or model priority.")
+use_drug_start_date = st.checkbox("Drug start date is available", value=False, key="egr_has_drug_start")
+drug_start_date = None
+if use_drug_start_date:
+    drug_start_date = st.date_input("Drug start date", value=date.today(), key="egr_drug_start")
+use_adr_onset_date = st.checkbox("ADR / symptom onset date is available", value=False, key="egr_has_onset")
+adr_onset_date = None
+if use_adr_onset_date:
+    adr_onset_date = st.date_input("ADR / symptom onset date", value=date.today(), key="egr_onset")
+
+# =========================================================
 # ADR INPUT
 # =========================================================
 
@@ -3994,7 +3014,7 @@ if st.button(
         st.stop()
         
     # -----------------------------------------------------
-    # STEP 96B: ADR MEDICAL-TERM VALIDATION
+    # ADR MEDICAL-TERM VALIDATION
     # -----------------------------------------------------
 
     validation_status, suggestion, validation_message = validate_adr_input(adr)
@@ -4012,7 +3032,7 @@ if st.button(
         st.stop()
 
     # =====================================================
-    # V22 — ADR INFORMATION COMPLETENESS CHECK
+    # ADR INFORMATION COMPLETENESS CHECK
     # =====================================================
     information_gaps = assess_information_completeness(
         patient_id,
@@ -4041,6 +3061,41 @@ if st.button(
         )
 
     # -----------------------------------------------------
+    # NEW — EVIDENCE GAP RADAR (reviewer-support only)
+    # -----------------------------------------------------
+    st.markdown("### 🧭 Evidence Gap Radar Results")
+    evidence_gaps = []
+    if not drug.strip():
+        evidence_gaps.append("Suspected drug name is missing.")
+    if not adr.strip():
+        evidence_gaps.append("ADR description is missing.")
+    if drug_start_date is None:
+        evidence_gaps.append("Drug start date was not provided.")
+    if adr_onset_date is None:
+        evidence_gaps.append("ADR onset date was not provided.")
+
+    if drug_start_date is not None and adr_onset_date is not None:
+        if adr_onset_date < drug_start_date:
+            st.error(
+                "🕒 Timeline conflict: the reported ADR onset date is earlier than the drug start date. "
+                "Verify both dates and the case history before drawing conclusions."
+            )
+            evidence_gaps.append("ADR onset precedes reported drug start; chronology needs verification.")
+        elif adr_onset_date == drug_start_date:
+            st.warning(
+                "🕒 Same-day timeline: ADR onset and drug start are recorded on the same date. "
+                "Confirm the sequence and, if available, the times."
+            )
+        else:
+            st.success("🕒 Timeline check: the entered dates are in chronological order. This alone does not prove causality.")
+
+    if evidence_gaps:
+        st.warning("**Review checklist — information to confirm:**\n\n" + "\n".join(f"- {item}" for item in evidence_gaps))
+    else:
+        st.success("Evidence Gap Radar: required fields for this limited check are present. Other clinical details may still be needed.")
+    st.caption("Safety safeguard: Evidence Gap Radar is advisory only. It does not downgrade or override the existing Safety Gate / Random Forest priority and does not diagnose or assess causality.")
+
+    # -----------------------------------------------------
     # RUN THE SHARED SAFETY-FIRST PRIORITY ENGINE
     # -----------------------------------------------------
 
@@ -4055,7 +3110,7 @@ if st.button(
     ) = evaluate_adr_priority(age, sex, drug, adr)
 
     # =====================================================
-    # V19 — SAFETY GATE vs RANDOM FOREST LIVE COMPARISON
+    # SAFETY GATE vs RANDOM FOREST LIVE COMPARISON
     # =====================================================
     rf_priority = model_predict(age, sex, drug, adr)
     if rf_priority not in {"LOW", "MODERATE", "HIGH"}:
@@ -4235,52 +3290,29 @@ if st.button(
     # =====================================================
     # CREATE DATABASE RECORD
     # =====================================================
-    # Generate a collision-resistant Case Reference.
-    # A UUID suffix avoids duplicate references when multiple sessions/users
-    # save cases at nearly the same time.
-    case_reference = (
-        f"PHG-CASE-{datetime.now().strftime('%Y%m%d-%H%M%S')}-"
-        f"{uuid.uuid4().hex[:8].upper()}"
-    )
+    # One timestamp is used for both the case reference and Date_Time.
+    now = datetime.now()
+    case_reference = make_case_reference(now)
+
+    if priority == "HIGH":
+        seriousness = "Yes"
+    elif priority in {"MODERATE", "LOW"}:
+        seriousness = "No"
+    else:
+        seriousness = "Uncertain"
+
     database_record = {
-
-        "Date_Time":
-            datetime.now().strftime(
-                "%Y-%m-%d %H:%M:%S"
-            ),
-
-        "Patient_ID":
-            patient_id,
-
-        "Age":
-            age,
-
-        "Sex":
-            sex,
-
-        "Drug":
-            drug,
-
-        "ADR":
-            adr,
-
-        "Seriousness":
-            "Yes"
-            if priority == "HIGH"
-            else "No"
-            if priority in {"MODERATE", "LOW"}
-            else "Uncertain",
-
-        "Decision_Source":
-            decision_source,
-
-        "Priority":
-            priority,
-
-        "Reason":
-            reason,
-        "Case_Reference":
-    case_reference
+        "Date_Time": now.strftime("%Y-%m-%d %H:%M:%S"),
+        "Patient_ID": patient_id,
+        "Age": age,
+        "Sex": sex,
+        "Drug": drug,
+        "ADR": adr,
+        "Seriousness": seriousness,
+        "Decision_Source": decision_source,
+        "Priority": priority,
+        "Reason": reason,
+        "Case_Reference": case_reference,
     }
 
 
@@ -4297,10 +3329,7 @@ if st.button(
 
         # Invalidate cached Google Sheet data so the next database refresh
         # can retrieve the newly saved row instead of stale data.
-        try:
-            st.cache_data.clear()
-        except Exception:
-            pass
+        invalidate_sheet_cache()
 
         st.success(
             "✅ ADR saved to PHARMAGUARD Database"
