@@ -1448,3 +1448,15 @@ section[data-testid="stSidebar"] div[data-baseweb="input"] * { color: var(--pg-t
     transition-duration: .001ms !important; scroll-behavior: auto !important;
   }
 }
+/* Sidebar: left-align menu labels */
+section[data-testid="stSidebar"] div.stButton > button > div,
+section[data-testid="stSidebar"] div.stButton > button p {
+  justify-content: flex-start !important;
+  text-align: left !important;
+  width: 100%;
+}
+/* Sidebar status pill: translucent teal */
+.pg-sidebar-status {
+  background: rgba(20,184,166,.16) !important;
+  border: 1px solid rgba(20,184,166,.45) !important;
+}
