@@ -1082,9 +1082,74 @@ def has_context_protection(text, serious_pattern):
 # MACHINE LEARNING PREDICTION
 # =========================================================
 
+_NEG_CUES = (
+    r"no evidence of|no signs? of|negative for|absence of|free of|never had|"
+    r"did not have|does not have|didn't have|doesn't have|did not experience|"
+    r"ruled out|without|denies|denied|denying|absent|no|not"
+)
+_NEG_STOP = {
+    "and", "or", "but", "with", "after", "following", "due", "because",
+    "while", "although", "since", "when", "however", "though", "then",
+}
+_NEG_AFTER = re.compile(
+    r"(?:\w+\s+){0,2}?\w+\s+(?:was\s+|were\s+|is\s+|has been\s+|been\s+)?"
+    r"(?:ruled out|excluded|not present|not seen|not confirmed|not observed|absent)\b"
+)
+
+
+def strip_negated_text(text):
+    """Remove negated findings ("no sepsis", "denies chest pain", "sepsis ruled out")
+    so the Random Forest does not react to a word the report says is NOT present.
+    The Safety Gate keeps using the original, unmodified text."""
+    text = " ".join(str(text).lower().split())
+    kept_clauses = []
+    for clause in re.split(r"[,;.]", text):
+        clause = " ".join(clause.split())
+        if not clause:
+            continue
+        clause = _NEG_AFTER.sub(" ", clause)
+        words, out, i = clause.split(), [], 0
+        cue = re.compile(rf"^(?:{_NEG_CUES})$")
+        while i < len(words):
+            # try 3-word and 2-word cues first, then single-word cues
+            matched = 0
+            for n in (4, 3, 2, 1):
+                if i + n <= len(words) and cue.match(" ".join(words[i:i + n])):
+                    matched = n
+                    break
+            if matched:
+                i += matched
+                while True:
+                    dropped = 0
+                    while i < len(words) and dropped < 3 and words[i] not in _NEG_STOP:
+                        i += 1
+                        dropped += 1
+                    # "without fever or rash": "or"/"nor" keeps the negation going
+                    if i < len(words) and words[i] in {"or", "nor"}:
+                        i += 1
+                        continue
+                    break
+            else:
+                out.append(words[i])
+                i += 1
+        while out and out[0] in _NEG_STOP:
+            out.pop(0)
+        while out and out[-1] in _NEG_STOP:
+            out.pop()
+        if out:
+            kept_clauses.append(" ".join(out))
+    return ", ".join(kept_clauses)
+
+
 @st.cache_data(show_spinner=False, max_entries=1024)
 def model_predict(age, sex, drug, adr):
     """Random Forest prototype prediction (cached: same inputs -> same output)."""
+    # Ignore findings the report says are NOT present. If nothing positive is left,
+    # the model would only be guessing from the drug name, so report UNKNOWN instead.
+    cleaned_adr = strip_negated_text(adr)
+    if str(adr).strip() and not cleaned_adr:
+        return "UNKNOWN"
+    adr = cleaned_adr
     X = pd.DataFrame([{
         "Age": age,
         # The model was trained on upper-case drug names and sex codes (FAERS style)
