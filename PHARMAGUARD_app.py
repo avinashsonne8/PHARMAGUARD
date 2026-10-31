@@ -443,7 +443,83 @@ SERIOUS_PATTERNS = [
     "required hospital admission",
     "prolonged hospitalization",
     "prolonged hospital stay",
-    "extended hospital stay"
+    "extended hospital stay",
+
+    # ---- Safety Gate additions (reviewed gaps found when testing against the RF model) ----
+    # Suicide / intentional self-harm
+    "completed suicide",
+    "suicide attempt",
+    "attempted suicide",
+    "intentional self-injury",
+    "intentional self-harm",
+    "intentional overdose",
+    "deliberate overdose",
+    "intentional product misuse overdose",
+
+    # Infection / sepsis
+    "sepsis",
+    "septicaemia",
+    "septicemia",
+    "neutropenic sepsis",
+
+    # Thromboembolic events
+    "pulmonary embolism",
+    "pulmonary embolus",
+    "deep vein thrombosis",
+    "deep venous thrombosis",
+    "venous thromboembolism",
+    "thromboembolism",
+
+    # Stroke
+    "stroke",
+    "cerebrovascular accident",
+    "ischaemic stroke",
+    "ischemic stroke",
+    "cva",
+
+    # Kidney / liver failure
+    "acute kidney injury",
+    "acute renal failure",
+    "renal failure",
+    "kidney failure",
+    "liver failure",
+    "hepatic failure",
+    "acute liver failure",
+    "drug-induced liver injury",
+    "liver injury",
+    "hepatic necrosis",
+
+    # Cardiac
+    "cardiac failure",
+    "heart failure",
+    "cardiomyopathy",
+    "unstable angina",
+    "aortic dissection",
+
+    # Pancreas / blood
+    "pancreatitis",
+    "febrile neutropenia",
+    "agranulocytosis",
+    "pancytopenia",
+    "aplastic anaemia",
+    "aplastic anemia",
+
+    # General haemorrhage (British and American spellings)
+    "haemorrhage",
+    "hemorrhage",
+
+    # Allergic airway swelling
+    "angioedema",
+    "laryngeal oedema",
+    "laryngeal edema",
+    "throat swelling",
+    "tongue swelling",
+
+    # Severe metabolic / lung
+    "severe hypoglycaemia",
+    "severe hypoglycemia",
+    "interstitial lung disease",
+    "pulmonary fibrosis"
 ]
 # =========================================================
 # CONTEXT PROTECTION PATTERNS
@@ -503,7 +579,26 @@ MODERATE_PATTERNS = [
     "marked dizziness",
     "muscle pain and weakness",
     "muscle pain with weakness",
-    "dehydration"
+    "dehydration",
+
+    # ---- Safety Gate additions: clinically meaningful, review recommended ----
+    "overdose",
+    "suicidal ideation",
+    "suicidal thoughts",
+    "self-harm",
+    "self harm",
+    "atrial fibrillation",
+    "arrhythmia",
+    "pneumonia",
+    "hypoglycaemia",
+    "hypoglycemia",
+    "jaundice",
+    "hepatotoxicity",
+    "renal impairment",
+    "osteonecrosis",
+    "hip fracture",
+    "thrombocytopenia",
+    "neutropenia"
 ]
 
 # Contextual moderate-review patterns.
@@ -705,7 +800,13 @@ def load_from_google_sheet():
         st.session_state["sheet_load_error"] = "Database URL is not configured."
         return pd.DataFrame()
     try:
-        return pd.DataFrame(_fetch_sheet_records())
+        df = pd.DataFrame(_fetch_sheet_records())
+        # Sheets return numeric-looking IDs as numbers; keep IDs as text so
+        # mixed int/str columns don't trigger Arrow conversion errors.
+        for id_col in ("Patient_ID", "Case_Reference"):
+            if id_col in df.columns:
+                df[id_col] = df[id_col].astype(str)
+        return df
     except Exception as exc:
         logger.warning("Database load failed: %s", exc)
         st.session_state["sheet_load_error"] = (
@@ -986,8 +1087,9 @@ def model_predict(age, sex, drug, adr):
     """Random Forest prototype prediction (cached: same inputs -> same output)."""
     X = pd.DataFrame([{
         "Age": age,
-        "Sex": sex,
-        "Drug": drug,
+        # The model was trained on upper-case drug names and sex codes (FAERS style)
+        "Sex": str(sex).strip().upper() or "UNKNOWN",
+        "Drug": str(drug).strip().upper(),
         "ADR": adr,
         "Age_Missing": int(pd.isna(age)),
         "Drug_Missing": int(not str(drug).strip()),
@@ -2214,1160 +2316,4 @@ def render_analytics_screen():
             {
                 "Audit Field": [
                     "Priority Recorded", "Decision Source Recorded", "Case Reference Recorded",
-                    "ADR Recorded", "Drug Recorded", "Reassessment Links", "Original Case Links",
-                ],
-                "Records": [
-                    priority_recorded, decision_recorded, case_reference_recorded,
-                    adr_recorded, drug_recorded, reassessment_links, original_links,
-                ],
-            }
-        )
-        st.dataframe(audit_df, use_container_width=True, hide_index=True)
-        csv_bytes = audit_df.to_csv(index=False).encode("utf-8")
-        st.download_button(
-            "📥 Download Quality & Audit CSV",
-            data=csv_bytes,
-            file_name="PHARMAGUARD_Quality_Audit.csv",
-            mime="text/csv",
-            use_container_width=True,
-        )
-
-    st.caption("All analytics are descriptive prototype-record summaries. They do not represent clinical risk estimates, calibrated probabilities, model accuracy, or regulatory performance.")
-
-def render_database_screen():
-    """Professional, mobile-friendly database workspace. Presentation-only changes."""
-    st.markdown(
-        textwrap.dedent("""
-        <div class="pg-db-hero">
-            <div class="pg-db-hero-icon">☁️</div>
-            <div>
-                <div class="pg-db-hero-title">PHARMAGUARD Database</div>
-                <div class="pg-db-hero-sub">Search, review and export saved ADR records from the project database.</div>
-            </div>
-        </div>
-        """).strip(),
-        unsafe_allow_html=True
-    )
-
-    df = pd.DataFrame(st.session_state.get("adr_history", []))
-    counts = _priority_counts(df)
-    loaded = bool(st.session_state.get("database_loaded"))
-
-    # Compact database overview
-    st.markdown(
-        f'<div class="pg-db-summary">'
-        f'<span><b>{len(df)}</b> records</span>'
-        f'<span>🔴 {counts["HIGH"]} HIGH</span>'
-        f'<span>🟡 {counts["MODERATE"]} MODERATE</span>'
-        f'<span>🟢 {counts["LOW"]} LOW</span>'
-        f'</div>',
-        unsafe_allow_html=True
-    )
-
-    status_text = "DATABASE LOADED" if loaded else "DATABASE NOT LOADED"
-    status_class = "pg-db-status-ok" if loaded else "pg-db-status-warn"
-    st.markdown(
-        textwrap.dedent(f"""
-        <div class="pg-db-status {status_class}">
-            <span>● {html.escape(status_text)}</span>
-            <span>{len(df)} records available in this session</span>
-        </div>
-        """).strip(),
-        unsafe_allow_html=True
-    )
-
-    if df.empty:
-        st.markdown(
-            textwrap.dedent("""
-            <div class="pg-empty-state">
-                <div class="pg-empty-icon">☁️</div>
-                <div class="pg-empty-title">Database is empty</div>
-                <div class="pg-empty-text">Saved ADR cases will appear here after they are loaded into the app.</div>
-            </div>
-            """).strip(),
-            unsafe_allow_html=True
-        )
-        return
-
-    st.markdown("### 🔎 Find a Database Record")
-    c1, c2 = st.columns([2, 1])
-    with c1:
-        q = st.text_input(
-            "Database search",
-            placeholder="Case ID, patient ID, drug or ADR...",
-            label_visibility="collapsed",
-            key="database_search_professional",
-        ).strip().lower()
-    with c2:
-        priority_filter = st.selectbox(
-            "Database priority",
-            ["All", "HIGH", "MODERATE", "LOW"],
-            label_visibility="collapsed",
-            key="database_priority_professional",
-        )
-
-    filtered = df.copy()
-    if q:
-        mask = pd.Series(False, index=filtered.index)
-        for col in ["Case_Reference", "Patient_ID", "Drug", "ADR"]:
-            if col in filtered.columns:
-                mask = mask | filtered[col].astype(str).str.lower().str.contains(
-                    re.escape(q), na=False
-                )
-        filtered = filtered[mask]
-
-    if priority_filter != "All" and "Priority" in filtered.columns:
-        filtered = filtered[
-            filtered["Priority"].astype(str).str.upper() == priority_filter
-        ]
-
-    st.caption(f"Showing {len(filtered)} of {len(df)} database records")
-
-    # -----------------------------------------------------
-    # Recent database records — mobile-first cards
-    # -----------------------------------------------------
-    recent = filtered.copy()
-    if "Date_Time" in recent.columns:
-        recent["_sort_time"] = pd.to_datetime(recent["Date_Time"], errors="coerce")
-        recent = recent.sort_values("_sort_time", ascending=False, na_position="last")
-    else:
-        recent = recent.sort_index(ascending=False)
-
-    recent = recent.head(5)
-    st.markdown("### 🗃️ Recent Database Records")
-
-    if recent.empty:
-        st.info("No database records match the current search or priority filter.")
-    else:
-        cards = []
-        for _, item in recent.iterrows():
-            ref = html.escape(str(item.get("Case_Reference", "Case")))
-            drug = str(item.get("Drug", "") or "").strip()
-            drug_display = html.escape(drug if drug else "Not reported")
-            adr = html.escape(str(item.get("ADR", "") or "Not reported"))
-            patient = html.escape(str(item.get("Patient_ID", "—")))
-            date_time = html.escape(str(item.get("Date_Time", "—")))
-            priority = str(item.get("Priority", "UNKNOWN") or "UNKNOWN").upper()
-            pclass = {
-                "HIGH": "pg-db-priority-high",
-                "MODERATE": "pg-db-priority-moderate",
-                "LOW": "pg-db-priority-low",
-            }.get(priority, "pg-db-priority-unknown")
-            source = html.escape(_display_decision_source(item))
-            cards.append(
-                f"""<div class="pg-db-card">
-                    <div class="pg-db-card-top">
-                        <div class="pg-db-ref">{ref}</div>
-                        <span class="{pclass}">{html.escape(priority)}</span>
-                    </div>
-                    <div class="pg-db-drug">💊 {drug_display}</div>
-                    <div class="pg-db-adr">{adr}</div>
-                    <div class="pg-db-meta">
-                        <span>👤 {patient}</span>
-                        <span>🕒 {date_time}</span>
-                    </div>
-                    <div class="pg-db-source">Decision source: {source}</div>
-                </div>"""
-            )
-        st.markdown("<div class='pg-db-card-list'>" + "".join(cards) + "</div>", unsafe_allow_html=True)
-
-    if len(filtered) > 5:
-        st.caption(
-            f"Showing the {min(5, len(filtered))} most recent matching records above. "
-            f"{len(filtered) - 5} additional records remain available in the table view."
-        )
-
-    # -----------------------------------------------------
-    # Full database table — available on demand
-    # -----------------------------------------------------
-    with st.expander("🗂️ Full Table View", expanded=False):
-        display_cols = [c for c in [
-            "Case_Reference", "Patient_ID", "Age", "Sex", "Drug", "ADR",
-            "Priority", "Seriousness", "Decision_Source", "Date_Time"
-        ] if c in filtered.columns]
-        table_df = filtered.copy()
-        if "Date_Time" in table_df.columns:
-            table_df["_sort_time"] = pd.to_datetime(table_df["Date_Time"], errors="coerce")
-            table_df = table_df.sort_values("_sort_time", ascending=False, na_position="last").drop(columns=["_sort_time"])
-        else:
-            table_df = table_df.sort_index(ascending=False)
-        st.dataframe(
-            table_df[display_cols],
-            use_container_width=True,
-            hide_index=True,
-        )
-
-    # -----------------------------------------------------
-    # Linked reassessment details — advanced workflow, collapsed
-    # -----------------------------------------------------
-    reassessment_candidates = filtered[
-        filtered["Case_Reference"].astype(str).str.strip() != ""
-    ].copy() if "Case_Reference" in filtered.columns else pd.DataFrame()
-
-    if not reassessment_candidates.empty:
-        with st.expander("🔄 Reassessment & Linked Timeline", expanded=False):
-            st.caption(
-                "Select a saved case version to review reassessment details and its linked ADR priority timeline."
-            )
-            case_options = reassessment_candidates["Case_Reference"].astype(str).tolist()
-            selected_case_ref = st.selectbox(
-                "Select Case Reference",
-                case_options,
-                key="database_reassessment_case_professional"
-            )
-
-            selected_rows = df[
-                df["Case_Reference"].astype(str) == str(selected_case_ref)
-            ] if "Case_Reference" in df.columns else pd.DataFrame()
-
-            if not selected_rows.empty:
-                selected_record = selected_rows.iloc[-1].to_dict()
-                reassessment_of = str(selected_record.get("Reassessment_Of", "") or "").strip()
-                original_ref = str(
-                    selected_record.get("Original_Case_Reference", "")
-                    or selected_record.get("Case_Reference", "")
-                ).strip()
-                reassessment_number = str(selected_record.get("Reassessment_Number", "") or "").strip()
-                previous_priority = str(selected_record.get("Previous_Priority", "") or "").strip()
-                follow_up_note = str(selected_record.get("Follow_Up_Note", "") or "").strip()
-                is_reassessment = bool(reassessment_of)
-
-                if is_reassessment:
-                    st.success(
-                        f"🔄 Reassessment {reassessment_number or '—'}: "
-                        f"{previous_priority or 'UNKNOWN'} → "
-                        f"{selected_record.get('Priority', 'UNKNOWN')}"
-                    )
-                else:
-                    st.info("🟢 This is the initial ADR case version.")
-
-                d1, d2 = st.columns(2)
-                with d1:
-                    st.markdown(f"**Previous Priority:** {previous_priority or '—'}")
-                    st.markdown(f"**Reassessment Of:** {reassessment_of or '—'}")
-                    st.markdown(f"**Reassessment Number:** {reassessment_number or 'Initial'}")
-                with d2:
-                    st.markdown(f"**Original Case Reference:** {original_ref or '—'}")
-                    st.markdown(f"**Current Priority:** {selected_record.get('Priority', 'UNKNOWN')}")
-                    st.markdown(f"**Decision Source:** {_display_decision_source(selected_record)}")
-
-                st.markdown("**Follow-up / New Clinical Information:**")
-                if follow_up_note:
-                    st.info(follow_up_note)
-                else:
-                    st.caption("No follow-up note recorded for this case version.")
-
-                timeline_root = original_ref or str(selected_case_ref)
-                linked = df.copy()
-                if "Case_Reference" in linked.columns:
-                    linked_root = linked.get(
-                        "Original_Case_Reference",
-                        pd.Series("", index=linked.index)
-                    ).fillna("").astype(str).str.strip()
-                    linked_case = linked["Case_Reference"].astype(str).str.strip()
-                    timeline_mask = (linked_root == timeline_root) | (linked_case == timeline_root)
-                    timeline = linked[timeline_mask].copy()
-                else:
-                    timeline = pd.DataFrame()
-
-                if not timeline.empty:
-                    st.markdown("#### 📈 Linked ADR Priority Timeline")
-                    timeline_rows = []
-                    for _, item in timeline.iterrows():
-                        reassess_no = str(item.get("Reassessment_Number", "") or "").strip()
-                        timeline_rows.append({
-                            "Version": f"Reassessment {reassess_no}" if reassess_no else "Initial",
-                            "Date & Time": item.get("Date_Time", ""),
-                            "Priority": item.get("Priority", "UNKNOWN"),
-                            "ADR / New Information": item.get("ADR", ""),
-                            "Case Reference": item.get("Case_Reference", ""),
-                        })
-                    st.dataframe(
-                        pd.DataFrame(timeline_rows),
-                        use_container_width=True,
-                        hide_index=True,
-                    )
-
-    st.markdown("### 📤 Export Database")
-    st.download_button(
-        "⬇️ Download Database CSV",
-        data=filtered.to_csv(index=False).encode("utf-8"),
-        file_name="PHARMAGUARD_Database.csv",
-        mime="text/csv",
-        use_container_width=True
-    )
-
-def render_cases_hub_screen():
-    """Central Cases workspace: history and professional case report review."""
-    df=pd.DataFrame(st.session_state.get("adr_history",[])); counts=_priority_counts(df)
-    st.markdown(textwrap.dedent("""
-    <div class="pg-cases-hero"><div class="pg-cases-hero-icon">📂</div><div><div class="pg-cases-hero-title">Cases</div><div class="pg-cases-hero-sub">One workspace for saved ADR cases, detailed reports, reassessment and review workflow.</div></div></div>
-    """).strip(),unsafe_allow_html=True)
-    st.markdown(f'<div class="pg-cases-summary"><span><b>{len(df)}</b> saved cases</span><span>🔴 {counts["HIGH"]} HIGH</span><span>🟡 {counts["MODERATE"]} MODERATE</span><span>🟢 {counts["LOW"]} LOW</span></div>',unsafe_allow_html=True)
-    tab_history,tab_report=st.tabs(["📋  Case History","📄  Case Report"])
-    with tab_history: render_history_screen()
-    with tab_report: render_case_reports_screen()
-
-def render_project_info_screen():
-    """Professional project/system workspace. Presentation-only changes."""
-    st.markdown(
-        textwrap.dedent("""
-        <div class="pg-project-hero">
-            <div class="pg-project-hero-icon">🛡️</div>
-            <div>
-                <div class="pg-project-hero-title">Project & System</div>
-                <div class="pg-project-hero-sub">Understand PHARMAGUARD, review its methodology, and check important scientific usage information.</div>
-            </div>
-        </div>
-        """).strip(),
-        unsafe_allow_html=True
-    )
-
-    tab_about, tab_status, tab_disclaimer = st.tabs([
-        "ℹ️ About",
-        "⚙️ Status",
-        "⚠️ Disclaimer",
-    ])
-
-    with tab_about:
-        render_about_screen()
-
-    with tab_status:
-        render_system_status_screen()
-
-    with tab_disclaimer:
-        render_scientific_disclaimer_screen()
-
-
-def render_about_screen():
-    st.markdown("### ℹ️ About PHARMAGUARD")
-    st.caption("Project methodology, workflow and scientific scope.")
-
-    st.markdown(
-        textwrap.dedent("""
-        <div class="pg-project-intro">
-            <div class="pg-project-intro-title">🛡️ AI-Assisted ADR Risk Prioritization System</div>
-            <div class="pg-project-intro-text">PHARMAGUARD is a pharmacovigilance proof-of-concept designed to prioritize ADR reports for review using a predefined Safety Gate with Random Forest prototype assistance.</div>
-        </div>
-        """).strip(),
-        unsafe_allow_html=True
-    )
-
-    st.markdown("### 🔬 How PHARMAGUARD Works")
-    steps = [
-        ("1", "ADR Report", "Enter the reported drug, patient/project information and ADR description."),
-        ("2", "Input Validation", "The report is checked for required ADR information and selected terminology issues."),
-        ("3", "Safety Gate", "Project-defined serious and moderate-review signals are screened before ML assistance."),
-        ("4", "Random Forest", "When no predefined signal is detected, the embedded Random Forest provides prototype priority assistance."),
-        ("5", "Final Review Priority", "PHARMAGUARD records HIGH, MODERATE, LOW or UNKNOWN according to the project workflow."),
-        ("6", "Database & Reports", "The case can be stored, searched and exported for project review."),
-    ]
-    for n, title, desc in steps:
-        st.markdown(
-            f'<div class="pg-method-step"><b>{html.escape(n)}. {html.escape(title)}</b><br><span>{html.escape(desc)}</span></div>',
-            unsafe_allow_html=True,
-        )
-
-    st.markdown("### 🧩 Core Components")
-    c1, c2 = st.columns(2)
-    with c1:
-        st.markdown(
-            textwrap.dedent("""
-            <div class="pg-project-component">
-                <div class="pg-project-component-title">💊 ADR</div>
-                <div>An adverse drug reaction is a harmful or unintended response associated with the use of a medicinal product.</div>
-            </div>
-            """).strip(),
-            unsafe_allow_html=True,
-        )
-    with c2:
-        st.markdown(
-            textwrap.dedent("""
-            <div class="pg-project-component">
-                <div class="pg-project-component-title">🧠 Random Forest</div>
-                <div>The embedded model provides prototype ML assistance. Its output is not a clinical probability or a validated regulatory classification.</div>
-            </div>
-            """).strip(),
-            unsafe_allow_html=True,
-        )
-
-    st.markdown(
-        textwrap.dedent("""
-        <div class="pg-project-component pg-project-safety">
-            <div class="pg-project-component-title">🛡️ Safety Gate</div>
-            <div>The Safety Gate screens for project-defined serious and moderate-review signals and protects selected serious signals from being downgraded by the ML model.</div>
-        </div>
-        """).strip(),
-        unsafe_allow_html=True,
-    )
-
-
-def render_system_status_screen():
-    df = pd.DataFrame(st.session_state.get("adr_history", []))
-    counts = _priority_counts(df)
-    loaded = bool(st.session_state.get("database_loaded"))
-
-    st.markdown("### ⚙️ System Status")
-    st.caption("Current project-state information available in this session.")
-
-    status_rows = [
-        ("Application", "PHARMAGUARD", "🛡️"),
-        ("Database", "Loaded" if loaded else "Not loaded", "🟢" if loaded else "🟠"),
-        ("Records available", str(len(df)), "📁"),
-        ("High priority", str(counts["HIGH"]), "🔴"),
-        ("Moderate priority", str(counts["MODERATE"]), "🟡"),
-        ("Low priority", str(counts["LOW"]), "🟢"),
-        ("Review engine", "Safety Gate + Random Forest prototype", "⚙️"),
-    ]
-    for label, value, icon in status_rows:
-        st.markdown(
-            f'<div class="pg-status-row"><div class="pg-status-icon">{icon}</div><div class="pg-status-main"><div class="pg-status-label">{html.escape(label)}</div><div class="pg-status-value">{html.escape(value)}</div></div></div>',
-            unsafe_allow_html=True,
-        )
-
-    st.markdown("### 📊 Priority Snapshot")
-    st.markdown(
-        f'<div class="pg-status-summary"><span><b>{counts["HIGH"]}</b><small>HIGH</small></span><span><b>{counts["MODERATE"]}</b><small>MODERATE</small></span><span><b>{counts["LOW"]}</b><small>LOW</small></span><span><b>{len(df)}</b><small>TOTAL</small></span></div>',
-        unsafe_allow_html=True,
-    )
-
-
-def render_scientific_disclaimer_screen():
-    st.markdown("### ⚠️ Scientific Disclaimer")
-    st.caption("Important scope and appropriate-use information for the PHARMAGUARD prototype.")
-
-    st.markdown(
-        textwrap.dedent("""
-        <div class="pg-scientific-card">
-            <div class="pg-scientific-title">PHARMAGUARD is a pharmacovigilance proof-of-concept.</div>
-            <div class="pg-scientific-text">The system provides project-defined review-priority outputs intended to support pharmacovigilance workflow. These outputs do not establish ADR causality, diagnosis, treatment, regulatory seriousness, or clinical decision-making.</div>
-            <div class="pg-scientific-text">The Random Forest component is a prototype ML assistant and should not be interpreted as a calibrated clinical probability. Professional clinical and pharmacovigilance assessment remains necessary.</div>
-        </div>
-        """).strip(),
-        unsafe_allow_html=True,
-    )
-
-    st.markdown("### 🔐 Data Note")
-    st.info(
-        "Use project identifiers rather than unnecessary personally identifiable information. "
-        "The configured Google Sheets integration is used as the project database."
-    )
-
-    st.markdown(
-        textwrap.dedent("""
-        <div class="pg-scope-note">
-            <b>Project scope:</b> PHARMAGUARD supports review prioritization. It is not a clinical diagnostic tool, causality assessment system, or replacement for professional judgment.
-        </div>
-        """).strip(),
-        unsafe_allow_html=True,
-    )
-
-
-def render_settings_screen():
-    """Backward-compatible wrapper for existing internal references."""
-    render_system_status_screen()
-    st.markdown("### ⚠️ Scientific Disclaimer")
-    render_scientific_disclaimer_screen()
-
-
-# =========================================================
-
-
-# PROFESSIONAL NEW ADR ANALYSIS POLISH
-# =========================================================
-
-# =========================================================
-# =========================================================
-# CASE REPORT COLLAPSED WORKFLOW POLISH
-# Presentation-only: keep advanced review tools compact on mobile.
-# =========================================================
-
-
-# =========================================================
-# PHARMAGUARD UNIFIED PATIENT / PROFESSIONAL WORKFLOWS
-# Separate API configuration; original 1.0 engine/database untouched.
-# =========================================================
-def _pg2_save_case(payload):
-    try:
-        api_url = str(st.secrets.get("PHARMAGUARD_API_URL", "")).strip()
-        api_token = str(st.secrets.get("PHARMAGUARD_API_TOKEN", "")).strip()
-        if not api_url or not api_token:
-            return False, "Patient/Professional API not configured in Streamlit Secrets."
-        # Apps Script web apps cannot read custom headers, so the shared secret
-        # travels in the JSON body over HTTPS. Rotate it periodically and never log it.
-        outgoing = dict(payload)
-        outgoing["api_token"] = api_token
-        response = requests.post(api_url, json=outgoing, timeout=20)
-        response.raise_for_status()
-        result = response.json()
-        if isinstance(result, dict) and result.get("success") is True:
-            return True, result.get("message", "Saved.")
-        message = result.get("message") if isinstance(result, dict) else None
-        return False, message or "API did not confirm saving."
-    except (requests.RequestException, ValueError) as exc:
-        logger.warning("Case API save failed: %s", type(exc).__name__)
-        return False, "Could not save. Check API URL, access settings, and Secrets."
-    except Exception:
-        logger.exception("Unexpected error while saving case via API.")
-        return False, "Could not save. Check API configuration."
-
-
-def _pg2_patient_corner():
-    t = LANGUAGE_TEXT[st.session_state.get("pg_language", "English")]
-    st.title(t["patient"])
-    st.caption(t["patient_caption"])
-    st.warning(t["emergency"])
-    if "unified_patient_case_id" not in st.session_state:
-        st.session_state["unified_patient_case_id"] = "PHG2-" + uuid.uuid4().hex[:8].upper()
-    st.caption(t["case_ref"] + ": " + st.session_state["unified_patient_case_id"])
-    with st.form("unified_patient_report"):
-        age = st.number_input(t["age"], min_value=0, max_value=120, value=30)
-        sex = st.selectbox(t["sex"], [t["not_provided"], t["female"], t["male"], t["other"]])
-        medicine = st.text_input(t["medicine"])
-        symptoms = st.text_area(t["symptoms"])
-        onset = st.date_input(t["onset"], value=date.today(), max_value=date.today())
-        breathing = st.checkbox(t["breathing"])
-        swelling = st.checkbox(t["swelling"])
-        fainting = st.checkbox(t["fainting"])
-        severe_bleeding = st.checkbox(t["bleeding"])
-        submitted = st.form_submit_button(t["submit"])
-    flags = []
-    if breathing: flags.append("Difficulty breathing")
-    if swelling: flags.append("Throat or tongue swelling")
-    if fainting: flags.append("Fainting or collapse")
-    if severe_bleeding: flags.append("Severe bleeding")
-    if flags:
-        st.error(t["urgent"])
-    if submitted:
-        if not medicine.strip() or not symptoms.strip():
-            st.warning(t["required"])
-        else:
-            payload = {
-                "case_id": st.session_state["unified_patient_case_id"], "role": "Patient",
-                "age": int(age), "sex": sex, "medicine": medicine.strip(), "adr": symptoms.strip(),
-                "emergency_flags": flags,
-                "emergency_status": "URGENT - emergency warning sign reported" if flags else "No listed emergency flags selected",
-                "seriousness": "Needs healthcare professional assessment", "review_status": "Pending",
-                "reviewer_notes": "Reported symptom onset: " + str(onset),
-            }
-            saved, message = _pg2_save_case(payload)
-            st.write("**" + t["case_ref"] + ":**", st.session_state["unified_patient_case_id"])
-            if saved: st.success(t["saved"])
-            else: st.error(t["not_saved"] + message)
-            st.caption(t["disclaimer"])
-
-
-def _pg2_professional_corner():
-    t = LANGUAGE_TEXT[st.session_state.get("pg_language", "English")]
-    st.title(t["professional"])
-    st.warning(t["pro_warning"])
-    flag_labels = [t["breathing"], t["swelling"], t["fainting"], t["bleeding"], t["seizure"], t["chest_pain"]]
-    canonical_flags = ["Difficulty breathing", "Throat or tongue swelling", "Fainting or collapse", "Severe bleeding", "Seizure", "Severe chest pain"]
-    chosen = st.multiselect(t["flags"], flag_labels, key="unified_professional_emergency_flags_" + st.session_state.get("pg_language", "English"))
-    flags = [canonical_flags[flag_labels.index(x)] for x in chosen]
-    if flags: st.error(t["urgent_prefix"] + ", ".join(chosen) + t["urgent_suffix"])
-    else: st.info(t["no_flags"])
-    seriousness_options = [t["not_assessed"], t["potentially_serious"], t["not_identified"], t["needs_assessment"]]
-    seriousness_map = dict(zip(seriousness_options, ["Not assessed", "Potentially serious", "Not currently identified as serious", "Needs further assessment"]))
-    status_options = [t["pending"], t["under_review"], t["reviewed"]]
-    status_map = dict(zip(status_options, ["Pending", "Under Review", "Reviewed"]))
-    with st.form("unified_professional_review"):
-        case_id = st.text_input(t["case_id"])
-        age = st.number_input(t["age_known"], min_value=0, max_value=120, value=0)
-        sex_labels = [t["not_provided"], t["female"], t["male"], t["other"]]
-        sex_values = ["Not provided", "Female", "Male", "Other"]
-        sex = sex_values[sex_labels.index(st.selectbox(t["sex_known"], sex_labels, placeholder=t["choose_option"]))]
-        medicine = st.text_input(t["medicine"])
-        adr = st.text_area(t["symptoms"])
-        seriousness_label = st.selectbox(t["seriousness"], seriousness_options)
-        status_label = st.selectbox(t["status"], status_options)
-        notes = st.text_area(t["notes"])
-        submitted = st.form_submit_button(t["save_review"])
-    if submitted:
-        if not case_id.strip() or not medicine.strip() or not adr.strip(): st.warning(t["required_pro"])
-        else:
-            payload = {
-                "case_id": case_id.strip(), "role": "Healthcare Professional", "age": int(age) if age else "",
-                "sex": sex, "medicine": medicine.strip(), "adr": adr.strip(), "emergency_flags": flags,
-                "emergency_status": "URGENT - emergency warning sign reported" if flags else "No emergency flags selected in this review",
-                "seriousness": seriousness_map[seriousness_label], "review_status": status_map[status_label], "reviewer_notes": notes.strip(),
-            }
-            saved, message = _pg2_save_case(payload)
-            if saved: st.success(t["review_saved"])
-            else: st.error(t["review_not_saved"] + message)
-    st.caption(t["disclaimer"])
-
-
-# SCREEN ROUTING
-# =========================================================
-
-active_page = st.session_state.get("active_page", "🏠 Dashboard")
-
-if active_page == "👤 Patient Corner":
-    _pg2_patient_corner()
-    st.stop()
-
-if active_page == "🩺 Healthcare Professional Corner":
-    _pg2_professional_corner()
-    st.stop()
-
-if active_page == "🏠 Dashboard":
-    render_dashboard_screen()
-    st.stop()
-
-if active_page == "📂 Cases":
-    render_cases_hub_screen()
-    st.stop()
-
-if active_page == "📊 Analytics":
-    render_analytics_screen()
-    st.stop()
-
-if active_page == "☁️ Database":
-    render_database_screen()
-    st.stop()
-
-if active_page == "ℹ️ Project Info":
-    render_project_info_screen()
-    st.stop()
-
-
-# =========================================================
-# NEW ADR ANALYSIS — UI-2
-# =========================================================
-
-st.markdown(
-    textwrap.dedent("""
-    <div class="pg-analysis-hero">
-        <div class="pg-analysis-title">🔍 New ADR Analysis</div>
-        <div class="pg-analysis-subtitle">Create a structured ADR report. PHARMAGUARD checks the predefined Safety Gate first, then uses the Random Forest prototype when appropriate.</div>
-    </div>
-    """).strip(),
-    unsafe_allow_html=True
-)
-
-st.markdown(
-    textwrap.dedent("""
-    <div class="pg-stepbar">
-        <div class="pg-step pg-step-active">1 · Report Details</div>
-        <div class="pg-step">2 · Safety Gate</div>
-        <div class="pg-step">3 · ML Assistance</div>
-        <div class="pg-step">4 · Final Priority</div>
-        <div class="pg-step">5 · Database</div>
-    </div>
-    """).strip(),
-    unsafe_allow_html=True
-)
-
-# =========================================================
-# PATIENT INPUT
-# =========================================================
-
-st.markdown(
-    textwrap.dedent("""
-    <div class="pg-form-card">
-        <div class="pg-form-title">👤 Patient / Case Information</div>
-        <div class="pg-form-subtitle">Start with the minimum patient and case information needed for review prioritization.</div>
-    </div>
-    """).strip(),
-    unsafe_allow_html=True
-)
-
-if "current_patient_id" not in st.session_state:
-    st.session_state.current_patient_id = f"PHG-{uuid.uuid4().hex[:8].upper()}"
-
-patient_id = st.text_input(
-    "Patient / Project ID",
-    value=st.session_state.current_patient_id,
-    key="patient_id_input",
-    help="A project identifier is generated automatically. Avoid unnecessary personally identifiable information."
-)
-st.session_state.current_patient_id = patient_id
-
-st.markdown(
-    textwrap.dedent(f"""
-    <div class="pg-id-card">
-        <div class="pg-id-label">Current case identifier</div>
-        <div class="pg-id-value">{html.escape(str(patient_id)) if patient_id else 'Not entered'}</div>
-    </div>
-    """).strip(),
-    unsafe_allow_html=True
-)
-
-col_age, col_sex = st.columns(2)
-with col_age:
-    age = st.number_input(
-        "Patient Age",
-        min_value=0,
-        max_value=120,
-        value=30,
-        step=1
-    )
-
-with col_sex:
-    sex = st.selectbox(
-        "Sex",
-        ["M", "F", "Unknown"]
-    )
-
-# =========================================================
-# DRUG INPUT
-# =========================================================
-
-st.markdown(
-    textwrap.dedent("""
-    <div class="pg-form-card">
-        <div class="pg-form-title">💊 Drug Information</div>
-        <div class="pg-form-subtitle">Record the suspected or reported medicinal product associated with the ADR.</div>
-    </div>
-    """).strip(),
-    unsafe_allow_html=True
-)
-
-drug = st.text_input(
-    "Drug Name",
-    placeholder="Example: Amoxicillin"
-)
-
-# =========================================================
-# EVIDENCE GAP RADAR — OPTIONAL TIMELINE DETAILS
-# This is reviewer support only; it does not alter priority.
-# =========================================================
-st.markdown("### 🧭 ADR Evidence Gap Radar (New)")
-st.caption("Optional timeline checks help reviewers spot missing dates or chronology conflicts. They do not establish causality and do not change the Safety Gate or model priority.")
-use_drug_start_date = st.checkbox("Drug start date is available", value=False, key="egr_has_drug_start")
-drug_start_date = None
-if use_drug_start_date:
-    drug_start_date = st.date_input("Drug start date", value=date.today(), key="egr_drug_start")
-use_adr_onset_date = st.checkbox("ADR / symptom onset date is available", value=False, key="egr_has_onset")
-adr_onset_date = None
-if use_adr_onset_date:
-    adr_onset_date = st.date_input("ADR / symptom onset date", value=date.today(), key="egr_onset")
-
-# =========================================================
-# ADR INPUT
-# =========================================================
-
-st.markdown(
-    textwrap.dedent("""
-    <div class="pg-form-card">
-        <div class="pg-form-title">⚠️ Adverse Drug Reaction Report</div>
-        <div class="pg-form-subtitle">Describe the reported reaction using the clearest clinical information available.</div>
-    </div>
-    """).strip(),
-    unsafe_allow_html=True
-)
-
-adr = st.text_area(
-    "Adverse Drug Reaction (ADR)",
-    placeholder="Example: Anaphylaxis with difficulty breathing",
-    height=150,
-    help="Describe the reported adverse event as clearly as possible."
-)
-
-st.markdown(
-    textwrap.dedent("""
-    <div class="pg-input-tip">💡 <b>Reporting tip:</b> Include clinically relevant details available in the report, such as the reported reaction, medical attention, hospitalization, outcome, or other important context.</div>
-    """).strip(),
-    unsafe_allow_html=True
-)
-
-# =========================================================
-# ANALYZE ADR
-# =========================================================
-
-st.markdown(
-    textwrap.dedent("""
-    <div class="pg-analyze-box">
-        <div class="pg-analyze-title">🛡️ PHARMAGUARD Review Engine</div>
-        <div class="pg-analyze-subtitle">Safety Gate  →  ML assistance  →  Final priority  →  Database</div>
-    </div>
-    """).strip(),
-    unsafe_allow_html=True
-)
-
-if st.button(
-    "🔍 ANALYZE ADR REPORT",
-    use_container_width=True,
-    type="primary"
-):
-
-    # -----------------------------------------------------
-    # INPUT VALIDATION
-    # -----------------------------------------------------
-
-    if not patient_id.strip():
-
-        st.warning(
-            "Please enter a Patient ID."
-        )
-
-        st.stop()
-
-
-    if not adr.strip():
-
-        st.warning(
-            "Please enter an ADR."
-        )
-
-        st.stop()
-        
-    # -----------------------------------------------------
-    # ADR MEDICAL-TERM VALIDATION
-    # -----------------------------------------------------
-
-    validation_status, suggestion, validation_message = validate_adr_input(adr)
-
-    if validation_status == "POSSIBLE_TYPO":
-
-        st.warning(validation_message)
-
-        st.stop()
-
-    if validation_status == "UNKNOWN":
-
-        st.warning(validation_message)
-
-        st.stop()
-
-    # =====================================================
-    # ADR INFORMATION COMPLETENESS CHECK
-    # =====================================================
-    information_gaps = assess_information_completeness(
-        patient_id,
-        age,
-        sex,
-        drug,
-        adr,
-    )
-
-    if information_gaps:
-        st.warning(
-            "⚠️ Information Gap Detected — "
-            "additional information may be needed before completing pharmacovigilance review."
-        )
-        st.markdown(
-            "**Missing / unspecified core information:** "
-            + ", ".join(information_gaps)
-        )
-        st.caption(
-            "This alert does not change the Safety Gate or Random Forest priority. "
-            "It is a reviewer-support information-quality check."
-        )
-    else:
-        st.success(
-            "✅ Core ADR information appears complete for this prototype review."
-        )
-
-    # -----------------------------------------------------
-    # NEW — EVIDENCE GAP RADAR (reviewer-support only)
-    # -----------------------------------------------------
-    st.markdown("### 🧭 Evidence Gap Radar Results")
-    evidence_gaps = []
-    if not drug.strip():
-        evidence_gaps.append("Suspected drug name is missing.")
-    if not adr.strip():
-        evidence_gaps.append("ADR description is missing.")
-    if drug_start_date is None:
-        evidence_gaps.append("Drug start date was not provided.")
-    if adr_onset_date is None:
-        evidence_gaps.append("ADR onset date was not provided.")
-
-    if drug_start_date is not None and adr_onset_date is not None:
-        if adr_onset_date < drug_start_date:
-            st.error(
-                "🕒 Timeline conflict: the reported ADR onset date is earlier than the drug start date. "
-                "Verify both dates and the case history before drawing conclusions."
-            )
-            evidence_gaps.append("ADR onset precedes reported drug start; chronology needs verification.")
-        elif adr_onset_date == drug_start_date:
-            st.warning(
-                "🕒 Same-day timeline: ADR onset and drug start are recorded on the same date. "
-                "Confirm the sequence and, if available, the times."
-            )
-        else:
-            st.success("🕒 Timeline check: the entered dates are in chronological order. This alone does not prove causality.")
-
-    if evidence_gaps:
-        st.warning("**Review checklist — information to confirm:**\n\n" + "\n".join(f"- {item}" for item in evidence_gaps))
-    else:
-        st.success("Evidence Gap Radar: required fields for this limited check are present. Other clinical details may still be needed.")
-    st.caption("Safety safeguard: Evidence Gap Radar is advisory only. It does not downgrade or override the existing Safety Gate / Random Forest priority and does not diagnose or assess causality.")
-
-    # -----------------------------------------------------
-    # RUN THE SHARED SAFETY-FIRST PRIORITY ENGINE
-    # -----------------------------------------------------
-
-    (
-        priority,
-        flag,
-        reason,
-        recommendation,
-        decision_source,
-        serious_hits,
-        moderate_hits,
-    ) = evaluate_adr_priority(age, sex, drug, adr)
-
-    # =====================================================
-    # SAFETY GATE vs RANDOM FOREST LIVE COMPARISON
-    # =====================================================
-    rf_priority = model_predict(age, sex, drug, adr)
-    if rf_priority not in {"LOW", "MODERATE", "HIGH"}:
-        rf_priority = "UNKNOWN"
-
-    # Uncertainty context: retain conservative final priority for possible serious
-    # symptoms, but explicitly mark the Safety Gate interpretation for human review.
-    uncertainty_context = bool(re.search(
-        r"\b(possible|possibly|suspected|疑|unclear|uncertain|uncertainty|unknown whether|not clear whether|cannot determine whether|could be|may be)\b",
-        str(adr).lower()
-    ))
-    current_status_unclear = bool(re.search(
-        r"(unclear whether|uncertain whether|unknown whether|not clear whether|cannot determine whether|whether the patient is currently|current status is unclear)",
-        str(adr).lower()
-    ))
-
-    safety_gate_priority = "NONE"
-    safety_gate_signal = "No predefined Safety Gate signal detected."
-    if serious_hits and uncertainty_context and current_status_unclear:
-        safety_gate_priority = "NEEDS REVIEW"
-        safety_gate_signal = (
-            "Potential serious signal with unclear current status: "
-            + ", ".join(serious_hits)
-        )
-    elif serious_hits:
-        safety_gate_priority = "HIGH"
-        safety_gate_signal = "Serious signal: " + ", ".join(serious_hits)
-    elif moderate_hits:
-        safety_gate_priority = "MODERATE"
-        safety_gate_signal = "Moderate-review signal: " + ", ".join(moderate_hits)
-
-    st.markdown("### 🛡️ Safety Gate vs 🤖 Random Forest")
-    st.markdown("This panel shows how the predefined Safety Gate and the Random Forest prototype responded to the same ADR report.")
-    compare_c1, compare_c2 = st.columns(2)
-    with compare_c1:
-        st.markdown(f"**🛡️ Safety Gate**\n\n**Result:** {safety_gate_priority}\n\n**Signal:** {safety_gate_signal}")
-    with compare_c2:
-        st.markdown(f"**🤖 Random Forest Prototype**\n\n**Model output:** {rf_priority}\n\nPrototype ML assistance only; not a calibrated clinical probability.")
-
-    if safety_gate_priority == "NEEDS REVIEW":
-        st.warning(
-            f"⚠️ Uncertain serious signal requires human review. Final PHARMAGUARD priority remains **{priority}** as a conservative safeguard; Random Forest output was **{rf_priority}**. Confirm current symptoms and urgency with a qualified clinician."
-        )
-    elif safety_gate_priority != "NONE" and rf_priority != safety_gate_priority:
-        st.info(f"🛡️ Safety Gate precedence: Final PHARMAGUARD priority is **{priority}**. The prototype Random Forest output was **{rf_priority}**.")
-    elif safety_gate_priority != "NONE":
-        st.success(f"🛡️ Safety Gate detected a {safety_gate_priority} signal and the Random Forest output was also {rf_priority}.")
-    else:
-        st.info(f"No predefined Safety Gate signal was detected; final priority uses the Random Forest prototype: **{priority}**.")
-
-    # =====================================================
-    # DISPLAY RESULT — UI-3 PROFESSIONAL RESULT
-    # =====================================================
-
-    priority_meta = {
-        "HIGH": {
-            "icon": "🚨",
-            "label": "HIGH PRIORITY",
-            "main_class": "pg-result-high-main",
-            "icon_class": "pg-result-high-icon",
-            "message": "Immediate pharmacovigilance review recommended."
-        },
-        "MODERATE": {
-            "icon": "⚠️",
-            "label": "MODERATE PRIORITY",
-            "main_class": "pg-result-moderate-main",
-            "icon_class": "pg-result-moderate-icon",
-            "message": "Clinical and pharmacovigilance review recommended."
-        },
-        "LOW": {
-            "icon": "✅",
-            "label": "LOW PRIORITY",
-            "main_class": "pg-result-low-main",
-            "icon_class": "pg-result-low-icon",
-            "message": "Routine pharmacovigilance review."
-        },
-        "UNKNOWN": {
-            "icon": "❓",
-            "label": "PRIORITY UNCERTAIN",
-            "main_class": "pg-result-unknown-main",
-            "icon_class": "pg-result-unknown-icon",
-            "message": "Additional information or professional review may be required."
-        }
-    }
-
-    meta = priority_meta.get(priority, priority_meta["UNKNOWN"])
-
-    safe_patient_id = html.escape(str(patient_id))
-    safe_age = html.escape(str(age))
-    safe_sex = html.escape(str(sex))
-    safe_drug = html.escape(str(drug))
-    safe_adr = html.escape(str(adr))
-    safe_flag = html.escape(str(flag))
-    safe_reason = html.escape(str(reason))
-    safe_source = html.escape(str(decision_source))
-    safe_recommendation = html.escape(str(recommendation))
-
-    st.markdown(
-        textwrap.dedent(
-            f"""
-            <div class="pg-result-hero {meta['main_class']}">
-                <div class="pg-result-kicker">PHARMAGUARD • ANALYSIS COMPLETE</div>
-                <div class="pg-result-main">
-                    <div class="pg-result-main-icon {meta['icon_class']}">{meta['icon']}</div>
-                    <div>
-                        <div class="pg-result-main-label">{meta['label']}</div>
-                        <div class="pg-result-main-message">{meta['message']}</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="pg-case-strip">
-                <div class="pg-case-item">
-                    <div class="pg-case-label">Patient / Case ID</div>
-                    <div class="pg-case-value">{safe_patient_id}</div>
-                </div>
-                <div class="pg-case-item">
-                    <div class="pg-case-label">Age</div>
-                    <div class="pg-case-value">{safe_age}</div>
-                </div>
-                <div class="pg-case-item">
-                    <div class="pg-case-label">Sex</div>
-                    <div class="pg-case-value">{safe_sex}</div>
-                </div>
-            </div>
-
-            <div class="pg-assessment-card">
-                <div class="pg-assessment-title">⚕️ Review Assessment</div>
-                <div class="pg-assessment-grid">
-                    <div class="pg-assessment-item">
-                        <div class="pg-assessment-label">Drug</div>
-                        <div class="pg-assessment-value">{safe_drug}</div>
-                    </div>
-                    <div class="pg-assessment-item">
-                        <div class="pg-assessment-label">Reported ADR</div>
-                        <div class="pg-assessment-value">{safe_adr}</div>
-                    </div>
-                    <div class="pg-assessment-item">
-                        <div class="pg-assessment-label">Seriousness / Review Flag</div>
-                        <div class="pg-assessment-value">{safe_flag}</div>
-                    </div>
-                    <div class="pg-assessment-item">
-                        <div class="pg-assessment-label">Decision Source</div>
-                        <div class="pg-assessment-value">{safe_source}</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="pg-signal-card">
-                <div class="pg-signal-title">🔎 Why this priority was assigned</div>
-                <div class="pg-signal-text">{safe_reason}</div>
-            </div>
-
-            <div class="pg-action-card">
-                <div class="pg-action-title">📌 Recommended Action</div>
-                <div class="pg-action-text">{safe_recommendation}</div>
-            </div>
-            """
-        ),
-        unsafe_allow_html=True
-    )
-
-    st.markdown(
-        textwrap.dedent(
-            """
-            <div class="pg-result-disclaimer">
-                <b>Review-priority support only:</b> PHARMAGUARD is a proof-of-concept
-                AI-assisted pharmacovigilance system. The displayed priority does not
-                establish ADR causality, diagnosis, treatment, regulatory seriousness,
-                or clinical decision-making.
-            </div>
-            """
-        ),
-        unsafe_allow_html=True
-    )
-
-    # =====================================================
-    # CREATE DATABASE RECORD
-    # =====================================================
-    # One timestamp is used for both the case reference and Date_Time.
-    now = datetime.now()
-    case_reference = make_case_reference(now)
-
-    if priority == "HIGH":
-        seriousness = "Yes"
-    elif priority in {"MODERATE", "LOW"}:
-        seriousness = "No"
-    else:
-        seriousness = "Uncertain"
-
-    database_record = {
-        "Date_Time": now.strftime("%Y-%m-%d %H:%M:%S"),
-        "Patient_ID": patient_id,
-        "Age": age,
-        "Sex": sex,
-        "Drug": drug,
-        "ADR": adr,
-        "Seriousness": seriousness,
-        "Decision_Source": decision_source,
-        "Priority": priority,
-        "Reason": reason,
-        "Case_Reference": case_reference,
-    }
-
-
-    # =====================================================
-    # SAVE TO GOOGLE SHEET
-    # =====================================================
-
-    saved = save_to_google_sheet(
-        database_record
-    )
-
-
-    if saved:
-
-        # Invalidate cached Google Sheet data so the next database refresh
-        # can retrieve the newly saved row instead of stale data.
-        invalidate_sheet_cache()
-
-        st.success(
-            "✅ ADR saved to PHARMAGUARD Database"
-        )
-
-    else:
-
-        st.warning(
-            "⚠️ Analysis completed, but ADR "
-            "could not be saved to database."
-        )
-
-
-    # =====================================================
-    # ADD TO CURRENT SESSION HISTORY
-    # =====================================================
-
-    # Keep the current-session record schema identical to the Google Sheet schema.
-    st.session_state.adr_history.append(
-        database_record.copy()
-    )
-
-# =========================================================
-# NEW ADR ANALYSIS — SCREEN BOUNDARY
-# Keep Dashboard, Cases, Analytics and Database on their own routed screens.
-# =========================================================
-st.markdown("""
-<div class="pg-ui6-footer">
-🛡️ <b>PHARMAGUARD</b> • AI-Assisted ADR Risk Prioritization System<br>
-Pharmacovigilance • Proof of Concept • Review-priority support only
-</div>
-""", unsafe_allow_html=True)
-
-st.markdown("""
-<div class="pg-disclaimer">
-<b>Scientific disclaimer:</b> PHARMAGUARD is a proof-of-concept AI-assisted pharmacovigilance review-prioritization system. Its HIGH/MODERATE/LOW outputs are project-defined review priorities and do not establish ADR causality, diagnosis, treatment, regulatory seriousness, or clinical decision-making.
-</div>
-""", unsafe_allow_html=True)
-
-# Prevent legacy/other-screen content from rendering below New ADR Analysis.
-st.stop()
+                    "ADR Recorded", "Drug Recorded", "Reassessm
